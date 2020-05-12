@@ -1,23 +1,23 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import numpy    as np
-from datetime import datetime as dt
+import numpy         as np
+from datetime        import datetime as dt
 from dateutil.parser import parse
 
 class Covid_SpecialDates:
 
-	def __init__(self, country, verbose):
-		self.country = country
-		self.vebose  = verbose
+	def __init__(self, country):
 
-		# Ampty list of dates
+		self.country = country
+
+		# Empty list of dates
 		self.listConfDates   = []
 		self.listDeconfDates = []
 		self.listOtherDates  = []
 
 	def __str__(self):
-		S = 'Dates:'
+		S =  'Interesting dates for ' + self.country + ':' 
 		S += '\n  Confinement date(s)  :' + str(self.listConfDates)
 		S += '\n  Deconfinement date(s):' + str(self.listDeconfDates)
 		S += '\n  Other date(s)        :' + str(self.listOtherDates)

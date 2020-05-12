@@ -5,6 +5,8 @@ import pandas            as pd
 import numpy             as np
 import matplotlib.pyplot as plt
 
+from Covid_SpecialDates import Covid_SpecialDates
+
 dpi           = 100    # plot resolution of saved figures
 figsize       = (8, 4) # figure's size (width, height)
 
@@ -60,6 +62,7 @@ def readDataEurope(country='France', dateMin=None, dateMax=None, Plot=False, fil
 
 
 	#covid_orig.dtypes
+	observ_label = ['cases']
 	covid_orig.set_index('dateRep', inplace=True)
 	covid_orig.sort_index(inplace=True)
 
@@ -68,8 +71,13 @@ def readDataEurope(country='France', dateMin=None, dateMax=None, Plot=False, fil
 		print(covid_orig.head())
 
 	covid_country = covid_orig.loc[covid_orig['countriesAndTerritories'] == country]
-	#covid_country.dtypes
-	#covid_country.tail()
+	# if covid_country.empty == True:
+	# 	return None, observ_label
+
+	# print('covid_country=', covid_country)
+	# print(covid_country.dtypes)
+	# input('attente')
+	# #covid_country.tail()
 	covid_country1   = covid_country[['cases', 'deaths']].cumsum()
 
 	# extraction entre dateMin et dateMax
@@ -86,32 +94,35 @@ def readDataEurope(country='France', dateMin=None, dateMax=None, Plot=False, fil
 	if verbose>0:
 		print('TAIL=', excerpt_country1.tail())
 	
-	observ_label = ['cases']
+	
 	return excerpt_country1, observ_label
+
 
 def drawAnnotation(ax, strin, date, color='black'):
 	bbox=dict(boxstyle='round4,pad=.3', fc='0.9', ec=color, lw=0.5)
 	arrowprops=dict(arrowstyle="->", color=color, lw=0.5)
 	ax.annotate(strin+date, xy=(date, ax.get_ylim()[0]), xycoords='data', xytext=(date, ax.get_ylim()[0]-(ax.get_ylim()[1]-ax.get_ylim()[0])/6.), \
-		 	fontsize=6, bbox=bbox, arrowprops=arrowprops, ha="center", va="center")
+			fontsize=6, bbox=bbox, arrowprops=arrowprops, ha="center", va="center")
 
 def Plot(pd, y, country, NameFig, Dates=None, z_observ=None):
-		fig, ax = plt.subplots(figsize=figsize)
-		pd.plot(ax=ax, y=y, title=country)
-		if z_observ != None:
-			pd.plot(ax=ax, y=z_observ, marker='x', ls='', color='green')
-		ax.grid(True, which='major', axis='both')
-		ax.grid(True, which='minor', axis='both')
 
-		if Dates!=None:
-			for d in Dates.listConfDates:
-				drawAnnotation(ax, 'Conf. date\n', d, color='red')
-			for d in Dates.listDeconfDates:
-				drawAnnotation(ax, 'Deconf. date\n', d, color='green')
-			for d in Dates.listOtherDates:
-				drawAnnotation(ax, 'Other date\n', d)
+	fig, ax = plt.subplots(figsize=figsize)
+	pd.plot(ax=ax, y=y, title=country)
+	if z_observ != None:
+		pd.plot(ax=ax, y=z_observ, marker='x', ls='', color='green')
+	ax.grid(True, which='major', axis='both')
+	ax.grid(True, which='minor', axis='both')
 
-		plt.tight_layout()
-		plt.savefig(NameFig, dpi=dpi)
-		plt.close()
+	if Dates!=None:
+		for d in Dates.listConfDates:
+			drawAnnotation(ax, 'Conf. date\n', d, color='red')
+		for d in Dates.listDeconfDates:
+			drawAnnotation(ax, 'Deconf. date\n', d, color='green')
+		for d in Dates.listOtherDates:
+			drawAnnotation(ax, 'Other date\n', d)
+
+	plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0), useOffset=False, useLocale=False)
+	plt.tight_layout()
+	plt.savefig(NameFig, dpi=dpi)
+	plt.close()
 

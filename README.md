@@ -4,24 +4,25 @@ Collection of some Jupyter Notebooks and Python3 scripts to test non-linear filt
 
 The programs are based on the Kalman-like filters implemented by Roger R Labbe Jr. in the [FilterPy](https://filterpy.readthedocs.io/en/latest/index.html) python module. 
 
+
+**Set a typical image**
+
+
 ## Notebooks repository
 
   - *readPlotDataGouvFr.ipynb*: Data reading from the website [data.gouv.fr](data.gouv.fr) (more specifically [these ones](https://static.data.gouv.fr/resources/donnees-hospitalieres-relatives-a-lepidemie-de-covid-19/20200327-154414/metadonnees-donnees-hospitalieres-covid19.csv)) and production of some figures for verification.
 
   - *readPlotDataEurope.ipynb*:  Data reading from the website [European Center for Disease Prevention and Control](https://www.ecdc.europa.eu/en/publications-data/download-todays-data-geographic-distribution-covid-19-cases-worldwide) and production of some figures for verification.
 
-Start reading on-line now by clicking the binder (**seems not to work due to pandas**):
+Start reading on-line now by clicking the binder (**seems not to work due to problem in Pandas module importation!**):
 
 [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/SDerrode/divoc.git/master)
 
-Start reading on-line now by clicking the Azure badge below:
-
-<a href="https://notebooks.azure.com/import/gh/SDerrode/divoc.git/master"><img src="https://notebooks.azure.com/launch.png" /></a>
-<a href="https://notebooks.azure.com/import/gh/SDerrode/divoc"><img src="https://notebooks.azure.com/launch.png" /></a>
-
 ## NL-Filtering
 
-  - *UKF_SEIR.py*: Main program to test UKF on SEIR-type models. Only Bacaer model implemented
+You just have to run *"python3 UKF_SEIR.py Italy"*. If the country name is not specified, then France will be selected.
+
+  - *UKF_SEIR.py*: Main program to test UKF on SEIR-type models. Only Bacaer model implemented for now.
 
   - *SEIR_Bacaer.py*: Class containing the description of the model described in the paper of Nicolas Bacaer (IRD). See file for exact referencing. 
 
@@ -29,4 +30,9 @@ Start reading on-line now by clicking the Azure badge below:
 , others dates. Mainly used to annotate plots.
 
   - *common.py*: Collection of functions for reading data on the web and for plotting
+
+
+## Contact
+
+stephane dot derrode at ec-lyon dot fr
 

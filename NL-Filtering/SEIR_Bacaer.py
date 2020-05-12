@@ -17,7 +17,7 @@ class SEIR1R2_Bacaer:
 
 		# Default values for parameters - from the paper
 		self.l  = 0.225          # coefficient de croissance exponentielle: exp(l * t)
-		                         # Ce paramètre est estimé par la pente de la croube sur le début de l'épidémie
+								 # Ce paramètre est estimé par la pente de la croube sur le début de l'épidémie
 		self.N  = 65.E6          # taille de la population étudiée
 		self.b  = 1./4.0         # phase de latence de 4 jours
 		self.c  = 1./4.0         # durée moyenne dans le compartiment I
@@ -27,7 +27,7 @@ class SEIR1R2_Bacaer:
 		self.set_a()
 
 	def __str__(self):
-		S  = 'Parameters: \n  l=' + str(self.l) + '\n  N='+ str(self.N) + '\n  b=' + str(self.b)
+		S  = 'Parameters for ' + self.modelName + ' model: \n  l=' + str(self.l) + '\n  N='+ str(self.N) + '\n  b=' + str(self.b)
 		S  +=  '\n  c=' + str(self.c) + '\n  f=' + str(self.f) + '\n  a=' + str(self.a)
 		return S
 
@@ -40,7 +40,7 @@ class SEIR1R2_Bacaer:
 		self.a = (self.l+self.c)*(1.+self.l/self.b) 
 
 	def f_bacaer(self, x, dt):
-		''' state transition function for Bacaer's model SEIR1R2'''
+		'''State transition function for Bacaer's model SEIR1R2'''
 
 		# bidouille pour etre sur que la somme des valeurs fasse bien N -> à améliorer?
 		x[[0,2,4,6,8]] /= abs(np.sum(x[[0,2,4,6,8]]))/self.N
