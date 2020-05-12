@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 
 from Covid_SpecialDates import Covid_SpecialDates
 
-dpi           = 100    # plot resolution of saved figures
+dpi           = 120    # plot resolution of saved figures
 figsize       = (8, 4) # figure's size (width, height)
 
 
@@ -16,7 +16,7 @@ def midDateStr(startDate, endDate):
 	d2 = datetime.strptime(dateconf,"%Y-%m-%d")
 	d  = d1.date() + (d2.date()-d1.date()) / 2
 
-def readDataGouvFr(Plot=False):
+def readDataGouvFr(plot=False):
 	'''
 		Lecture des données du gouvernement français (data.gouv.fr)
 		Les données débutent à la date de confinement (pourquoi?)
@@ -42,7 +42,7 @@ def readDataGouvFr(Plot=False):
 	return  
 
 
-def readDataEurope(country='France', dateMin=None, dateMax=None, Plot=False, fileLocalCopy=False, verbose=0):
+def readDataEurope(country='France', dateMin=None, dateMax=None, plot=False, fileLocalCopy=False, verbose=0):
 	'''
 		Lecture des données receuilli au niveau de  (data.gouv.fr)
 		Remarque: ll semble qu'il y ai un décalage d'un jour avec les données françaises
@@ -70,15 +70,8 @@ def readDataEurope(country='France', dateMin=None, dateMax=None, Plot=False, fil
 	if verbose>1:
 		print(covid_orig.head())
 
-	covid_country = covid_orig.loc[covid_orig['countriesAndTerritories'] == country]
-	# if covid_country.empty == True:
-	# 	return None, observ_label
-
-	# print('covid_country=', covid_country)
-	# print(covid_country.dtypes)
-	# input('attente')
-	# #covid_country.tail()
-	covid_country1   = covid_country[['cases', 'deaths']].cumsum()
+	covid_country  = covid_orig.loc[covid_orig['countriesAndTerritories'] == country]
+	covid_country1 = covid_country[['cases', 'deaths']].cumsum()
 
 	# extraction entre dateMin et dateMax
 	if verbose>0:
@@ -94,7 +87,6 @@ def readDataEurope(country='France', dateMin=None, dateMax=None, Plot=False, fil
 	if verbose>0:
 		print('TAIL=', excerpt_country1.tail())
 	
-	
 	return excerpt_country1, observ_label
 
 
@@ -104,15 +96,15 @@ def drawAnnotation(ax, strin, date, color='black'):
 	ax.annotate(strin+date, xy=(date, ax.get_ylim()[0]), xycoords='data', xytext=(date, ax.get_ylim()[0]-(ax.get_ylim()[1]-ax.get_ylim()[0])/6.), \
 			fontsize=6, bbox=bbox, arrowprops=arrowprops, ha="center", va="center")
 
-def Plot(pd, y, country, NameFig, Dates=None, z_observ=None):
+def Plot(pd, y, titre, NameFig, Dates=None, z_observ=None):
 
-	fig, ax = plt.subplots(figsize=figsize)
-	pd.plot(ax=ax, y=y, title=country)
+	fig = plt.figure(facecolor='w',figsize=figsize)
+	ax = fig.add_subplot(111, facecolor='#dddddd', axisbelow=True)
+
+	pd.plot(ax=ax, y=y, title=titre)
 	if z_observ != None:
 		pd.plot(ax=ax, y=z_observ, marker='x', ls='', color='green')
-	ax.grid(True, which='major', axis='both')
-	ax.grid(True, which='minor', axis='both')
-
+	
 	if Dates!=None:
 		for d in Dates.listConfDates:
 			drawAnnotation(ax, 'Conf. date\n', d, color='red')
@@ -121,7 +113,25 @@ def Plot(pd, y, country, NameFig, Dates=None, z_observ=None):
 		for d in Dates.listOtherDates:
 			drawAnnotation(ax, 'Other date\n', d)
 
+	# axes
+	ax.grid(True, which='major', axis='both')
+	ax.grid(True, which='minor', axis='both')
+	#ax.yaxis.set_tick_params(length=0)
+	#ax.xaxis.set_tick_params(length=0)
+	ax.grid(b=True, which='major', c='k', lw=0.5, ls='-', alpha=0.3)
+	ax.grid(b=True, which='minor', c='w', lw=0.5, ls='-')
+	for spine in ('top', 'right', 'bottom', 'left'):
+	    ax.spines[spine].set_visible(False)
 	plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0), useOffset=False, useLocale=False)
+
+	# On enlève le label sur l'axe x
+	x_label = ax.axes.get_xaxis().get_label().set_visible(False)
+
+	# legende
+	legend = ax.legend().get_frame().set_alpha(0.8)
+	plt.legend(fontsize=7)
+
+	
 	plt.tight_layout()
 	plt.savefig(NameFig, dpi=dpi)
 	plt.close()

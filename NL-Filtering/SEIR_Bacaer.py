@@ -37,7 +37,34 @@ class SEIR1R2_Bacaer:
 
 	def set_a(self):
 		# taux de contact effectif
-		self.a = (self.l+self.c)*(1.+self.l/self.b) 
+		self.a = (self.l+self.c)*(1.+self.l/self.b)
+
+	def h_bacaer(self, x):
+		return x[[6]] # on renvoie R1 (7ieme élément dans le vecteur x)
+
+	def f_bacaer_new(self, x, dt):
+		'''State transition function for Bacaer's model SEIR1R2'''
+
+		# bidouille pour etre sur que la somme des valeurs fasse bien N -> à améliorer?
+		x[[0,2,4,6,8]] /= abs(np.sum(x[[0,2,4,6,8]]))/self.N
+		xout = np.empty_like(x)
+
+		# param S, \dot{S}
+		xout[1] = -self.a/self.N * x[0] * x[4]
+		xout[0] = x[0]
+		# param E, \dot{E}
+		xout[3] = self.a/self.N * x[0] * x[4] - self.b * x[2]
+		xout[2] = x[2]
+		# param I, \dot{I}
+		xout[5] = self.b * x[2] - self.c * x[4]
+		xout[4] = x[4]
+		# param R^1, \dot{R}^1
+		xout[7] = self.f * self.c * x[4]
+		xout[6] = x[6]
+		# param R^2, \dot{R}^2
+		xout[9] = (1.-self.f) * self.c * x[4]
+		xout[8] = x[8]
+		return xout
 
 	def f_bacaer(self, x, dt):
 		'''State transition function for Bacaer's model SEIR1R2'''
@@ -63,6 +90,4 @@ class SEIR1R2_Bacaer:
 		xout[9] = x[9]
 		return xout
 
-	def h_bacaer(self, x):
-		return x[[6]] # on renvoie R1 (7ieme élément dans le vecteur x)
 

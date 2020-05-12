@@ -77,9 +77,9 @@ def main():
 		#############################################################################
 
 		pd, z_observ = readDataEurope(country=country, dateMin=startDate, dateMax=None, \
-								Plot=plot, fileLocalCopy=fileLocalCopy, verbose=verbose)
+								plot=plot, fileLocalCopy=fileLocalCopy, verbose=verbose)
 		if pd.empty==True:
-			continue
+			continue # on passe au pays suivant
 
 		zs = []
 		for z in pd[z_observ[0]]:
@@ -135,19 +135,21 @@ def main():
 
 			# These are the date of confinement and deconfinement + other. See function getDates to add or delete dates to put the focus on
 			Dates = getDates(country, verbose)
-			print('Dates=', Dates)
+			#print('Dates=', Dates)
+
+			titre = country + ' - ' + modele.modelName
 
 			# Plot de E, I, R^1, R^2
-			Plot(pd, ['$E(t)$', '$I(t)$', '$R^1(t)$', '$R^2(t)$', '$R^2(t)=N-\sum(SEIR^1)$'], country, prefixFig+'_EIR1R2.png', Dates, z_observ)
+			Plot(pd, ['$E(t)$', '$I(t)$', '$R^1(t)$', '$R^2(t)$', '$R^2(t)=N-\sum(SEIR^1)$'], titre , prefixFig+'_EIR1R2.png', Dates, z_observ)
 
 			# Plot de S
-			Plot(pd, ['$S(t)$'], country, prefixFig+'_S.png', Dates)
+			Plot(pd, ['$S(t)$'], titre, prefixFig+'_S.png', Dates)
 
-			# Plot dérivées de de E, I, R^1, R
-			Plot(pd, ['$\dot{E}(t)$', '$\dot{I}(t)$', '$\dot{R}^1(t)$', '$\dot{R}^2(t)$'], country, prefixFig+'_EIR1R2_dot.png', Dates)
+			# Plot dérivées de de E, I, R^1, R^2
+			Plot(pd, ['$\dot{E}(t)$', '$\dot{I}(t)$', '$\dot{R}^1(t)$', '$\dot{R}^2(t)$'], titre, prefixFig+'_EIR1R2_dot.png', Dates)
 
 			# Plot dérivée de S
-			Plot(pd, ['$\dot{S}(t)$'], country, prefixFig+'_S_dot.png', Dates)
+			Plot(pd, ['$\dot{S}(t)$'], titre, prefixFig+'_S_dot.png', Dates)
 
 
 def getDates(country, verbose):
