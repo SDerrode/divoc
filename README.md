@@ -2,7 +2,7 @@
 
 Processing of CoVid data. 
 
-List of jupyter notebooks and python3 scripts to test non linear-filtering technics to some covid Data collected on the web.
+List of Jupyter Notebooks and Python3 scripts to test non linear-filtering technics to some covid Data collected on the web.
 
 ## Notebooks repository
 
