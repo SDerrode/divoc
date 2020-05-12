@@ -10,15 +10,14 @@ The programs are based on the Kalman-like filters implemented by Roger R Labbe J
 
   - *readPlotDataEurope.ipynb*:  Data reading from the website [European Center for Disease Prevention and Control](https://www.ecdc.europa.eu/en/publications-data/download-todays-data-geographic-distribution-covid-19-cases-worldwide) and production of some figures for verification.
 
-Start reading online now by clicking the binder or Azure badge below:
+Start reading on-line now by clicking the binder (**seems not to work due to pandas**):
 
 [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/SDerrode/divoc.git/master)
 
-[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/SDerrode/divoc/master)
+Start reading on-line now by clicking the Azure badge below:
 
-[![Binder](http://mybinder.org/badge.svg)](https://beta.mybinder.org/v2/gh/rlabbe/Kalman-and-Bayesian-Filters-in-Python/master)
-<a href="https://notebooks.azure.com/import/gh/rlabbe/Kalman-and-Bayesian-Filters-in-Python"><img src="https://notebooks.azure.com/launch.png" /></a>
-
+<a href="https://notebooks.azure.com/import/gh/SDerrode/divoc.git/master"><img src="https://notebooks.azure.com/launch.png" /></a>
+<a href="https://notebooks.azure.com/import/gh/SDerrode/divoc"><img src="https://notebooks.azure.com/launch.png" /></a>
 
 ## NL-Filtering
 
