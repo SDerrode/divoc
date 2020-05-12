@@ -12,7 +12,7 @@ The programs are based on the Kalman-like filters implemented by Roger R Labbe J
 
 Start reading online now by clicking the binder or Azure badge below:
 
-[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/SDerrode/divoc/master)
+[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/SDerrode/divoc)
 
 [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/SDerrode/divoc/tree/master/Notebooks/master)
 
