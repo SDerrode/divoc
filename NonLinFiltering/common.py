@@ -16,6 +16,32 @@ def midDateStr(startDate, endDate):
 	d2 = datetime.strptime(dateconf,"%Y-%m-%d")
 	d  = d1.date() + (d2.date()-d1.date()) / 2
 
+def getDates(country, verbose):
+
+	Dates = None
+	if country == 'France':
+		Dates = Covid_SpecialDates(country=country)
+		Dates.addConfDates('2020-03-16')
+		Dates.addDeconfDates('2020-05-11')
+		Dates.setListOtherDates(['2020-03-06'])
+	if country == 'Germany':
+		Dates = Covid_SpecialDates(country=country)
+		Dates.addConfDates('2020-03-22')
+		Dates.addDeconfDates('2020-04-20')
+	if country == 'Italy':
+		Dates = Covid_SpecialDates(country=country)
+		Dates.addConfDates('2020-03-09')
+		Dates.addDeconfDates('2020-05-04')
+	if country == 'Spain':
+		Dates = Covid_SpecialDates(country=country)
+		Dates.addConfDates('2020-03-15')
+		Dates.addDeconfDates('2020-05-10')
+
+	if verbose>1:
+		print(Dates)
+	
+	return Dates
+
 def readDataGouvFr(plot=False):
 	'''
 		Lecture des données du gouvernement français (data.gouv.fr)
@@ -130,9 +156,7 @@ def Plot(pd, y, titre, NameFig, Dates=None, z_observ=None):
 	# legende
 	legend = ax.legend().get_frame().set_alpha(0.8)
 	plt.legend(fontsize=7)
-
 	
 	plt.tight_layout()
 	plt.savefig(NameFig, dpi=dpi)
 	plt.close()
-

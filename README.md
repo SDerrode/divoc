@@ -20,16 +20,15 @@ Start reading on-line now by clicking the binder (**seems not to work due to pro
 
 ## NL-Filtering
 
-You just have to run *"python3 UKF_SEIR.py Italy"*. If the country name is not specified, then France will be selected.
+You just have to run *python3 UKF_SEIR.py Italy*. If the country name is not specified, then France will be selected. By default: limited verbosing, and ploting
 
   - *UKF_SEIR.py*: Main program to test UKF on SEIR-type models. Only Bacaer model implemented for now.
 
   - *SEIR_Bacaer.py*: Class containing the description of the model described in the paper of Nicolas Bacaer (IRD). See file for exact referencing. 
 
-  - *Covid_SpecialDates*: Class to set-up and manage special Covid dates for a country (confinement date(s), deconfinement date(s)
-, others dates. Mainly used to annotate plots.
+  - *Covid_SpecialDates*: Class to set-up and manage special Covid dates for a country (confinement date(s), deconfinement date(s), others dates. Mainly used to annotate plots.
 
-  - *common.py*: Collection of functions for reading data on the web and for plotting
+  - *common.py*: Collection of functions for reading data on the web (or in data repository) and for plotting
 
 
 ## Contact

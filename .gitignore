@@ -1,5 +1,6 @@
 # specific to this project
-NL-Filtering/figures/
+NonLinFiltering/figures/
+NonLinFiltering/testPython/
 
 
 # Byte-compiled / optimized / DLL files
