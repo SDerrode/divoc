@@ -116,21 +116,50 @@ def readDataEurope(country='France', dateMin=None, dateMax=None, plot=False, fil
 	return excerpt_country1, observ_label
 
 
+def get_WE_indice(pd):
+	WE_indices = []
+	BoolWE = False
+	for i in range(len(pd)):
+		if pd.index[i].weekday() >= 5 and BoolWE == False:
+			WE_indices.append(i) 
+			BoolWE = True
+		if pd.index[i].weekday() < 5 and BoolWE == True:
+			WE_indices.append(i) 
+			BoolWE = False
+	# refermer si ouvert
+	if BoolWE==True:
+		WE_indices.append(i)
+	# print('WE_indices=', WE_indices)
+	# input('weekday')
+	return WE_indices 
+
 def drawAnnotation(ax, strin, date, color='black'):
 	bbox=dict(boxstyle='round4,pad=.3', fc='0.9', ec=color, lw=0.5)
 	arrowprops=dict(arrowstyle="->", color=color, lw=0.5)
 	ax.annotate(strin+date, xy=(date, ax.get_ylim()[0]), xycoords='data', xytext=(date, ax.get_ylim()[0]-(ax.get_ylim()[1]-ax.get_ylim()[0])/6.), \
 			fontsize=6, bbox=bbox, arrowprops=arrowprops, ha="center", va="center")
 
-def Plot(pd, y, titre, NameFig, Dates=None, z_observ=None):
 
+def Plot(pd, titre, NameFig, modele, y, Dates=None, z_observ=None):
+
+	if len(y)==0 or y is None: pass
+
+	listeString, listeColor = [], []
+	for p in y:
+		listeString.append(modele.getString(p))
+		listeColor.append(modele.getColor(p))
+
+	
 	fig = plt.figure(facecolor='w',figsize=figsize)
 	ax = fig.add_subplot(111, facecolor='#dddddd', axisbelow=True)
 
-	pd.plot(ax=ax, y=y, title=titre)
+	# Dessin des courbes théoriques
+	pd.plot(ax=ax, y=listeString, color=listeColor, title=titre)
+	# Dessin des observations
 	if z_observ != None:
-		pd.plot(ax=ax, y=z_observ, marker='x', ls='', color='green')
+		pd.plot(ax=ax, y=z_observ, marker='x', ls='', color=modele.getColorFromString('$R^1(t)$') )
 	
+	# ajout des dates spéciales
 	if Dates!=None:
 		for d in Dates.listConfDates:
 			drawAnnotation(ax, 'Conf. date\n', d, color='red')
@@ -138,6 +167,13 @@ def Plot(pd, y, titre, NameFig, Dates=None, z_observ=None):
 			drawAnnotation(ax, 'Deconf. date\n', d, color='green')
 		for d in Dates.listOtherDates:
 			drawAnnotation(ax, 'Other date\n', d)
+
+	# surlignage des jours de WE
+	WE_indices = get_WE_indice(pd)
+	i = 0
+	while i < len(WE_indices)-1:
+		ax.axvspan(pd.index[WE_indices[i]], pd.index[WE_indices[i+1]], facecolor='gray', edgecolor='none', alpha=.15, zorder=-100)
+		i += 2
 
 	# axes
 	ax.grid(True, which='major', axis='both')
@@ -147,7 +183,7 @@ def Plot(pd, y, titre, NameFig, Dates=None, z_observ=None):
 	ax.grid(b=True, which='major', c='k', lw=0.5, ls='-', alpha=0.3)
 	ax.grid(b=True, which='minor', c='w', lw=0.5, ls='-')
 	for spine in ('top', 'right', 'bottom', 'left'):
-	    ax.spines[spine].set_visible(False)
+		ax.spines[spine].set_visible(False)
 	plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0), useOffset=False, useLocale=False)
 
 	# On enlève le label sur l'axe x

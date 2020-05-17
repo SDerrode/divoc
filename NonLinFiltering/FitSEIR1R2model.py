@@ -12,8 +12,8 @@ from common              import readDataEurope
 from SolveDiff_SEIR1R2   import SolveDiff_SEIR1R2
 
 # constante
-fileLocalCopy = True         # if we upload the file from the url (to get latest results) or from a local copy file
-startDate     = '2020-02-25'  # whatever the upload data starts, this set the satrt date to be processed
+fileLocalCopy = False         # if we upload the file from the url (to get latest results) or from a local copy file
+startDate     = '2020-02-25'  # whatever the upload data starts, this sets the start date to be processed
 
 def residual(paras, t, data, solveur):
     """
@@ -42,33 +42,39 @@ if __name__ == '__main__':
     N       = 65.E6
     dt      = 1
     solveur = SolveDiff_SEIR1R2(N, dt, verbose)
+    #solveur.setParamInit(1000, 10000, 5000*solveur.modele.f, 5000*(1.-solveur.modele.f))
     if verbose>0:
         print(solveur)
 
     prefixFig = './figures/' + solveur.modele.modelShortName + '_' + country
 
     # Lecture des données et copy of the observation
-    ############################################################################
+    #############################################################################
+
     pd, z_observ = readDataEurope(country=country, dateMin=startDate, dateMax=None, \
-                            plot=False, fileLocalCopy=fileLocalCopy, verbose=verbose)
+                            plot=plot, fileLocalCopy=fileLocalCopy, verbose=verbose)
     if pd.empty==True:
-        print("The country " , country, ' is not available! -- exit')
+        print('pd is empty - No data! --> exit')
         exit(1)
+
     zs = []
     for z in pd[z_observ[0]]:
         zs.append(np.array([z]))
+
 
     # Solveur
     ############################################################################
     
     # Integration time grid
-    simulLenght = 600
+    simulLenght = 600 #len(zs) #600
     vectTime    = np.linspace(0, simulLenght-1, simulLenght)
 
     # with the inital values
     solveur.solve_SEIR1R2_sol1(vectTime)
     if plot==True:
-        solveur.plot_SEIR1R2(prefixFig+'_Fitinit.png', vectTime)
+        listePlot=[3]
+        solveur.plot_SEIR1R2(prefixFig+'_Fitinit.png', vectTime, plot=listePlot, zs=(zs,270))
+    input('attente')
 
     # set parameters including bounds; you can also fix parameters (use vary=False)
     S0, E0, I0, R10, R20 = solveur.getParamInit()

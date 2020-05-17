@@ -75,7 +75,6 @@ class SolveDiff_SEIR1R2:
 		# print('self.solution[0, :]=', self.solution[0, :])
 		# input('pause')
 
-
 		print('\n')
 		for t in range(1, simulLenght):
 			print('\rTime ', t, ' over ', simulLenght, '      ', end='', flush = True)
@@ -134,32 +133,30 @@ class SolveDiff_SEIR1R2:
 			# print('sum = ', np.sum(self.solution[t, :]))
 			# input('pause')
 
-
 		return self.solution
 
 
-	def plot_SEIR1R2(self, name, vectTime, withR2=True, zs=None):
+	def plot_SEIR1R2(self, name, vectTime, plot, zs=(None, 0)):
 
-		# set color cycle identical to panda's default color cycle
-		# ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf']
+		if len(plot)==0 or plot is None: pass
 
 		fig = plt.figure(facecolor='w', figsize=figsize)
 		ax  = fig.add_subplot(111, facecolor='#dddddd', axisbelow=True)
 
-		R2bis = self.N-self.solution[:, 0]-self.solution[:, 1]-self.solution[:, 2]-self.solution[:, 3]
+		for p in plot:
+			ax.plot(vectTime, self.solution[:, p], color=self.modele.getColor(p), alpha=1.0, lw=2, label=self.modele.getString(p))
 
-		#ax.plot(vectTime, self.solution[:, 0], color='black',   alpha=1.0, lw=2, label='$S(t)$')
-		ax.plot(vectTime, self.solution[:, 1], color='#1f77b4', alpha=1.0, lw=2, label='$E(t)$')
-		ax.plot(vectTime, self.solution[:, 2], color='#ff7f0e', alpha=1.0, lw=2, label='$I(t)$')
-		ax.plot(vectTime, self.solution[:, 3], color='#2ca02c', alpha=1.0, lw=2, label='$R^1(t)$')
-		if withR2==True:
-			ax.plot(vectTime, self.solution[:, 4], color='#d62728', alpha=1.0, lw=2, label='$R^2(t)$')
-			ax.plot(vectTime, R2bis,               color='#9467bd', alpha=1.0, lw=2, label='$R^2(t)=N-\sum{SEIR^1}$')
-		if zs != None:
-			ax.plot(vectTime, zs, color='#8c564b', alpha=1.0, lw=2, label='Observations (R1)', marker='x', ls='')
+		# seconde estimation de R2
+		# R2bis = self.N-self.solution[:, 0]-self.solution[:, 1]-self.solution[:, 2]-self.solution[:, 3]
+		# ax.plot(vectTime, R2bis, color=self.modele.getColor(indice), alpha=1.0, lw=2, label='$R^2(t)=N-\sum{SEIR^1}$')
+
+		# les données observées
+		if zs[0] != None:
+			delta = zs[1]
+			ax.plot(vectTime[delta:delta+len(zs[0])], zs[0], color=self.modele.getColor(3), alpha=1.0, lw=2, label='Observations ($R^1(n)$)', marker='x', ls='')
 
 		ax.set_xlabel('Time (days)')
-		ax.set_ylabel('Number (' + str(self.N) + ')')
+		ax.set_ylabel('Pop. size (' + str(int(self.N)) + ')')
 		#ax.set_ylim(0, self.N*1.01)
 		ax.yaxis.set_tick_params(length=0)
 		ax.xaxis.set_tick_params(length=0)
@@ -187,14 +184,15 @@ if __name__ == '__main__':
 		print(solveur)
 
 	# integration time grid
-	simulLenght = 600
+	simulLenght = 500
 	vectTime    = np.linspace(0, simulLenght-1, simulLenght)
 
 	# Solveur to get the theoretical behavior
 	########################################################################
 	solveur.solve_SEIR1R2_sol1(vectTime)
 	if plot==True:
-		solveur.plot_SEIR1R2(prefixFig+'simSEIR1R2model.png', vectTime, withR2= False)
+		listePlot=[1,2,3]
+		solveur.plot_SEIR1R2(prefixFig+'simSEIR1R2model.png', vectTime, plot=listePlot)
 	
 	# call main function
 	# solveur.solve_SEIR1R2_sol2(simulLenght)
@@ -204,8 +202,10 @@ if __name__ == '__main__':
 	# Simulateur to get the theoretical behavior
 	########################################################################
 	# solveur.simul_SEIR1R2(simulLenght)
+	# istePlot=[1,2,3]
 	# if plot==True:
-	# 	solveur.plot_SEIR1R2(prefixFig+'simSEIR1R2model_ter.png', vectTime, withR2= False)
+		# listePlot=[1,2,3]
+	# 	solveur.plot_SEIR1R2(prefixFig+'simSEIR1R2model_pop.png', vectTime, plot=listePlot)
 
 
 

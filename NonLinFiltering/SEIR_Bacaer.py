@@ -3,6 +3,7 @@
 
 import numpy as np
 from scipy.integrate import odeint
+import matplotlib.pyplot as plt
 
 class SEIR1R2_Bacaer:
 	''' Modèle SEIR1R2 du papier suivant 
@@ -23,9 +24,11 @@ class SEIR1R2_Bacaer:
 		self.a  = 0.155
 		self.b  = 1./5.2         # phase de latence de 4 jours
 		self.c  = 1./12.39       # durée moyenne dans le compartiment I
-		self.f  = 0.01           # fraction d'individus infectieux qui sont comptabilisés parmi les cas confirmés au moment de l'isolement
+		self.f  = 0.003           # fraction d'individus infectieux qui sont comptabilisés parmi les cas confirmés au moment de l'isolement
 		self.dt = dt
 
+		self.colorCycle = plt.rcParams['axes.prop_cycle'].by_key()['color']
+		
 		#a, b, c, f = 0.9025, 0.68, 0.43, 0.4
 		#a, b, c, f = 0.155, 1./5.2, 1./12.39, 0.05
 
@@ -34,32 +37,53 @@ class SEIR1R2_Bacaer:
 		S += '\n  b=' + str(self.b) + '\n  c=' + str(self.c) + '\n  f=' + str(self.f)
 		return S
 
-	def setParam(self, a, b, c, f):
-		self.a, self.b, self.c, self.f = a, b, c, f
+	def setParam(self, N, a, b, c, f):
+		self.N, self.a, self.b, self.c, self.f = N, a, b, c, f
 
 	def getParam(self):
-		return (self.a, self.b, self.c, self.f)
+		return (self.N, self.a, self.b, self.c, self.f)
 
 	def h_bacaer(self, x):
 		return x[[3]] # on renvoie R1 (4ieme élément dans le vecteur SEIR1R2)
 
 	# The SEIR1R2 model differential equations.
-	def deriv(self, y, t, a, b, c, f):
+	def deriv(self, y, t, N, a, b, c, f):
 	    S, E, I, R1, R2 = y
-	    dSdt  = -a * S * I / self.N
-	    dEdt  = a * S * I / self.N - b * E
+	    dSdt  = -a * S * I / N
+	    dEdt  = a * S * I / N - b * E
 	    dIdt  = b * E - c * I
 	    dR1dt = f * c * I
 	    dR2dt = (1.-f) * c * I
 	    return dSdt, dEdt, dIdt, dR1dt, dR2dt
+
+	def getString(self, indice):
+		if indice == 0: return '$S(t)$'
+		if indice == 1: return '$E(t)$'
+		if indice == 2: return '$I(t)$'
+		if indice == 3: return '$R^1(t)$'
+		if indice == 4: return '$R^2(t)$'
+		print('PB getString - indice =', indice, ' does not exist!')
+		exit(1)
+
+	def getColor(self, indice):
+		if indice >= 0 and indice<5: return self.colorCycle[indice]
+		print('PB getColor - indice =', indice, ' does not exist!')
+		exit(1)
+
+	def getColorFromString(self, string):
+
+		if string == '$S(t)$'  : return self.colorCycle[0] 
+		if string == '$E(t)$'  : return self.colorCycle[1] 
+		if string == '$I(t)$'  : return self.colorCycle[2] 
+		if string == '$R^1(t)$': return self.colorCycle[3] 
+		if string == '$R^2(t)$': return self.colorCycle[4] 
+
+		return 'black'
 
 	def f_bacaer(self, x, dt):
 		'''State transition function for Bacaer's model SEIR1R2'''
 
 		# petite normalisation pour véiter des dérives
 		x /= abs(np.sum(x))/self.N
-		ret = odeint(self.deriv, x, [0, dt], args=(self.N, self.a, self.b, self.c, self.f))
-		#xout = ret.T[:, -1]
-		# print('xout=', xout, 'shpe=', np.shape(xout))
-		#input('attente')
+		ret = odeint(self.deriv, x, [0, dt], args=self.getParam())
 		return ret.T[:, -1]

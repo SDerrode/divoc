@@ -15,7 +15,7 @@ from SolveDiff_SEIR1R2  import SolveDiff_SEIR1R2
 
 # constante
 fileLocalCopy = False         # if we upload the file from the url (to get latest results) or from a local copy file
-startDate     = '2020-02-25'  # whatever the upload data starts, this set the satrt date to be processed
+startDate     = '2020-02-25'  # whatever the upload data starts, this sets the start date to be processed
 
 
 def main():
@@ -123,7 +123,7 @@ def main():
 		if verbose>1:
 			print(pd.tail())
 		
-		# save the genjerated data in csv form
+		# save the generated data in csv form
 		pd.to_csv (prefixFig + '_all.csv', header=True, index=False)
 
 		if plot == True:
@@ -135,18 +135,10 @@ def main():
 			titre = country + ' - ' + solveur.modele.modelName
 
 			# Plot de E, I, R^1, R^2
-			Plot(pd, ['$E(t)$', '$I(t)$', '$R^1(t)$', '$R^2(t)$', '$R^2(t)=N-\sum(SEIR^1)$'], titre , prefixFig+'_EIR1R2.png', Dates, z_observ)
+			Plot(pd, titre, prefixFig+'_EIR1R2.png', solveur.modele, y=[1,2,3], Dates=Dates, z_observ=z_observ)
 
 			# Plot de S
-			Plot(pd, ['$S(t)$'], titre, prefixFig+'_S.png', Dates)
-
-			# Plot dérivées de de E, I, R^1, R^2
-			# Plot(pd, ['$\dot{E}(t)$', '$\dot{I}(t)$', '$\dot{R}^1(t)$', '$\dot{R}^2(t)$'], titre, prefixFig+'_EIR1R2_dot.png', Dates)
-
-			# Plot dérivée de S
-			# Plot(pd, ['$\dot{S}(t)$'], titre, prefixFig+'_S_dot.png', Dates)
-
-
+			Plot(pd, titre, prefixFig+'_S.png',      solveur.modele, y=[0], Dates=Dates)
 
 
 
