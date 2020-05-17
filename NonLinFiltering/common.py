@@ -149,7 +149,6 @@ def Plot(pd, titre, NameFig, modele, y, Dates=None, z_observ=None):
 		listeString.append(modele.getString(p))
 		listeColor.append(modele.getColor(p))
 
-	
 	fig = plt.figure(facecolor='w',figsize=figsize)
 	ax = fig.add_subplot(111, facecolor='#dddddd', axisbelow=True)
 

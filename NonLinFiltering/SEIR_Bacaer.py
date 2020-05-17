@@ -24,7 +24,7 @@ class SEIR1R2_Bacaer:
 		self.a  = 0.155
 		self.b  = 1./5.2         # phase de latence de 4 jours
 		self.c  = 1./12.39       # durée moyenne dans le compartiment I
-		self.f  = 0.003           # fraction d'individus infectieux qui sont comptabilisés parmi les cas confirmés au moment de l'isolement
+		self.f  = 0.004           # fraction d'individus infectieux qui sont comptabilisés parmi les cas confirmés au moment de l'isolement
 		self.dt = dt
 
 		self.colorCycle = plt.rcParams['axes.prop_cycle'].by_key()['color']
@@ -71,7 +71,6 @@ class SEIR1R2_Bacaer:
 		exit(1)
 
 	def getColorFromString(self, string):
-
 		if string == '$S(t)$'  : return self.colorCycle[0] 
 		if string == '$E(t)$'  : return self.colorCycle[1] 
 		if string == '$I(t)$'  : return self.colorCycle[2] 

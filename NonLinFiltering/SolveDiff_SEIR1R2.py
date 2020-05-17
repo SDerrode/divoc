@@ -32,7 +32,7 @@ class SolveDiff_SEIR1R2:
 		self.modele = SEIR1R2_Bacaer(self.N, dt=dt)
 		
 	def __str__(self):
-		S  = 'Parameters for solveur:\n  N=' + str(self.N) + '\n  y0='+ str(self.y0) + '\n'
+		S  = 'Parameters for solveur:\n  N=' + str(self.N) + '\n  dt='+str(self.dt) + '\n  y0='+ str(self.y0) + '\n'
 		S += self.modele.__str__()
 		return S
 		
@@ -144,6 +144,7 @@ class SolveDiff_SEIR1R2:
 		ax  = fig.add_subplot(111, facecolor='#dddddd', axisbelow=True)
 
 		for p in plot:
+			#print('self.solution[:, p]=', self.solution[:, p])
 			ax.plot(vectTime, self.solution[:, p], color=self.modele.getColor(p), alpha=1.0, lw=2, label=self.modele.getString(p))
 
 		# seconde estimation de R2
