@@ -23,7 +23,7 @@ class SEIR1R2_Bacaer:
 		self.a  = 0.155
 		self.b  = 1./5.2         # phase de latence de 4 jours
 		self.c  = 1./12.39       # durée moyenne dans le compartiment I
-		self.f  = 0.2            # fraction d'individus infectieux qui sont comptabilisés parmi les cas confirmés au moment de l'isolement
+		self.f  = 0.01           # fraction d'individus infectieux qui sont comptabilisés parmi les cas confirmés au moment de l'isolement
 		self.dt = dt
 
 		#a, b, c, f = 0.9025, 0.68, 0.43, 0.4
