@@ -24,7 +24,7 @@ class SEIR1R2_Bacaer:
 		self.a  = 0.155
 		self.b  = 1./5.2         # phase de latence de 4 jours
 		self.c  = 1./12.39       # durée moyenne dans le compartiment I
-		self.f  = 0.004           # fraction d'individus infectieux qui sont comptabilisés parmi les cas confirmés au moment de l'isolement
+		self.f  = 0.003    # france 0.0032 , RU : 0.007      # fraction d'individus infectieux qui sont comptabilisés parmi les cas confirmés au moment de l'isolement
 		self.dt = dt
 
 		self.colorCycle = plt.rcParams['axes.prop_cycle'].by_key()['color']
@@ -39,6 +39,11 @@ class SEIR1R2_Bacaer:
 
 	def setParam(self, N, a, b, c, f):
 		self.N, self.a, self.b, self.c, self.f = N, a, b, c, f
+
+	def setN(self, N):
+		self.N = N
+	def setf(self, f):
+		self.f = f
 
 	def getParam(self):
 		return (self.N, self.a, self.b, self.c, self.f)

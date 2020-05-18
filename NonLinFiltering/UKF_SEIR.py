@@ -10,13 +10,13 @@ from filterpy.kalman    import UnscentedKalmanFilter as UKF
 from filterpy.kalman    import JulierSigmaPoints, MerweScaledSigmaPoints, rts_smoother
 from filterpy.common    import Q_discrete_white_noise
 
-from common             import readDataEurope, getDates, Plot
+from common             import readDataEurope, getDates, Plot, addDaystoStrDate
 from SolveDiff_SEIR1R2  import SolveDiff_SEIR1R2
 
 # constante
 fileLocalCopy = False         # if we upload the file from the url (to get latest results) or from a local copy file
-startDate     = '2020-02-25'  # whatever the upload data starts, this sets the start date to be processed
-
+startDate     = None 
+stopDate      = None
 
 def main():
 	"""
@@ -54,21 +54,32 @@ def main():
 	# Modele d'eq. diff non lineaires
 	#############################################################################
 	# Solveur eq. diff.
-	N       = 65.E6
+	N = 65E6 # this value will be replaced
 	dt      = 1
 	solveur = SolveDiff_SEIR1R2(N, dt, verbose)
-	if verbose>0:
+	if verbose>1:
 		print(solveur)
 
 	for country in listcountries:
 
 		print('PROCESSING of ', country, ' in ', listcountries)
-		prefixFig = './figures/' + solveur.modele.modelShortName + '_' + country
+		prefFig = './figures/' + solveur.modele.modelShortName + '_' + country
+
+		if country != 'France':
+			print('Only france for the moment')
+			exit(1)
+		
+
+		# These are the date of confinement and deconfinement + other. See function getDates on how to add or delete dates to put the focus on
+		Dates     = getDates(country, verbose)
+		startDate = addDaystoStrDate(Dates.listConfDates[0],   10) # ajout de 10 jours à la date de confinement
+		stopDate  = addDaystoStrDate(Dates.listDeconfDates[0], 10) # ajout de 10 jours à la date de déconfinement
+
 
 		# Lecture des données et copy of the observation
 		#############################################################################
 
-		pd, z_observ = readDataEurope(country=country, dateMin=startDate, dateMax=None, \
+		pd, z_observ, N = readDataEurope(country=country, dateMin=startDate, dateMax=None, \
 								plot=plot, fileLocalCopy=fileLocalCopy, verbose=verbose)
 		if pd.empty==True:
 			continue # on passe au pays suivant si celui-ci n'existe pas
@@ -76,6 +87,10 @@ def main():
 		zs = []
 		for z in pd[z_observ[0]]:
 			zs.append(np.array([z]))
+
+		# MAJ des parametres
+		solveur.setParamInit(N, N*0.01, N*0.01, zs[0].item(), 0) # 1% de la population infectée
+		solveur.modele.setParam(N=N, a=0.062, b=0.07692, c=0.1856, f=0.064)
 
 		# Unscented KF
 		#############################################################################
@@ -124,21 +139,17 @@ def main():
 			print(pd.tail())
 		
 		# save the generated data in csv form
-		pd.to_csv (prefixFig + '_all.csv', header=True, index=False)
+		pd.to_csv (prefFig + '_all.csv', header=True, index=False)
 
 		if plot == True:
-
-			# These are the date of confinement and deconfinement + other. See function getDates to add or delete dates to put the focus on
-			Dates = getDates(country, verbose)
-			#print('Dates=', Dates)
 
 			titre = country + ' - ' + solveur.modele.modelName
 
 			# Plot de E, I, R^1, R^2
-			Plot(pd, titre, prefixFig+'_EIR1R2.png', solveur.modele, y=[1,2,3], Dates=Dates, z_observ=z_observ)
+			Plot(pd, titre, prefFig+'_EIR1R2.png', solveur.modele, y=[1,2,3], Dates=Dates, z_observ=z_observ)
 
 			# Plot de S
-			Plot(pd, titre, prefixFig+'_S.png',      solveur.modele, y=[0], Dates=Dates)
+			Plot(pd, titre, prefFig+'_S.png',      solveur.modele, y=[0], Dates=Dates)
 
 
 

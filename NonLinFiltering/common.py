@@ -4,6 +4,7 @@
 import pandas            as pd
 import numpy             as np
 import matplotlib.pyplot as plt
+from datetime import datetime, timedelta
 
 from Covid_SpecialDates import Covid_SpecialDates
 
@@ -11,10 +12,17 @@ dpi           = 120    # plot resolution of saved figures
 figsize       = (8, 4) # figure's size (width, height)
 
 
+
 def midDateStr(startDate, endDate):
-	d1 = datetime.strptime(datemin,"%Y-%m-%d")
-	d2 = datetime.strptime(dateconf,"%Y-%m-%d")
+	d1 = datetime.strptime(startDate,"%Y-%m-%d")
+	d2 = datetime.strptime(endDate,"%Y-%m-%d")
 	d  = d1.date() + (d2.date()-d1.date()) / 2
+	return d.strftime("%Y-%m-%d")
+
+def addDaystoStrDate(startDate, d):
+	d1 = datetime.strptime(startDate,"%Y-%m-%d")
+	d  = d1.date() + timedelta(10)
+	return d.strftime("%Y-%m-%d")
 
 def getDates(country, verbose):
 
@@ -36,6 +44,10 @@ def getDates(country, verbose):
 		Dates = Covid_SpecialDates(country=country)
 		Dates.addConfDates('2020-03-15')
 		Dates.addDeconfDates('2020-05-10')
+	if country == 'United_Kingdom':
+		Dates = Covid_SpecialDates(country=country)
+		Dates.addConfDates('2020-03-23')
+		Dates.addDeconfDates('2020-05-13')
 
 	if verbose>1:
 		print(Dates)
@@ -70,7 +82,7 @@ def readDataGouvFr(plot=False):
 
 def readDataEurope(country='France', dateMin=None, dateMax=None, plot=False, fileLocalCopy=False, verbose=0):
 	'''
-		Lecture des données receuilli au niveau de  (data.gouv.fr)
+		Lecture des données recueillies au niveau du site européen
 		Remarque: ll semble qu'il y ai un décalage d'un jour avec les données françaises
 	'''
 
@@ -92,12 +104,17 @@ def readDataEurope(country='France', dateMin=None, dateMax=None, plot=False, fil
 	covid_orig.set_index('dateRep', inplace=True)
 	covid_orig.sort_index(inplace=True)
 
+	if verbose>0:
+		print('TAIL=', covid_orig.tail())
+
 	covid_orig.drop(columns=['day', 'year', 'month', 'geoId', 'countryterritoryCode'], inplace=True)
 	if verbose>1:
 		print(covid_orig.head())
 
 	covid_country  = covid_orig.loc[covid_orig['countriesAndTerritories'] == country]
 	covid_country1 = covid_country[['cases', 'deaths']].cumsum()
+	# récupération de la taille de la population
+	pop_size = int(covid_country[['popData2018']].iloc[0])
 
 	# extraction entre dateMin et dateMax
 	if verbose>0:
@@ -113,7 +130,7 @@ def readDataEurope(country='France', dateMin=None, dateMax=None, plot=False, fil
 	if verbose>0:
 		print('TAIL=', excerpt_country1.tail())
 	
-	return excerpt_country1, observ_label
+	return excerpt_country1, observ_label, pop_size
 
 
 def get_WE_indice(pd):
