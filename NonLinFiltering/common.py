@@ -4,8 +4,8 @@
 import pandas            as pd
 import numpy             as np
 import matplotlib.pyplot as plt
-from datetime import datetime, timedelta
 
+from datetime           import datetime, timedelta
 from Covid_SpecialDates import Covid_SpecialDates
 
 dpi           = 120    # plot resolution of saved figures
@@ -21,33 +21,45 @@ def midDateStr(startDate, endDate):
 
 def addDaystoStrDate(startDate, d):
 	d1 = datetime.strptime(startDate,"%Y-%m-%d")
-	d  = d1.date() + timedelta(10)
-	return d.strftime("%Y-%m-%d")
+	d2  = d1.date() + timedelta(d)
+	return d2.strftime("%Y-%m-%d")
+
+def getLowerDateFromString(strdate1, strdate2):
+	d1 = datetime.strptime(strdate1,"%Y-%m-%d")
+	d2 = datetime.strptime(strdate1,"%Y-%m-%d")
+	if d1<d2:
+		return d1.strftime("%Y-%m-%d")
+	else:
+		return d2.strftime("%Y-%m-%d")
+
+def getNbDaysBetweenDateFromString(strdate1, strdate2):
+	d1 = datetime.strptime(strdate1,"%Y-%m-%d")
+	d2 = datetime.strptime(strdate2,"%Y-%m-%d")
+	return (d2-d1).days
 
 def getDates(country, verbose):
-
 	Dates = None
 	if country == 'France':
 		Dates = Covid_SpecialDates(country=country)
-		Dates.addConfDates('2020-03-16')
-		Dates.addDeconfDates('2020-05-11')
+		Dates.addConfDates      ('2020-03-16')
+		Dates.addDeconfDates    ('2020-05-11')
 		Dates.setListOtherDates(['2020-03-06'])
 	if country == 'Germany':
 		Dates = Covid_SpecialDates(country=country)
-		Dates.addConfDates('2020-03-22')
-		Dates.addDeconfDates('2020-04-20')
+		Dates.addConfDates      ('2020-03-22')
+		Dates.addDeconfDates    ('2020-04-20')
 	if country == 'Italy':
 		Dates = Covid_SpecialDates(country=country)
-		Dates.addConfDates('2020-03-09')
-		Dates.addDeconfDates('2020-05-04')
+		Dates.addConfDates      ('2020-03-09')
+		Dates.addDeconfDates    ('2020-05-04')
 	if country == 'Spain':
 		Dates = Covid_SpecialDates(country=country)
-		Dates.addConfDates('2020-03-15')
-		Dates.addDeconfDates('2020-05-10')
+		Dates.addConfDates      ('2020-03-15')
+		Dates.addDeconfDates    ('2020-05-10')
 	if country == 'United_Kingdom':
 		Dates = Covid_SpecialDates(country=country)
-		Dates.addConfDates('2020-03-23')
-		Dates.addDeconfDates('2020-05-13')
+		Dates.addConfDates      ('2020-03-23')
+		Dates.addDeconfDates    ('2020-05-13')
 
 	if verbose>1:
 		print(Dates)
@@ -88,7 +100,7 @@ def readDataEurope(country='France', dateMin=None, dateMax=None, plot=False, fil
 
 	covid_orig = None
 	if fileLocalCopy==True:
-		name = './data/csv_2020-05-06'
+		name = './data/csv-2020-05-18'
 		try:
 			covid_orig=pd.read_csv(name, sep=',', parse_dates=[0], dayfirst=True)
 		except:
@@ -157,7 +169,7 @@ def drawAnnotation(ax, strin, date, color='black'):
 			fontsize=6, bbox=bbox, arrowprops=arrowprops, ha="center", va="center")
 
 
-def Plot(pd, titre, NameFig, modele, y, Dates=None, z_observ=None):
+def Plot(pd, titre, NameFig, modele, y, Dates=None, data=None):
 
 	if len(y)==0 or y is None: pass
 
@@ -172,8 +184,8 @@ def Plot(pd, titre, NameFig, modele, y, Dates=None, z_observ=None):
 	# Dessin des courbes théoriques
 	pd.plot(ax=ax, y=listeString, color=listeColor, title=titre)
 	# Dessin des observations
-	if z_observ != None:
-		pd.plot(ax=ax, y=z_observ, marker='x', ls='', color=modele.getColorFromString('$R^1(t)$') )
+	if data != None:
+		pd.plot(ax=ax, y=data, marker='x', ls='', color=modele.getColorFromString('$R^1(t)$') )
 	
 	# ajout des dates spéciales
 	if Dates!=None:
@@ -194,8 +206,6 @@ def Plot(pd, titre, NameFig, modele, y, Dates=None, z_observ=None):
 	# axes
 	ax.grid(True, which='major', axis='both')
 	ax.grid(True, which='minor', axis='both')
-	#ax.yaxis.set_tick_params(length=0)
-	#ax.xaxis.set_tick_params(length=0)
 	ax.grid(b=True, which='major', c='k', lw=0.5, ls='-', alpha=0.3)
 	ax.grid(b=True, which='minor', c='w', lw=0.5, ls='-')
 	for spine in ('top', 'right', 'bottom', 'left'):

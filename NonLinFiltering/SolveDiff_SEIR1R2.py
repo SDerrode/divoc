@@ -170,7 +170,7 @@ class SolveDiff_SEIR1R2:
 		# ax.plot(vectTime, R2bis, color=self.modele.getColor(indice), alpha=1.0, lw=2, label='$R^2(t)=N-\sum{SEIR^1}$')
 
 		# les données observées
-		if zs[0] != None:
+		if len(zs[0]) != 0:
 			delta = zs[1]
 			ax.plot(vectTime[delta:delta+len(zs[0])], zs[0], color=self.modele.getColor(3), alpha=1.0, lw=2, label='Observations ($R^1(n)$)', marker='x', ls='')
 
@@ -188,7 +188,7 @@ class SolveDiff_SEIR1R2:
 		plt.close()
 
 
-	def paramOptimization(self, ts0, zs, vectTime):
+	def paramOptimization(self, ts0, data, vectTime):
 
 		# set parameters including bounds; you can also fix parameters (use vary=False)
 		S0, E0, I0, R10, R20 = self.y0 
@@ -196,28 +196,29 @@ class SolveDiff_SEIR1R2:
 	 
 		params = Parameters()
 		params.add('N',   value=self.N, vary=False)
-		params.add('S0',  value=S0,     vary=False) #, min=1E7,    max=6.5E7)
-		params.add('E0',  value=E0,     vary=False) #, min=0.,     max=200)
-		params.add('I0',  value=I0,     vary=False) #, min=0.,     max=200)
-		params.add('R10', value=R10,    vary=False) #, min=0.,     max=200)
-		params.add('R20', value=R20,    vary=False) #, min=0.,     max=200)
-		params.add('a',   value=a0,     vary=True, min=0.4*a0, max=2*a0) #min=0.01*a0, max=1.7*a0) #min=0.001, max=0.999)
-		params.add('b',   value=b0,     vary=True, min=0.4*b0, max=2*b0) #min=0.01*b0, max=3.5*b0) #min=0.001, max=0.999)
-		params.add('c',   value=c0,     vary=True, min=0.5*c0, max=2.3*c0) #min=0.03*c0, max=4.*c0)  #min=0.001, max=0.999)
+		params.add('S0',  value=S0,     vary=False)
+		params.add('E0',  value=E0,     vary=False)
+		params.add('I0',  value=I0,     vary=False)
+		params.add('R10', value=R10,    vary=False)
+		params.add('R20', value=R20,    vary=False)
+		params.add('ts',  value=ts0,    vary=True,  min=0, max=len(vectTime)-len(data)-1)
 		params.add('f',   value=f0,     vary=False) #, min=0.8*f0, max=1.4*f0)
-		params.add('ts',  value=ts0,    vary=True,  min=0, max=len(vectTime)-len(zs)-1)
+		params.add('a',   value=a0,     vary=True, min=0.01*a0, max=1.7*a0)
+		params.add('b',   value=b0,     vary=True, min=0.01*b0, max=3.5*b0)
+		params.add('c',   value=c0,     vary=True, min=0.03*c0, max=4.*c0)
+		# params.add('a',   value=a0,     vary=True, min=0.001, max=0.999) 
+		# params.add('b',   value=b0,     vary=True, min=0.001, max=0.999) 
+		# params.add('c',   value=c0,     vary=True, min=0.001, max=0.999) 
 		
 		# fit model
-		result = minimize(residual, params, args=(vectTime, zs, self), method='least_squares')
+		result = minimize(residual, params, args=(vectTime, data, self), method='least_squares')
 		if self.verbose>0:
 			result.params.pretty_print()
 
 		# with the optimized values
 		self.setParamInit(result.params['N'].value, result.params['E0'].value, result.params['I0'].value, result.params['R10'].value, result.params['R20'].value)
 		self.modele.setParam(result.params['N'].value, result.params['a'].value, result.params['b'].value, result.params['c'].value, result.params['f'].value)
-		if self.verbose>0:
-			print('Solver''s state after optimization=', self)
-
+		
 		return result.params['ts'].value
 
 

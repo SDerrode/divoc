@@ -79,13 +79,13 @@ def main():
 		# Lecture des données et copy of the observation
 		#############################################################################
 
-		pd, z_observ, N = readDataEurope(country=country, dateMin=startDate, dateMax=None, \
+		pd_exerpt, z_observ, N = readDataEurope(country=country, dateMin=startDate, dateMax=None, \
 								plot=plot, fileLocalCopy=fileLocalCopy, verbose=verbose)
-		if pd.empty==True:
+		if pd_exerpt.empty==True:
 			continue # on passe au pays suivant si celui-ci n'existe pas
 
 		zs = []
-		for z in pd[z_observ[0]]:
+		for z in pd_exerpt[z_observ[0]]:
 			zs.append(np.array([z]))
 
 		# MAJ des parametres
@@ -132,24 +132,24 @@ def main():
 		# Panda dataframe
 		columns = ['$S(t)$', '$E(t)$', '$I(t)$', '$R^1(t)$', '$R^2(t)$', '$R^2(t)=N-\sum(SEIR^1)$', '$R(t)=R^1(t)+R^2(t)$']
 		for j in range(5):
-			pd[columns[j]]=xMean_est[:, j]
-		pd[columns[5]] = solveur.modele.N-np.sum(xMean_est[:, 0:4], axis=1)
-		pd[columns[6]] = np.sum(xMean_est[:, 3:5], axis=1)
+			pd_exerpt[columns[j]]=xMean_est[:, j]
+		pd_exerpt[columns[5]] = solveur.modele.N-np.sum(xMean_est[:, 0:4], axis=1)
+		pd_exerpt[columns[6]] = np.sum(xMean_est[:, 3:5], axis=1)
 		if verbose>1:
-			print(pd.tail())
+			print(pd_exerpt.tail())
 		
 		# save the generated data in csv form
-		pd.to_csv (prefFig + '_all.csv', header=True, index=False)
+		pd_exerpt.to_csv(prefFig + '_all.csv', header=True, index=False)
 
 		if plot == True:
 
 			titre = country + ' - ' + solveur.modele.modelName
 
 			# Plot de E, I, R^1, R^2
-			Plot(pd, titre, prefFig+'_EIR1R2.png', solveur.modele, y=[1,2,3], Dates=Dates, z_observ=z_observ)
+			Plot(pd_exerpt, titre, prefFig+'_EIR1R2.png', solveur.modele, y=[1,2,3], Dates=Dates, z_observ=z_observ)
 
 			# Plot de S
-			Plot(pd, titre, prefFig+'_S.png',      solveur.modele, y=[0], Dates=Dates)
+			Plot(pd_exerpt, titre, prefFig+'_S.png',      solveur.modele, y=[0], Dates=Dates)
 
 
 
