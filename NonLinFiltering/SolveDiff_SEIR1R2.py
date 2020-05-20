@@ -36,10 +36,18 @@ class SolveDiff_SEIR1R2:
 		self.modele = SEIR1R2_Bacaer(self.N, dt=dt)
 		
 	def __str__(self):
-		S  = 'Parameters for solveur:\n  N=' + str(self.N) + '\n  dt='+str(self.dt) + '\n  y0='+ str(self.y0) + '\n'
-		S += self.modele.__str__()
+		S  = 'Solveur:\n  N=' + str(self.N) + '\n  dt='+str(self.dt) + '\n  y0='+ str(self.y0) + '\n'
+		S = self.modele.__str__()
 		return S
-		
+
+	def getTextParam(self):
+		S  = self.modele.getTextParam()
+		S += '\nSolveur init:'# + '\n  N=' + str(self.N) + '\n  dt='+str(self.dt) \
+		#S += '\n  y0='+ str(self.y0) + '\n'
+		S += '\n  S0='+str(self.y0[0])
+		S += '\n  E0='+str(self.y0[1]) + ', I0='+str(self.y0[2]) + ', R^10='+str(self.y0[3]) + ', R^20='+str(self.y0[4])
+		return S
+
 	def setN(self, N):
 		self.N = N
 		# MAJ des autres paramètres en conséquence
@@ -96,8 +104,8 @@ class SolveDiff_SEIR1R2:
 		params.add('ts',  value=ts0,    vary=True, min=0,       max=len(time)-len(data))
 		params.add('f',   value=f0,     vary=True, min=0.60*f0, max=1.8*f0)
 		params.add('a',   value=a0,     vary=True, min=0.3*a0, max=1/0.3*a0)
-		params.add('b',   value=b0,     vary=False) #True, min=0.01*b0, max=3.5*b0)
-		params.add('c',   value=c0,     vary=False) #True, min=0.5*c0, max=2.*c0)
+		params.add('b',   value=b0,     vary=True, min=0.8*b0, max=1./0.8*b0)
+		params.add('c',   value=c0,     vary=True, min=0.8*c0, max=1./0.8*c0)
 		# params.add('a',   value=a0,     vary=True, min=0.001, max=0.999) 
 		# params.add('b',   value=b0,     vary=True, min=0.001, max=0.999) 
 		# params.add('c',   value=c0,     vary=True, min=0.001, max=0.999) 
@@ -113,75 +121,75 @@ class SolveDiff_SEIR1R2:
 		
 		return result.params['ts'].value
 
-	def simul_SEIR1R2(self, simulLenght):
-		self.solution = np.zeros(shape=(simulLenght, 5), dtype=int) # 5 parameters: S, E, I, R1, R2
+	# def simul_SEIR1R2(self, simulLenght):
+	# 	self.solution = np.zeros(shape=(simulLenght, 5), dtype=int) # 5 parameters: S, E, I, R1, R2
 
-		# initalisation
-		self.solution[0, :] = self.y0
-		# print('self.solution[0, :]=', self.solution[0, :])
-		# input('pause')
+	# 	# initalisation
+	# 	self.solution[0, :] = self.y0
+	# 	# print('self.solution[0, :]=', self.solution[0, :])
+	# 	# input('pause')
 
-		print('\n')
-		for t in range(1, simulLenght):
-			print('\rTime ', t, ' over ', simulLenght, '      ', end='', flush = True)
+	# 	print('\n')
+	# 	for t in range(1, simulLenght):
+	# 		print('\rTime ', t, ' over ', simulLenght, '      ', end='', flush = True)
 
-			# compartiment S
-			tab = np.random.random_sample(size=(self.solution[t-1, 0],))
-			mask = (tab <= self.modele.a).astype(np.int)
-			self.solution[t, 1] =  np.sum(mask)
-			self.solution[t, 0] =  self.solution[t-1, 0] - self.solution[t, 1]
-			# print('self.solution[t, 1]=', self.solution[t, 1])
-			# print('np.sum(mask)=', np.sum(mask))
-			# print(self.solution[t-1, 0] - self.solution[t, 1])
-			# input('apuse')
+	# 		# compartiment S
+	# 		tab = np.random.random_sample(size=(self.solution[t-1, 0],))
+	# 		mask = (tab <= self.modele.a).astype(np.int)
+	# 		self.solution[t, 1] =  np.sum(mask)
+	# 		self.solution[t, 0] =  self.solution[t-1, 0] - self.solution[t, 1]
+	# 		# print('self.solution[t, 1]=', self.solution[t, 1])
+	# 		# print('np.sum(mask)=', np.sum(mask))
+	# 		# print(self.solution[t-1, 0] - self.solution[t, 1])
+	# 		# input('apuse')
 
-			tab = np.random.random_sample(size=(self.solution[t-1, 1],))
-			mask = (tab <= self.modele.b).astype(np.int)
-			self.solution[t, 2]  =  np.sum(mask)
-			self.solution[t, 1] +=  self.solution[t-1, 1] - self.solution[t, 2]
+	# 		tab = np.random.random_sample(size=(self.solution[t-1, 1],))
+	# 		mask = (tab <= self.modele.b).astype(np.int)
+	# 		self.solution[t, 2]  =  np.sum(mask)
+	# 		self.solution[t, 1] +=  self.solution[t-1, 1] - self.solution[t, 2]
 
-			tab = np.random.random_sample(size=(self.solution[t-1, 2],))
-			mask = (tab <= self.modele.c).astype(np.int)
-			temp = np.sum(mask)
-			self.solution[t, 3] =  int(temp * self.modele.f)
-			self.solution[t, 4] =  np.sum(mask)-self.solution[t, 3]
-			self.solution[t, 2] +=  self.solution[t-1, 2] - temp
+	# 		tab = np.random.random_sample(size=(self.solution[t-1, 2],))
+	# 		mask = (tab <= self.modele.c).astype(np.int)
+	# 		temp = np.sum(mask)
+	# 		self.solution[t, 3] =  int(temp * self.modele.f)
+	# 		self.solution[t, 4] =  np.sum(mask)-self.solution[t, 3]
+	# 		self.solution[t, 2] +=  self.solution[t-1, 2] - temp
 			
-			# for individu in range(self.solution[t-1, 0]):
-			# 	if random.random() <= self.modele.a: # passage de S à E
-			# 		self.solution[t, 1] += 1
-			# 	else:
-			# 		self.solution[t, 0] += 1
+	# 		# for individu in range(self.solution[t-1, 0]):
+	# 		# 	if random.random() <= self.modele.a: # passage de S à E
+	# 		# 		self.solution[t, 1] += 1
+	# 		# 	else:
+	# 		# 		self.solution[t, 0] += 1
 
-			# # compartiment E
-			# for individu in range(self.solution[t-1, 1]):
-			# 	if random.random() <= self.modele.b: # passage de E à I
-			# 		self.solution[t, 2] += 1
-			# 	else:
-			# 		self.solution[t, 1] += 1
+	# 		# # compartiment E
+	# 		# for individu in range(self.solution[t-1, 1]):
+	# 		# 	if random.random() <= self.modele.b: # passage de E à I
+	# 		# 		self.solution[t, 2] += 1
+	# 		# 	else:
+	# 		# 		self.solution[t, 1] += 1
 
-			# # compartiment I
-			# for individu in range(self.solution[t-1, 2]):
-			# 	if random.random() <= self.modele.c: # passage de I vers R
-			# 		if random.random() <= self.modele.f:
-			# 			self.solution[t, 3] += 1
-			# 		else:
-			# 			self.solution[t, 4] += 1
-			# 	else:
-			# 		self.solution[t, 2] += 1
+	# 		# # compartiment I
+	# 		# for individu in range(self.solution[t-1, 2]):
+	# 		# 	if random.random() <= self.modele.c: # passage de I vers R
+	# 		# 		if random.random() <= self.modele.f:
+	# 		# 			self.solution[t, 3] += 1
+	# 		# 		else:
+	# 		# 			self.solution[t, 4] += 1
+	# 		# 	else:
+	# 		# 		self.solution[t, 2] += 1
 
 
-			# compartiments R1 e R2 : on ajoute le passé (ces compartiments cumulent)
-			self.solution[t, 3] += self.solution[t-1, 3]
-			self.solution[t, 4] += self.solution[t-1, 4]
+	# 		# compartiments R1 e R2 : on ajoute le passé (ces compartiments cumulent)
+	# 		self.solution[t, 3] += self.solution[t-1, 3]
+	# 		self.solution[t, 4] += self.solution[t-1, 4]
 
-			# print('self.solution[t, :]=', self.solution[t, :])
-			# print('sum = ', np.sum(self.solution[t, :]))
-			# input('pause')
+	# 		# print('self.solution[t, :]=', self.solution[t, :])
+	# 		# print('sum = ', np.sum(self.solution[t, :]))
+	# 		# input('pause')
 
-		return self.solution
+	# 	return self.solution
 
-	def plot_SEIR1R2(self, name, timefocus, plot, data):
+	def plot_SEIR1R2(self, name, timefocus, plot, data, text=''):
 
 		if len(plot)==0 or plot is None: pass
 
@@ -210,6 +218,13 @@ class SolveDiff_SEIR1R2:
 		legend.get_frame().set_alpha(0.5)
 		for spine in ('top', 'right', 'bottom', 'left'):
 			ax.spines[spine].set_visible(False)
+
+		# ajout d'un text d'annotation
+		print('text', text)
+		if text != '':
+			bbox=dict(boxstyle='round4, pad=.3', alpha=0.5, color='xkcd:light turquoise') #, facecolor='0.8', edgecolor='xkcd:light turquoise', lw=0.5)
+			ax.annotate(text, xy=(time[0], ax.get_ylim()[0]+(ax.get_ylim()[1]-ax.get_ylim()[0])/1.8), fontsize=7, bbox=bbox, ha="left", va="center") 
+
 		plt.savefig(name, dpi=dpi)
 		plt.close()
 

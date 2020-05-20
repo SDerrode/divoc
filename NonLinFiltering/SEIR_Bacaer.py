@@ -33,8 +33,16 @@ class SEIR1R2_Bacaer:
 		#a, b, c, f = 0.155, 1./5.2, 1./12.39, 0.05
 
 	def __str__(self):
-		S  = 'Parameters for ' + self.modelName + ' model: \n  N=' + str(self.N) + '\n  a='+ str(self.a)
-		S += '\n  b=' + str(self.b) + '\n  c=' + str(self.c) + '\n  f=' + str(self.f)
+		S  = 'Model ' + self.modelName + ':' + ' \n  N=' + str(self.N) 
+		S += '\n  a='+ str(np.round(self.a, decimals=3))
+		S += '\n  b=' + str(np.round(self.b, decimals=3)) + '\n  c=' + str(np.round(self.c, decimals=3)) + '\n  f=' + str(np.round(self.f, decimals=3))
+		return S
+
+	def getTextParam(self):
+		S  = 'Model '  + self.modelShortName + ':'
+		S += '\n  a='  + str(np.round(self.a, decimals=3)) + ', b=' + str(np.round(self.b, decimals=3))
+		S += '\n  c='  + str(np.round(self.c, decimals=3)) + ', f=' + str(np.round(self.f, decimals=3))
+		S += '\n  R0=' + str(np.round(self.a/self.c, decimals=3))
 		return S
 
 	def setParam(self, N, a, b, c, f):

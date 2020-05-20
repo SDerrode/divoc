@@ -15,16 +15,14 @@ readStopDateStr  = None
 
 if __name__ == '__main__':
 
-    verbose       = 1
-    plot          = True
-    country, tabf = 'United_Kingdom', [0.032, 0.6, 0.8]
-    DatesString   = getDates(country, verbose)
+    verbose     = 1
+    plot        = True
+    country     = 'France' #United_Kingdom
+    DatesString = getDates(country, verbose)
 
     # paramètres initiaux
     E0, I0, R10, R20 = 0, 1, 0, 0
-    #a0, b0, c0, f0   = 0.155, 1./5.2, 1./12.39, 0.02
-
-    l, b0, c0, f0 = 0.255, 1./5.2, 1./12.68, 0.08
+    l, b0, c0, f0    = 0.255, 1./5.2, 1./10, 0.10
     a0 = (l+c0)*(1.+l/b0)
     print('Reproductivité avant: ', a0/c0)
 
@@ -82,7 +80,6 @@ if __name__ == '__main__':
         T    = 350
         time = np.linspace(0, T-1, T)
 
-
         # Before optimization
         ###############################@
 
@@ -104,7 +101,7 @@ if __name__ == '__main__':
             listePlot=[3]
             filename = prefFig + '_Period' + str(i) + '_Fitinit.png'
             timefocus = slice(ts0, ts0+dataLength)
-            solveur.plot_SEIR1R2(filename, timefocus, plot=listePlot, data=data)
+            solveur.plot_SEIR1R2(filename, timefocus, plot=listePlot, data=data, text=solveur.getTextParam())
 
             # begDate = (fitStartDate+ timedelta(-int(ts0))).strftime("%Y-%m-%d")
             # print('begDate=', begDate)
@@ -141,7 +138,7 @@ if __name__ == '__main__':
             listePlot=[3]
             filename = prefFig + '_Period' + str(i) + '_Fit.png'
             timefocus = slice(ts, ts+dataLength)
-            solveur.plot_SEIR1R2(filename, timefocus, plot=listePlot, data=data)
+            solveur.plot_SEIR1R2(filename, timefocus, plot=listePlot, data=data, text=solveur.getTextParam())
 
             # begDate = addDaystoStrDate(fitStartDate, -int(ts))
             # #print('begDate=', begDate)
@@ -155,5 +152,9 @@ if __name__ == '__main__':
             # titre = country + ' - ' + solveur.modele.modelName
             # # Plot de E, I, R^1, R^2
             # Plot(pd_exerpt, titre, prefFig+'_Fit_EIR1R2.png', solveur.modele, y=[3], Dates=Dates, z_observ=z_observ)
+
+        print(np.shape(solut_eqdiff))
+        #print(solut_eqdiff)
+        print(solut_eqdiff[timefocus.stop-1, :])
 
         exit()
