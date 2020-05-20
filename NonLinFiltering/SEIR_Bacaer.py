@@ -21,8 +21,8 @@ class SEIR1R2_Bacaer:
 
 		# Default values for parameters - from the paper
 		self.N  = N              # taille de la population étudiée
-		self.a  = 0.155
-		self.b  = 1./5.2         # phase de latence de 4 jours
+		self.a  = 0.155			 # tau de contact effectif
+		self.b  = 1./5.2         # phase de latence de 5.2 jours
 		self.c  = 1./12.39       # durée moyenne dans le compartiment I
 		self.f  = 0.003    # france 0.0032 , RU : 0.007      # fraction d'individus infectieux qui sont comptabilisés parmi les cas confirmés au moment de l'isolement
 		self.dt = dt

@@ -58,15 +58,11 @@ class SolveDiff_SEIR1R2:
 		self.N = N
 		S0 = N - E0 - I0 - R10 - R20
 		self.y0 = S0, E0, I0, R10, R20
-		# print('N-sum=', self.N-np.sum(self.y0))
-		# input('pause')
 
 	def getParamInit(self):
 		return self.y0
 
 	def solve_SEIR1R2_sol2(self, simulLenght):
-		self.solution = []
-
 		# SOLUTION 2 - Integrate the SEIR1R2 equations over the time grid t, one by one.
 		self.solution = np.zeros(shape=(simulLenght, 5))
 		ret = odeint(self.modele.deriv, self.y0, [0, 0], args=self.modele.getParam())
@@ -77,14 +73,45 @@ class SolveDiff_SEIR1R2:
 
 		return self.solution
 
-	def solve_SEIR1R2_sol1(self, vectTime):
-
+	def solve_SEIR1R2_sol1(self, time):
 		# Integrate the SIR equations over the time grid t.
-		self.solution = odeint(self.modele.deriv, self.y0, vectTime, args=self.modele.getParam())
+		self.solution = odeint(self.modele.deriv, self.y0, time, args=self.modele.getParam())
 		# print(type(self.solution))
 		# print('shape=', np.shape(self.solution))
 		# input('attente')
 		return self.solution
+
+	def paramOptimization(self, ts0, data, time):
+
+		# set parameters including bounds; you can also fix parameters (use vary=False)
+		S0, E0, I0, R10, R20 = self.y0 
+		_, a0, b0, c0, f0    = self.modele.getParam()
+	 
+		params = Parameters()
+		params.add('N',   value=self.N, vary=False)
+		params.add('E0',  value=E0,     vary=False) #True, min=0 , max=2000)
+		params.add('I0',  value=I0,     vary=False) #True, min=0 , max=2000)
+		params.add('R10', value=R10,    vary=False) #True, min=0 , max=2000)
+		params.add('R20', value=R20,    vary=False) #True, min=0 , max=2000)
+		params.add('ts',  value=ts0,    vary=True, min=0,       max=len(time)-len(data))
+		params.add('f',   value=f0,     vary=True, min=0.60*f0, max=1.8*f0)
+		params.add('a',   value=a0,     vary=True, min=0.3*a0, max=1/0.3*a0)
+		params.add('b',   value=b0,     vary=False) #True, min=0.01*b0, max=3.5*b0)
+		params.add('c',   value=c0,     vary=False) #True, min=0.5*c0, max=2.*c0)
+		# params.add('a',   value=a0,     vary=True, min=0.001, max=0.999) 
+		# params.add('b',   value=b0,     vary=True, min=0.001, max=0.999) 
+		# params.add('c',   value=c0,     vary=True, min=0.001, max=0.999) 
+		
+		# fit model
+		result = minimize(residual, params, args=(time, data, self), method='powell') #powell, least_squares
+		if self.verbose>0:
+			result.params.pretty_print()
+
+		# with the optimized values
+		self.setParamInit(result.params['N'].value, result.params['E0'].value, result.params['I0'].value, result.params['R10'].value, result.params['R20'].value)
+		self.modele.setParam(result.params['N'].value, result.params['a'].value, result.params['b'].value, result.params['c'].value, result.params['f'].value)
+		
+		return result.params['ts'].value
 
 	def simul_SEIR1R2(self, simulLenght):
 		self.solution = np.zeros(shape=(simulLenght, 5), dtype=int) # 5 parameters: S, E, I, R1, R2
@@ -154,29 +181,28 @@ class SolveDiff_SEIR1R2:
 
 		return self.solution
 
-	def plot_SEIR1R2(self, name, vectTime, plot, zs=(None, 0)):
+	def plot_SEIR1R2(self, name, timefocus, plot, data):
 
 		if len(plot)==0 or plot is None: pass
 
 		fig = plt.figure(facecolor='w', figsize=figsize)
 		ax  = fig.add_subplot(111, facecolor='#dddddd', axisbelow=True)
 
+		time = np.linspace(timefocus.start, timefocus.stop-1, timefocus.stop-timefocus.start, dtype=int)
+		
 		for p in plot:
-			#print('self.solution[:, p]=', self.solution[:, p])
-			ax.plot(vectTime, self.solution[:, p], color=self.modele.getColor(p), alpha=1.0, lw=2, label=self.modele.getString(p))
+			ax.plot(time, self.solution[timefocus.start:timefocus.stop, p], color=self.modele.getColor(p), alpha=1.0, lw=2, label=self.modele.getString(p))
 
 		# seconde estimation de R2
 		# R2bis = self.N-self.solution[:, 0]-self.solution[:, 1]-self.solution[:, 2]-self.solution[:, 3]
-		# ax.plot(vectTime, R2bis, color=self.modele.getColor(indice), alpha=1.0, lw=2, label='$R^2(t)=N-\sum{SEIR^1}$')
+		# ax.plot(time, R2bis, color=self.modele.getColor(indice), alpha=1.0, lw=2, label='$R^2(t)=N-\sum{SEIR^1}$')
 
 		# les données observées
-		if len(zs[0]) != 0:
-			delta = zs[1]
-			ax.plot(vectTime[delta:delta+len(zs[0])], zs[0], color=self.modele.getColor(3), alpha=1.0, lw=2, label='Observations ($R^1(n)$)', marker='x', ls='')
+		if len(data) != 0:
+			ax.plot(time, data, color=self.modele.getColor(3), alpha=1.0, lw=2, label='Observations ($R^1(n)$)', marker='x', ls='')
 
 		ax.set_xlabel('Time (days)')
 		ax.set_ylabel('Pop. size (' + str(int(self.N)) + ')')
-		#ax.set_ylim(0, self.N*1.01)
 		ax.yaxis.set_tick_params(length=0)
 		ax.xaxis.set_tick_params(length=0)
 		ax.grid(b=True, which='major', c='w', lw=1, ls='-')
@@ -186,40 +212,6 @@ class SolveDiff_SEIR1R2:
 			ax.spines[spine].set_visible(False)
 		plt.savefig(name, dpi=dpi)
 		plt.close()
-
-
-	def paramOptimization(self, ts0, data, vectTime):
-
-		# set parameters including bounds; you can also fix parameters (use vary=False)
-		S0, E0, I0, R10, R20 = self.y0 
-		_, a0, b0, c0, f0    = self.modele.getParam()
-	 
-		params = Parameters()
-		params.add('N',   value=self.N, vary=False)
-		params.add('S0',  value=S0,     vary=False)
-		params.add('E0',  value=E0,     vary=False)
-		params.add('I0',  value=I0,     vary=False)
-		params.add('R10', value=R10,    vary=False)
-		params.add('R20', value=R20,    vary=False)
-		params.add('ts',  value=ts0,    vary=True,  min=0, max=len(vectTime)-len(data)-1)
-		params.add('f',   value=f0,     vary=False) #, min=0.8*f0, max=1.4*f0)
-		params.add('a',   value=a0,     vary=True, min=0.01*a0, max=1.7*a0)
-		params.add('b',   value=b0,     vary=True, min=0.01*b0, max=3.5*b0)
-		params.add('c',   value=c0,     vary=True, min=0.03*c0, max=4.*c0)
-		# params.add('a',   value=a0,     vary=True, min=0.001, max=0.999) 
-		# params.add('b',   value=b0,     vary=True, min=0.001, max=0.999) 
-		# params.add('c',   value=c0,     vary=True, min=0.001, max=0.999) 
-		
-		# fit model
-		result = minimize(residual, params, args=(vectTime, data, self), method='least_squares')
-		if self.verbose>0:
-			result.params.pretty_print()
-
-		# with the optimized values
-		self.setParamInit(result.params['N'].value, result.params['E0'].value, result.params['I0'].value, result.params['R10'].value, result.params['R20'].value)
-		self.modele.setParam(result.params['N'].value, result.params['a'].value, result.params['b'].value, result.params['c'].value, result.params['f'].value)
-		
-		return result.params['ts'].value
 
 
 def residual(paras, t, data, solveur):
@@ -233,12 +225,9 @@ def residual(paras, t, data, solveur):
 	solveur.setParamInit(paras['N'].value, paras['E0'].value, paras['I0'].value, paras['R10'].value, paras['R20'].value)
 	solveur.modele.setParam(paras['N'].value, paras['a'].value, paras['b'].value, paras['c'].value, paras['f'].value)
 	model = solveur.solve_SEIR1R2_sol1(t)
-	# print('model=', model)
-	# input('apuse')
 
 	# Only R1 to calculate the residual
 	eqm=[]
-	# print(paras['ts'].min, paras['ts'].max)
 	for t in range(paras['ts'].min, paras['ts'].max):
 		eqm.append(mean_squared_error(model[t:t+len(data), 3], data))
 	delay = np.argmin(eqm)
@@ -247,8 +236,27 @@ def residual(paras, t, data, solveur):
 	# print('delay=', delay)
 	# print('next ts', int(paras['ts'].value))
 
+	# print('current value', paras['E0'].value, paras['I0'].value, paras['R10'].value, paras['R20'].value, ' -- ', paras['a'].value, paras['b'].value, paras['c'].value, paras['f'].value)
+	# print('current ts', int(paras['ts'].value))
+
+	# print(data)
+	# print(model[ts:ts+len(data), 3])
+	#print(model[:, 3])
+	#input('attente')
+
+	# Dessin des courbes théoriques
+	# fig = plt.figure(facecolor='w',figsize=figsize)
+	# ax = fig.add_subplot(111, facecolor='#dddddd', axisbelow=True)
+	# ax.plot(model[ts:ts+len(data), 3], color='red',   label='model')
+	# ax.plot(data,                 color='green', label='data', marker='x', ls='')
+	# plt.legend()
+	# plt.show()
+
 	# Only R1 to calculate the residual, only on the window's size of the data
-	result = (model[ts:ts+len(data), 3] - data).ravel()
+	result = model[ts:ts+len(data), 3] - data
+	# print('result=', result)
+	#print('sum=', np.sum(np.multiply(result, result)))
+	# input('pause')
 	# paras.pretty_print()
 	#print('sum=', np.sum(np.abs(result)))
 
@@ -275,19 +283,19 @@ if __name__ == '__main__':
 
 	# integration time grid
 	simulLenght = 80
-	vectTime    = np.linspace(0, simulLenght-1, simulLenght)
+	time    = np.linspace(0, simulLenght-1, simulLenght)
 
 	# Solveur to get the theoretical behavior
 	########################################################################
-	solveur.solve_SEIR1R2_sol1(vectTime)
+	solveur.solve_SEIR1R2_sol1(time)
 	if plot==True:
 		listePlot=[1,2,3]
-		solveur.plot_SEIR1R2(prefixFig+'simSEIR1R2model.png', vectTime, plot=listePlot)
+		solveur.plot_SEIR1R2(prefixFig+'simSEIR1R2model.png', time, plot=listePlot)
 	
 	# call main function
 	# solveur.solve_SEIR1R2_sol2(simulLenght)
 	# if plot==True:
-	#	solveur.plot_SEIR1R2(prefixFig+'simSEIR1R2model_bis.png', vectTime)
+	#	solveur.plot_SEIR1R2(prefixFig+'simSEIR1R2model_bis.png', time)
 
 	# Simulateur to get the theoretical behavior
 	########################################################################
@@ -295,5 +303,5 @@ if __name__ == '__main__':
 	# istePlot=[1,2,3]
 	# if plot==True:
 		# listePlot=[1,2,3]
-	# 	solveur.plot_SEIR1R2(prefixFig+'simSEIR1R2model_pop.png', vectTime, plot=listePlot)
+	# 	solveur.plot_SEIR1R2(prefixFig+'simSEIR1R2model_pop.png', time, plot=listePlot)
 

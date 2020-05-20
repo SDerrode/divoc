@@ -92,7 +92,7 @@ def readDataGouvFr(plot=False):
 	return  
 
 
-def readDataEurope(country='France', dateMin=None, dateMax=None, plot=False, fileLocalCopy=False, verbose=0):
+def readDataEurope(country='France', dateMinStr=None, dateMaxStr=None, plot=False, fileLocalCopy=False, verbose=0):
 	'''
 		Lecture des données recueillies au niveau du site européen
 		Remarque: ll semble qu'il y ai un décalage d'un jour avec les données françaises
@@ -128,21 +128,19 @@ def readDataEurope(country='France', dateMin=None, dateMax=None, plot=False, fil
 	# récupération de la taille de la population
 	pop_size = int(covid_country[['popData2018']].iloc[0])
 
-	# extraction entre dateMin et dateMax
-	if verbose>0:
-		print('dateMin=', dateMin, ', dateMax=', dateMax)
-	if dateMin==None:
-		if dateMax==None:
-			excerpt_country1 = covid_country1.loc[:]
-		else:
-			excerpt_country1 = covid_country1.loc[:dateMax]
-	else:
-		excerpt_country1 = covid_country1.loc[dateMin:dateMax]
+	# extraction entre dateMin et dateMaxStr
+	if dateMinStr==None:
+		dateMinStr = covid_country1.index[0].strftime("%Y-%m-%d")
+	if dateMaxStr==None:
+		dateMaxStr = covid_country1.index[-1].strftime("%Y-%m-%d")
+	if verbose>1:
+		print('dateMinStr=', dateMinStr, ', dateMaxStr=', dateMaxStr)
+	excerpt_country1 = covid_country1.loc[dateMinStr:dateMaxStr]
 	
 	if verbose>0:
 		print('TAIL=', excerpt_country1.tail())
 	
-	return excerpt_country1, observ_label, pop_size
+	return excerpt_country1, observ_label, pop_size, dateMinStr, dateMaxStr
 
 
 def get_WE_indice(pd):
