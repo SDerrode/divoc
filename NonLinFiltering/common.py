@@ -5,13 +5,21 @@ import pandas            as pd
 import numpy             as np
 import matplotlib.pyplot as plt
 
+from sklearn.metrics import mean_squared_error
+
 from datetime           import datetime, timedelta
 from Covid_SpecialDates import Covid_SpecialDates
 
 dpi           = 120    # plot resolution of saved figures
 figsize       = (8, 4) # figure's size (width, height)
 
-
+def getMaxEQM(sol_edo_R1, data, T):
+	dataLength = len(data)
+	eqm=np.zeros(shape=(T-dataLength))
+	for t in range(T-dataLength):
+		eqm[t] = mean_squared_error(sol_edo_R1[t:t+dataLength], data)
+	ts0 = np.argmin(eqm)
+	return ts0
 
 def midDateStr(startDate, endDate):
 	d1 = datetime.strptime(startDate,"%Y-%m-%d")
@@ -100,7 +108,7 @@ def readDataEurope(country='France', dateMinStr=None, dateMaxStr=None, plot=Fals
 
 	covid_orig = None
 	if fileLocalCopy==True:
-		name = './data/csv-2020-05-18'
+		name = './data/csv_2020-05-21'
 		try:
 			covid_orig=pd.read_csv(name, sep=',', parse_dates=[0], dayfirst=True)
 		except:

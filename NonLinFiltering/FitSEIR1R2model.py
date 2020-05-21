@@ -64,7 +64,7 @@ if __name__ == '__main__':
     vectTime    = np.linspace(0, simulLenght-1, simulLenght)
 
     # equa diff with the initial values
-    solut_eqdiff = solveur.solve_SEIR1R2_sol1(vectTime)
+    solut_eqdiff = solveur.solve_SEIR1R2(vectTime)
     #print(solveur)
 
     # calcul timeshift initial (ts0)
@@ -105,7 +105,7 @@ if __name__ == '__main__':
         print('Solver''s state after optimization=', solveur)
 
     
-    solut_eqdiff = solveur.solve_SEIR1R2_sol1(vectTime)
+    solut_eqdiff = solveur.solve_SEIR1R2(vectTime)
     if plot==True:
         listePlot=[3]
         solveur.plot_SEIR1R2(prefFig+'_Fit.png', vectTime, plot=listePlot, zs=(zs, ts))

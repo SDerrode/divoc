@@ -42,7 +42,8 @@ class SEIR1R2_Bacaer:
 		S  = 'Model '  + self.modelShortName + ':'
 		S += '\n  a='  + str(np.round(self.a, decimals=3)) + ', b=' + str(np.round(self.b, decimals=3))
 		S += '\n  c='  + str(np.round(self.c, decimals=3)) + ', f=' + str(np.round(self.f, decimals=3))
-		S += '\n  R0=' + str(np.round(self.a/self.c, decimals=3))
+		if self.c!= 0.:
+			S += '\n  R0=' + str(np.round(self.a/self.c, decimals=3))
 		return S
 
 	def setParam(self, N, a, b, c, f):
@@ -50,6 +51,12 @@ class SEIR1R2_Bacaer:
 
 	def setN(self, N):
 		self.N = N
+	def seta(self, a):
+		self.a = a
+	def setb(self, b):
+		self.b = b
+	def setc(self, c):
+		self.c = c
 	def setf(self, f):
 		self.f = f
 
