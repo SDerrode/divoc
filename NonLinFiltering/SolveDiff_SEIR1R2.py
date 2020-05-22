@@ -82,6 +82,7 @@ class SolveDiff_SEIR1R2:
 		for t in range(T-dataLength):
 			eqm[t] = mean_squared_error(self.solution[t:t+dataLength, 3], data)
 		self.TS = np.argmin(eqm)
+
 		return self.TS
 
 	def solve_SEIR1R2_withSwitch(self, T, timeswitch=-1):
@@ -229,7 +230,7 @@ class SolveDiff_SEIR1R2:
 		# ax.plot(timeedo, R2bis, color=self.modele.getColor(indice), alpha=1.0, lw=2, label='$R^2(t)=N-\sum{SEIR^1}$')
 
 		# les données observées
-		time = np.linspace(timefocusdata.start, timefocusdata.stop-1, timefocusdata.stop-timefocusdata.start, dtype=int)
+		time = np.linspace(timefocusdata.start, timefocusdata.stop-1, timefocusdata.stop-timefocusdata.start)
 		if len(data) != 0:
 			ax.plot(time, data[timefocusdata], color=self.modele.getColor(3), alpha=1.0, lw=2, label='Observations ($R^1(n)$)', marker='x', ls='')
 

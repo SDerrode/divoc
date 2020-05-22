@@ -11,13 +11,15 @@ import matplotlib.pyplot as plt
 # constante
 fileLocalCopy    = True  # if we upload the file from the url (to get latest results) or from a local copy file
 readStartDateStr = "2020-03-01" 
-readStopDateStr  = None 
+readStopDateStr  = None
 
 if __name__ == '__main__':
 
-    verbose     = 1
+    verbose     = 2
     plot        = True
-    country     = 'Italy' #United_Kingdom
+    surplus     = False
+    decalage    = 10       # 10 jours de decalage
+    country     = 'France' # United_Kingdom
     DatesString = getDates(country, verbose)
 
     # Lecture des données et copy of the observations
@@ -33,11 +35,21 @@ if __name__ == '__main__':
         #input('pause')
     
     # Liste des dates pour les approximations piecewise
-    ListDatesStr = [readStartDateStr, DatesString.listConfDates[0], DatesString.listDeconfDates[0], readStopDateStr]
+    fitStartDate = addDaystoStrDate(DatesString.listConfDates[0],   10) # ajout de 10 jours à la date de confinement
+    fitStopDate  = addDaystoStrDate(DatesString.listDeconfDates[0], 10) # ajout de 10 jours à la date de déconfinement
+
+    confin_decalage   = addDaystoStrDate(DatesString.listConfDates[0],   decalage)
+    deconfin_decalage = addDaystoStrDate(DatesString.listDeconfDates[0], decalage)
+    ListDatesStr = [readStartDateStr, confin_decalage, deconfin_decalage, readStopDateStr]
+    ListDatesStr = [readStartDateStr, confin_decalage, deconfin_decalage, readStopDateStr]
     ListDates    = [datetime.strptime(dateString,"%Y-%m-%d") for dateString in ListDatesStr]
-    if verbose>1:
+    if ListDates[-1]<ListDates[-2]:
+        ListDatesStr.pop()
+        ListDates.pop()
+    if verbose>2:
         print('ListDates=', ListDates)
         print('ListDatesStr=', ListDatesStr)
+        #input('pause')
     
     # Modele d'eq. diff non lineaires
     #############################################################################
@@ -52,8 +64,7 @@ if __name__ == '__main__':
     # Surplus de la précédente période (nulle pour le début)
     data_surplus   = np.zeros(shape=(dataLength))
     data_corrected = np.zeros(shape=(dataLength))
-    indMaxPeriod  = 0
-    
+    indMaxPeriod   = 0
 
     # Boucle pour traiter successivement les différentes fenêtres
     #############################################################################
@@ -64,15 +75,20 @@ if __name__ == '__main__':
             E0, I0, R10, R20 = 0, 1, 0, 0
             l, b0, c0, f0    = 0.255, 1./5.2, 1./10, 0.10
             a0 = (l+c0)*(1.+l/b0)
-            T  = 100
+            T  = 150
         if i==1:
-            E0, I0, R10, R20 = 0, 1, 0, 0
-            a0, b0, c0, f0   = 0.155, 1./5.2, 1./13.0, 0.10
-            T = 600
+            if surplus==True:
+                a0, b0, c0, f0   = 0.100, 0.18, 0.09, 0.14 # en enlevant le surplus
+            else:
+                a0, b0, c0, f0   = 0.03, 0.14, 0.10, 0.10 # sans enlever le surplus
+            T = 100
         if i==2:
-            E0, I0, R10, R20 = 0, 1, 0, 0
-            a0, b0, c0, f0   = 0.155, 1./5.2, 1./13.0, 0.10
-            T = 1500
+            if surplus==True:
+                a0, b0, c0, f0   = 0.100, 0.18, 0.09, 0.14 # en enlevant le surplus
+            else:
+                a0, b0, c0, f0   = 0.05, 0.10, 0.05, 0.04 # en enlevant le surplus
+
+            T = 100
         #print('Reproductivité avant: ', a0/c0)
         time = np.linspace(0, T-1, T)
 
@@ -85,8 +101,8 @@ if __name__ == '__main__':
         # Récupérations des données observées
         indMinPeriod = indMaxPeriod
         dataLengthPeriod = 0
-        for j, z in enumerate(pd_exerpt.loc[fitStartDateStr:addDaystoStrDate(fitStopDateStr,- 1), (HeadData[0])]):
-            data_corrected[indMinPeriod+j] = z #-data_surplus[indMinPeriod+j])
+        for j, z in enumerate(pd_exerpt.loc[fitStartDateStr:addDaystoStrDate(fitStopDateStr, -1), (HeadData[0])]):
+            data_corrected[indMinPeriod+j] = z - data_surplus[indMinPeriod+j]
             dataLengthPeriod +=1
         indMaxPeriod += dataLengthPeriod
         timefocusdata = slice(indMinPeriod, indMaxPeriod)
@@ -117,7 +133,7 @@ if __name__ == '__main__':
         # plot
         if plot==True:
             listePlot    = [3]
-            filename     = prefFig + '_Period' + str(i) + '_Fitinit_3.png'
+            filename     = prefFig + '_Period' + str(i) + '_Fitinit_' + ''.join(map(str, listePlot)) + '.png'
             timefocusedo = slice(ts0, ts0+dataLengthPeriod+5)
             solveur.plot_SEIR1R2(filename, timefocusedo, timefocusdata, plot=listePlot, data=data_corrected, text=solveur.getTextParam())
 
@@ -146,19 +162,19 @@ if __name__ == '__main__':
         
         if plot==True:
             listePlot=[1,2,3]
-            filename = prefFig + '_Period' + str(i) + '_Fit_123.png'
+            filename = prefFig + '_Period' + str(i) + '_Fit_' + ''.join(map(str, listePlot)) + '.png'
             solveur.plot_SEIR1R2(filename, timefocusedo, timefocusdata, plot=listePlot, data=data_corrected, text=solveur.getTextParam())
             listePlot=[3]
-            filename = prefFig + '_Period' + str(i) + '_Fit_3.png'
+            filename = prefFig + '_Period' + str(i) + '_Fit_' + ''.join(map(str, listePlot)) + '.png'
             solveur.plot_SEIR1R2(filename, timefocusedo, timefocusdata, plot=listePlot, data=data_corrected, text=solveur.getTextParam())
 
         sol_ode_withSwitch = solveur.solve_SEIR1R2_withSwitch(T, timeswitch=ts+dataLengthPeriod)
         if plot==True:
             listePlot=[1,2,3]
-            filename = prefFig + '_Period' + str(i) + '_Fi_withSwitch_123.png'
+            filename = prefFig + '_Period' + str(i) + '_Fi_withSwitch_' + ''.join(map(str, listePlot)) + '.png'
             solveur.plot_SEIR1R2(filename, timefocusedo, timefocusdata, plot=listePlot, data=data_corrected, text=solveur.getTextParam())
             listePlot=[3]
-            filename = prefFig + '_Period' + str(i) + '_Fi_withSwitch_3.png'
+            filename = prefFig + '_Period' + str(i) + '_Fi_withSwitch_' + ''.join(map(str, listePlot)) + '.png'
             solveur.plot_SEIR1R2(filename, timefocusedo, timefocusdata, plot=listePlot, data=data_corrected, text=solveur.getTextParam())
 
             # begDate = addDaystoStrDate(fitStartDate, -int(ts))
@@ -174,19 +190,29 @@ if __name__ == '__main__':
             # # Plot de E, I, R^1, R^2
             # Plot(pd_exerpt, titre, prefFig+'_Fit_EIR1R2.png', solveur.modele, y=[3], Dates=Dates, z_observ=z_observ)
         
-        input('attente avant tour suivant')
-
-        # # get the residuals
-        # # print('residu apres le switch=', sol_ode_withSwitch[ts+dataLengthPeriod:, 3])
-        # # print('fitStopDateStr=', fitStopDateStr)
-        # # print('np.shape(sol_ode_withSwitch)=', np.shape(sol_ode_withSwitch))
-        # # print(len(data_surplus))
-        # mini = min(np.shape(sol_ode_withSwitch)[0], len(data_surplus))
-        # data_surplus[ts+dataLengthPeriod:mini] = sol_ode_withSwitch[ts+dataLengthPeriod:mini, 3]-data_corrected[-1]
+        # nouvelles valeurs d'init de l'edo
+        S0, E0, I0, R10, R20 = map(int, sol_ode_withSwitch[ts+dataLengthPeriod, :])
         
-        # fig = plt.figure(facecolor='w', figsize=(8, 4))
-        # ax  = fig.add_subplot(111, facecolor='#dddddd', axisbelow=True)
-        # ax.plot(data_surplus, label='data_surplus')
-        # plt.legend()
-        # plt.show()
-        # plt.close()
+        if surplus == True:
+            # get the residuals
+            bout  = min(T, ts+dataLengthPeriod +(dataLength-indMaxPeriod))
+            debut = ts+dataLengthPeriod
+            # print('bout=', bout)
+            # print('debut=', debut)
+            # print('data_corrected[indMaxPeriod-1]=', data_corrected[indMaxPeriod-1])
+            data_surplus[indMaxPeriod:indMaxPeriod+(bout-debut)] += sol_ode_withSwitch[debut:bout, 3]-data_corrected[indMaxPeriod-1]
+        
+        
+
+        if surplus == True:
+            fig = plt.figure(facecolor='w', figsize=(8, 4))
+            ax  = fig.add_subplot(111, facecolor='#dddddd', axisbelow=True)
+            ax.plot(data_surplus, label='data_surplus')
+            plt.legend()
+            #plt.show()
+            plt.savefig(prefFig + '_Period' + str(i) + '_surplus.png')
+            #plt.savefig(prefFig + 'surplus.png')
+            plt.close()
+
+        #input('attente')
+
