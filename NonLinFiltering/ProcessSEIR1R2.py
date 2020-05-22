@@ -25,7 +25,7 @@ if __name__ == '__main__':
     # Lecture des données et copy of the observations
     #############################################################################
     pd_exerpt, HeadData, N, readStartDateStr, readStopDateStr = \
-                readDataEurope(country, readStartDateStr, readStopDateStr, plot, fileLocalCopy, verbose=0)
+                readDataEurope(country, readStartDateStr, readStopDateStr, fileLocalCopy, verbose=0)
     readStartDate = datetime.strptime(readStartDateStr, "%Y-%m-%d")
     readStopDate  = datetime.strptime(readStopDateStr,  "%Y-%m-%d")
     dataLength = pd_exerpt.shape[0]

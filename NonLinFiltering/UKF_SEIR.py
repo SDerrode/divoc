@@ -80,7 +80,7 @@ def main():
 		#############################################################################
 
 		pd_exerpt, z_observ, N = readDataEurope(country=country, dateMin=startDate, dateMax=None, \
-								plot=plot, fileLocalCopy=fileLocalCopy, verbose=verbose)
+								fileLocalCopy=fileLocalCopy, verbose=verbose)
 		if pd_exerpt.empty==True:
 			continue # on passe au pays suivant si celui-ci n'existe pas
 
