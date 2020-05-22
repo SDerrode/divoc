@@ -10,7 +10,7 @@ from sklearn.metrics import mean_squared_error
 from datetime           import datetime, timedelta
 from Covid_SpecialDates import Covid_SpecialDates
 
-dpi           = 120    # plot resolution of saved figures
+dpi           = 150    # plot resolution of saved figures
 figsize       = (8, 4) # figure's size (width, height)
 
 def getMaxEQM(sol_edo_R1, data, T):
@@ -182,7 +182,7 @@ def Plot(pd, titre, filenameFig, modele, y, Dates=None, data=None):
 		listeString.append(modele.getString(p))
 		listeColor.append(modele.getColor(p))
 
-	fig = plt.figure(facecolor='w',figsize=figsize)
+	fig = plt.figure(facecolor='w', figsize=figsize)
 	ax = fig.add_subplot(111, facecolor='#dddddd', axisbelow=True)
 
 	# Dessin des courbes théoriques
@@ -222,7 +222,6 @@ def Plot(pd, titre, filenameFig, modele, y, Dates=None, data=None):
 	# legende
 	legend = ax.legend().get_frame().set_alpha(0.8)
 	plt.legend(fontsize=7)
-	
 	plt.tight_layout()
 	plt.savefig(filenameFig, dpi=dpi)
 	plt.close()
