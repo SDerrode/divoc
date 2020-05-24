@@ -9,18 +9,19 @@ from datetime  import datetime, timedelta
 from common    import readDataEurope, readDataGouvFr, getDates, PlotData, addDaystoStrDate
 
 # constante
-fileLocalCopy = True         # if we upload the file from the url (to get latest results) or from a local copy file
+fileLocalCopy = False         # if we upload the file from the url (to get latest results) or from a local copy file
 
-def main():
+if __name__ == '__main__':
     """
         Program to perform UKF filtering on Covid Data.
  
         :Example:
 
         >> python3 PlotDataCovid.py 
-        >> python3 PlotDataCovid.py Italy
+        >> python3 PlotDataCovid.py United_Kingdom
         >> python3 PlotDataCovid.py Italy 1 
         >> python3 PlotDataCovid.py France,Germany 1 # Shortcut for processing the two countries successively
+        >> python3 PlotDataCovid.py France,Spain,Italy,United_Kingdom,Germany,Belgium 0
        
         argv[1] : Country (or list separeted by ','), or Continent, or 'World'. Default: France 
         argv[2] : Verbose level (debug: 3, ..., almost mute: 0). Default: 1
@@ -63,11 +64,17 @@ def main():
             print(readStartDate, readStopDate)
             #input('pause')
 
-        print('tail=', pd_exerpt.tail())
+        # On ajoute le gradient
+        pd_exerpt['Instant cases']  = pd_exerpt['cases'].diff()
+        pd_exerpt['Instant deaths'] = pd_exerpt['deaths'].diff()
+        # print('Head=', pd_exerpt.head())
+        # print('tail=', pd_exerpt.tail())
+        # print('HeadData=', HeadData)
+        # print('liste=', list(pd_exerpt))
 
-        PlotData(pd_exerpt, titre=country, filenameFig=prefFig+'.png', y=HeadData, color='green', Dates=Dates)
+        PlotData(pd_exerpt, titre=country, filenameFig=prefFig+'_Cases.png',      y=HeadData,           color='green', Dates=Dates)
+        PlotData(pd_exerpt, titre=country, filenameFig=prefFig+'_Deaths.png',     y=['deaths'],         color='red',   Dates=Dates)
+        PlotData(pd_exerpt, titre=country, filenameFig=prefFig+'_DiffCases.png',  y=['Instant cases'],  color='green', Dates=Dates)
+        PlotData(pd_exerpt, titre=country, filenameFig=prefFig+'_DiffDeaths.png', y=['Instant deaths'], color='red',   Dates=Dates)
 
 
-
-if __name__ == '__main__':
-    main()

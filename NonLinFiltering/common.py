@@ -28,8 +28,9 @@ def midDateStr(startDate, endDate):
 	return d.strftime("%Y-%m-%d")
 
 def addDaystoStrDate(startDate, d):
+	d = int(d)
 	d1 = datetime.strptime(startDate,"%Y-%m-%d")
-	d2  = d1.date() + timedelta(d)
+	d2 = d1.date() + timedelta(d)
 	return d2.strftime("%Y-%m-%d")
 
 def getLowerDateFromString(strdate1, strdate2):
@@ -51,7 +52,7 @@ def getDates(country, verbose):
 		Dates = Covid_SpecialDates(country=country)
 		Dates.addConfDates      ('2020-03-16')
 		Dates.addDeconfDates    ('2020-05-11')
-		Dates.setListOtherDates(['2020-03-06'])
+		#Dates.setListOtherDates(['2020-03-06'])
 	if country == 'Germany':
 		Dates = Covid_SpecialDates(country=country)
 		Dates.addConfDates      ('2020-03-22')
@@ -67,18 +68,18 @@ def getDates(country, verbose):
 	if country == 'United_Kingdom':
 		Dates = Covid_SpecialDates(country=country)
 		Dates.addConfDates      ('2020-03-23')
-		Dates.addDeconfDates    ('2020-05-13')
+		#Dates.addDeconfDates    ('2020-05-13') # not now
 	if country == 'Belgium':
 		Dates = Covid_SpecialDates(country=country)
 		Dates.addConfDates      ('2020-03-18')
-		Dates.addDeconfDates    ('2020-05-04')
+		Dates.addDeconfDates    ('2020-05-18')
 
 	if verbose>1:
 		print(Dates)
 	
 	return Dates
 
-def readDataGouvFr(dateMinStr=None, dateMaxStr=None, fileLocalCopy=False, verbose=0):
+def readDataGouvFr(region='', dateMinStr=None, dateMaxStr=None, fileLocalCopy=False, verbose=0):
 	'''
 		Lecture des données du gouvernement français (data.gouv.fr)
 		Les données débutent à la date de confinement (pourquoi?)
@@ -93,7 +94,7 @@ def readDataGouvFr(dateMinStr=None, dateMaxStr=None, fileLocalCopy=False, verbos
 	covid1 = covid.groupby(covid.index)[['hosp', 'rea', 'rad', 'dc']].sum()
 	print(covid1.head())
 	print(covid1.tail())
-	input('pause')
+	exit()
 
 	#return excerpt_country1, observ_label, pop_size, dateMinStr, dateMaxStr
 
@@ -138,7 +139,7 @@ def readDataEurope(country='France', dateMinStr=None, dateMaxStr=None, fileLocal
 	if dateMinStr==None:
 		dateMinStr = covid_country1.index[0].strftime("%Y-%m-%d")
 	if dateMaxStr==None:
-		dateMaxStr = covid_country1.index[-1].strftime("%Y-%m-%d")
+		dateMaxStr = addDaystoStrDate(covid_country1.index[-1].strftime("%Y-%m-%d"), 1)
 	if verbose>1:
 		print('dateMinStr=', dateMinStr, ', dateMaxStr=', dateMaxStr)
 	excerpt_country1 = covid_country1.loc[dateMinStr:dateMaxStr]

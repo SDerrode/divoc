@@ -40,10 +40,10 @@ class SEIR1R2_Bacaer:
 
 	def getTextParam(self):
 		S  = 'Model '  + self.modelShortName + ':'
-		S += '\n  a='  + str(np.round(self.a, decimals=3)) + ', b=' + str(np.round(self.b, decimals=3))
-		S += '\n  c='  + str(np.round(self.c, decimals=3)) + ', f=' + str(np.round(self.f, decimals=3))
+		S += '\n  a='  + str(np.round(self.a, decimals=4)) + ', b=' + str(np.round(self.b, decimals=4))
+		S += '\n  c='  + str(np.round(self.c, decimals=4)) + ', f=' + str(np.round(self.f, decimals=4))
 		if self.c!= 0.:
-			S += '\n  R0=' + str(np.round(self.a/self.c, decimals=3))
+			S += '\n  R0=' + str(np.round(self.a/self.c, decimals=2))
 		return S
 
 	def setParam(self, N, a, b, c, f):

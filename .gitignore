@@ -1,6 +1,7 @@
 # specific to this project
 *.png
 NonLinFiltering/testPython/
+NonLinFiltering/old/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

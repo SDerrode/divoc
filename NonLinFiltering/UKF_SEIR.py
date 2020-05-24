@@ -28,8 +28,6 @@ def main():
 		>> python3 UKF_SEIR.py Italy
 		>> python3 UKF_SEIR.py Italy 1 1
 		>> python3 UKF_SEIR.py France,Germany 1 1 # Shortcut for processing the two countries successively
-		>> python3 UKF_SEIR.py Europe 1 1         # Sum of all coutries in Europe (no time-shift of data)
-		>> python3 UKF_SEIR.py World 1 1          # Sum of all coutries in Europe (no time-shift of data)
 
 		argv[1] : Country (or list separeted by ','), or Continent, or 'World'. Default: France 
 		argv[2] : Verbose level (debug: 3, ..., almost mute: 0). Default: 1
