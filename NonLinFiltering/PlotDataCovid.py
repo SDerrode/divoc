@@ -25,10 +25,10 @@ if __name__ == '__main__':
         >> python3 PlotDataCovid.py France,Spain,Italy,United_Kingdom,Germany,Belgium 0
 
         For French Regions (French database)
-        >> python3 ProcessSEIR1R2.py France,69    # Dpt 69 (Rhône)
+        >> python3 ProcessSEIR1R2.py France,69       # Dpt 69 (Rhône)
         >> python3 ProcessSEIR1R2.py France,69,75,01 # Dpt 69 (Rhône) + Dpt 75 + Dpt 01
        
-        argv[1] : Country (or list separeted by ','), or 'France' folloed by a list of regions. Default: France 
+        argv[1] : Country (or list separeted by ','), or 'France' followed by a list of regions. Default: France 
         argv[2] : Verbose level (debug: 3, ..., almost mute: 0). Default: 1
     """
 
@@ -67,17 +67,17 @@ if __name__ == '__main__':
         placefull = place
         # These are the date of confinement and deconfinement + other. 
         # See function getDates on how to add or delete dates to put the focus on
-        Dates = getDates(place, verbose)
-        if FrDatabase == True: 
-            placefull = France + place
-            Dates = getDates(France, verbose)
+        DatesString = getDates(place, verbose)
+        if FrDatabase==True: 
+            placefull   = France + place
+            DatesString = getDates(France, verbose)
 
         print('PROCESSING of ', placefull, ' in ', listplaces)
         prefFig = './figures/Data_' + placefull
         
         # Lecture des données et copy of the observation
         #############################################################################
-        if FrDatabase == True:
+        if FrDatabase==True:
             pd_exerpt, HeadData, N, readStartDateStr, readStopDateStr = readDataFrance(place, readStartDateStr, readStopDateStr, fileLocalCopy, verbose=0)
         else:
             pd_exerpt, HeadData, N, readStartDateStr, readStopDateStr = readDataEurope(place, readStartDateStr, readStopDateStr, fileLocalCopy, verbose=0)
@@ -87,7 +87,7 @@ if __name__ == '__main__':
         dataLength = pd_exerpt.shape[0]
         if verbose>1:
             print('readStartDateStr=', readStartDateStr, ', readStopDateStr=', readStopDateStr)
-            print('readStartDate=', readStartDate, ', readStopDate=', readStopDate)
+            print('readStartDate   =', readStartDate,    ', readStopDate   =', readStopDate)
             #input('pause')
 
         # On ajoute le gradient
@@ -98,7 +98,7 @@ if __name__ == '__main__':
         # print('HeadData=', HeadData)
         # print('liste=', list(pd_exerpt))
 
-        PlotData(pd_exerpt, titre=placefull, filenameFig=prefFig+'_'    +HeadData[0]+'.png', y=HeadData[0],        color='green', Dates=Dates)
-        PlotData(pd_exerpt, titre=placefull, filenameFig=prefFig+'_'    +HeadData[1]+'.png', y=HeadData[1],        color='red',   Dates=Dates)
-        PlotData(pd_exerpt, titre=placefull, filenameFig=prefFig+'_Diff'+HeadData[0]+'.png', y=['Instant cases'],  color='green', Dates=Dates)
-        PlotData(pd_exerpt, titre=placefull, filenameFig=prefFig+'_Diff'+HeadData[1]+'.png', y=['Instant deaths'], color='red',   Dates=Dates)
+        PlotData(pd_exerpt, titre=placefull, filenameFig=prefFig+'_'    +HeadData[0]+'.png', y=HeadData[0],        color='green', Dates=DatesString)
+        PlotData(pd_exerpt, titre=placefull, filenameFig=prefFig+'_'    +HeadData[1]+'.png', y=HeadData[1],        color='red',   Dates=DatesString)
+        PlotData(pd_exerpt, titre=placefull, filenameFig=prefFig+'_Diff'+HeadData[0]+'.png', y=['Instant cases'],  color='green', Dates=DatesString)
+        PlotData(pd_exerpt, titre=placefull, filenameFig=prefFig+'_Diff'+HeadData[1]+'.png', y=['Instant deaths'], color='red',   Dates=DatesString)

@@ -11,7 +11,7 @@ from filterpy.kalman    import JulierSigmaPoints, MerweScaledSigmaPoints, rts_sm
 from filterpy.common    import Q_discrete_white_noise
 
 from common             import readDataEurope, getDates, Plot, addDaystoStrDate
-from SolveDiff_SEIR1R2  import SolveDiff_SEIR1R2
+from SolveEDO_SEIR1R2  import SolveEDO_SEIR1R2
 
 # constante
 fileLocalCopy = False         # if we upload the file from the url (to get latest results) or from a local copy file
@@ -54,7 +54,7 @@ def main():
 	# Solveur eq. diff.
 	N = 65E6 # this value will be replaced
 	dt      = 1
-	solveur = SolveDiff_SEIR1R2(N, dt, verbose)
+	solveur = SolveEDO_SEIR1R2(N, dt, verbose)
 	if verbose>1:
 		print(solveur)
 
@@ -128,7 +128,7 @@ def main():
 		# xMean_est, _, _ = ukf.rts_smoother(uxs, ucovs)
 		
 		# Panda dataframe
-		columns = ['$S(t)$', '$E(t)$', '$I(t)$', '$R^1(t)$', '$R^2(t)$', '$R^2(t)=N-\sum(SEIR^1)$', '$R(t)=R^1(t)+R^2(t)$']
+		columns = [r'$S(t)$', r'$E(t)$', r'$I(t)$', r'$R^1(t)$', r'$R^2(t)$', r'$R^2(t)=N-\sum(SEIR^1)$', r'$R(t)=R^1(t)+R^2(t)$']
 		for j in range(5):
 			pd_exerpt[columns[j]]=xMean_est[:, j]
 		pd_exerpt[columns[5]] = solveur.modele.N-np.sum(xMean_est[:, 0:4], axis=1)

@@ -17,7 +17,7 @@ dpi     = 150    # plot resolution of saved figures
 figsize = (8, 4) # figure's size (width, height)
 
 
-class SolveDiff_SEIR1R2:
+class SolveEDO_SEIR1R2:
 
 	def __init__(self, N, dt=1, verbose=1):
 
@@ -45,17 +45,17 @@ class SolveDiff_SEIR1R2:
 
 	def getTextParam(self, startDate=None):
 		S  = self.modele.getTextParam()
-		S += '\nSolveur init:'# + '\n  N=' + str(self.N) + '\n  dt='+str(self.dt) \
+		S += '\nSolveur init:\n'# + '\n  N=' + str(self.N) + '\n  dt='+str(self.dt) \
 		#S += '\n  y0='+ str(self.y0) + '\n'
-		S += '\n  S0='  +str(self.y0[0])
-		S += '\n  E0='  +str(self.y0[1]) + ', I0='+str(self.y0[2])
-		S += '\n  R^10='+str(self.y0[3]) + ', R^20='+str(self.y0[4])
-		if self.TS != -1:
-			if startDate==None:
-				S += '\n  TS='+str(self.TS)
-			else:
-				dateI0 = addDaystoStrDate(startDate, -self.TS)
-				S += '\n  Start date:'+dateI0
+		S += r'  $S0=' + str(self.y0[0]) + r'$' + '\n'
+		S += '  E0=' + str(self.y0[1]) + ', I0='+str(self.y0[2]) + '\n'
+		S += r'  $R^1$0=' + str(self.y0[3]) + r', $R^2$0=' + str(self.y0[4])
+		# if self.TS != -1:
+		# 	if startDate==None:
+		# 		S += '\n' + r'  $TS='+str(self.TS)+'$'
+		# 	else:
+		# 		dateI0 = addDaystoStrDate(startDate, -self.TS)
+		# 		S += '\n  Start date:'+dateI0
 		return S
 
 	def setN(self, N):
@@ -218,7 +218,7 @@ class SolveDiff_SEIR1R2:
 
 	# 	return self.solution
 
-	def plot_SEIR1R2(self, name, title, timefocusedo, timefocusdata, plot, data, text=''):
+	def plot_SEIR1R2(self, name, title, timefocusedo, timefocusdata, plot, data='', text=''):
 
 		if len(plot)==0 or plot is None: pass
 
@@ -236,7 +236,6 @@ class SolveDiff_SEIR1R2:
 
 		# les données observées
 		time = np.linspace(timefocusdata.start, timefocusdata.stop-1, timefocusdata.stop-timefocusdata.start)
-		#if data != None and len(data) != 0:
 		if len(data) != 0:
 			ax.plot(time, data[timefocusdata], color=self.modele.getColor(3), alpha=1.0, lw=2, label='Data $R^1$', marker='x', ls='')
 
@@ -260,7 +259,7 @@ class SolveDiff_SEIR1R2:
 		plt.close()
 
 
-	def plot_dR1(self, name, title, timefocusedo, timefocusdata, deriv_data, text=''):
+	def plot_dR1(self, name, title, timefocusedo, timefocusdata, deriv_data='', text=''):
 
 		time = np.linspace(timefocusdata.start, timefocusdata.stop-1, timefocusdata.stop-timefocusdata.start)
 
@@ -280,7 +279,7 @@ class SolveDiff_SEIR1R2:
 		# les données observées
 		#if deriv_data != None and len(deriv_data) != 0:
 		if len(deriv_data) != 0:
-			ax.plot(time, deriv_data, color=self.modele.getColor(3), alpha=1.0, lw=0.5, label='Instant cases', marker='x')
+			ax.plot(time, deriv_data, color=self.modele.getColor(3), alpha=1.0, lw=0.5, label=r'$\frac{\partial R^1(n)}{\partial n}$', marker='x')
 
 		ax.set_xlabel('Time (days)')
 		ax.yaxis.set_tick_params(length=0)
@@ -360,7 +359,7 @@ if __name__ == '__main__':
 	plot    = True
 	N       = 66987244 # Population de la France
 	dt      = 1
-	solveur = SolveDiff_SEIR1R2(N, dt, verbose)
+	solveur = SolveEDO_SEIR1R2(N, dt, verbose)
 	if verbose>0:
 		print(solveur)
 
@@ -383,17 +382,16 @@ if __name__ == '__main__':
 		listePlot=[3]
 		timefocusedo = slice(0, 0+T)
 		filename     = prefixFig + 'SEIR1R2model_' + ''.join(map(str, listePlot)) + '.png'
-		solveur.plot_SEIR1R2(filename, timefocusedo, timefocusedo, plot=listePlot, data=None, text=solveur.getTextParam())
-
+		solveur.plot_SEIR1R2(filename, '', timefocusedo, timefocusedo, plot=listePlot, data='', text=solveur.getTextParam())
 		listePlot=[1,2,3]
 		timefocusedo = slice(0, 0+T)
 		filename     = prefixFig + 'SEIR1R2model_' + ''.join(map(str, listePlot)) + '.png'
-		solveur.plot_SEIR1R2(filename, timefocusedo, timefocusedo, plot=listePlot, data=None, text=solveur.getTextParam())
+		solveur.plot_SEIR1R2(filename, '', timefocusedo, timefocusedo, plot=listePlot, data='', text=solveur.getTextParam())
 
 		listePlot=[0,1,2,3,4]
 		timefocusedo = slice(0, 0+T)
 		filename     = prefixFig + 'SEIR1R2model_' + ''.join(map(str, listePlot)) + '.png'
-		solveur.plot_SEIR1R2(filename, timefocusedo, timefocusedo, plot=listePlot, data=None, text=solveur.getTextParam())
+		solveur.plot_SEIR1R2(filename, '', timefocusedo, timefocusedo, plot=listePlot, data='', text=solveur.getTextParam())
 
 
 	# call main function

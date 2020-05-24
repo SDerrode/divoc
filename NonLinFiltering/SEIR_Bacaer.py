@@ -40,10 +40,10 @@ class SEIR1R2_Bacaer:
 
 	def getTextParam(self):
 		S  = 'Model '  + self.modelShortName + ':'
-		S += '\n  a='  + str(np.round(self.a, decimals=4)) + ', b=' + str(np.round(self.b, decimals=4))
-		S += '\n  c='  + str(np.round(self.c, decimals=4)) + ', f=' + str(np.round(self.f, decimals=4))
-		if self.c!= 0.:
-			S += '\n  R0=' + str(np.round(self.a/self.c, decimals=2))
+		S += '\n' + r'  $a='  + str(np.round(self.a, decimals=4)) + r', b=' + str(np.round(self.b, decimals=4)) + '$'
+		S += '\n' + r'  $c='  + str(np.round(self.c, decimals=4)) + r', f=' + str(np.round(self.f, decimals=4)) + '$'
+		# if self.c!= 0.:
+		# 	S += '\n' + r'  $R_0=' + str(np.round(self.a/self.c, decimals=2)) + '$'
 		return S
 
 	def setParam(self, N, a, b, c, f):
@@ -77,11 +77,11 @@ class SEIR1R2_Bacaer:
 	    return dSdt, dEdt, dIdt, dR1dt, dR2dt
 
 	def getString(self, indice):
-		if indice == 0: return '$S(t)$'
-		if indice == 1: return '$E(t)$'
-		if indice == 2: return '$I(t)$'
-		if indice == 3: return '$R^1(t)$'
-		if indice == 4: return '$R^2(t)$'
+		if indice == 0: return r'$S(t)$'
+		if indice == 1: return r'$E(t)$'
+		if indice == 2: return r'$I(t)$'
+		if indice == 3: return r'$R^1(t)$'
+		if indice == 4: return r'$R^2(t)$'
 		print('PB getString - indice =', indice, ' does not exist!')
 		exit(1)
 
@@ -91,11 +91,11 @@ class SEIR1R2_Bacaer:
 		exit(1)
 
 	def getColorFromString(self, string):
-		if string == '$S(t)$'  : return self.colorCycle[0] 
-		if string == '$E(t)$'  : return self.colorCycle[1] 
-		if string == '$I(t)$'  : return self.colorCycle[2] 
-		if string == '$R^1(t)$': return self.colorCycle[3] 
-		if string == '$R^2(t)$': return self.colorCycle[4] 
+		if string == r'$S(t)$'  : return self.colorCycle[0] 
+		if string == r'$E(t)$'  : return self.colorCycle[1] 
+		if string == r'$I(t)$'  : return self.colorCycle[2] 
+		if string == r'$R^1(t)$': return self.colorCycle[3] 
+		if string == r'$R^2(t)$': return self.colorCycle[4] 
 
 		return 'black'
 
