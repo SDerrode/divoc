@@ -6,10 +6,10 @@ import pandas            as pd
 import numpy             as np
 import matplotlib.pyplot as plt
 from datetime  import datetime, timedelta
-from common    import readDataEurope, readDataGouvFr, getDates, PlotData, addDaystoStrDate
+from common    import readDataEurope, readDataFrance, getDates, PlotData, addDaystoStrDate
 
 # constante
-fileLocalCopy = False         # if we upload the file from the url (to get latest results) or from a local copy file
+fileLocalCopy = True         # if we upload the file from the url (to get latest results) or from a local copy file
 
 if __name__ == '__main__':
     """
@@ -17,13 +17,18 @@ if __name__ == '__main__':
  
         :Example:
 
+        For country (European database)
         >> python3 PlotDataCovid.py 
         >> python3 PlotDataCovid.py United_Kingdom
         >> python3 PlotDataCovid.py Italy 1 
         >> python3 PlotDataCovid.py France,Germany 1 # Shortcut for processing the two countries successively
         >> python3 PlotDataCovid.py France,Spain,Italy,United_Kingdom,Germany,Belgium 0
+
+        For French Regions (French database)
+        >> python3 ProcessSEIR1R2.py France,69    # Dpt 69 (Rhône)
+        >> python3 ProcessSEIR1R2.py France,69,75,01 # Dpt 69 (Rhône) + Dpt 75 + Dpt 01
        
-        argv[1] : Country (or list separeted by ','), or Continent, or 'World'. Default: France 
+        argv[1] : Country (or list separeted by ','), or 'France' folloed by a list of regions. Default: France 
         argv[2] : Verbose level (debug: 3, ..., almost mute: 0). Default: 1
     """
 
@@ -33,48 +38,67 @@ if __name__ == '__main__':
         exit(1)
 
     # Default value for parameters
-    listcountries = ['France']
-    verbose       = 1
+    listplaces = ['France']
+    verbose    = 2
     
     # Parameters from argv
-    if len(sys.argv)>1: listcountries = list(sys.argv[1].split(','))
+    if len(sys.argv)>1: listplaces = list(sys.argv[1].split(','))
+    FrDatabase = False
+    if listplaces[0]=='France' and len(listplaces)>1:
+        try:
+            int(listplaces[1])
+        except Exception as e:
+            FrDatabase=False
+        else:
+            FrDatabase = True
+            listplaces = listplaces[1:]
+            France     = 'France'
+
     if len(sys.argv)>2: verbose       = int(sys.argv[2])
 
+    # Constantes
     dt = 1
-    readStartDateStr = "2020-03-01" 
+    readStartDateStr = "2020-03-18" 
     readStopDateStr  = None
     
-    for country in listcountries:
+    # Loop for all places
+    for place in listplaces:
 
-        print('PROCESSING of ', country, ' in ', listcountries)
-        prefFig = './figures/Data_' + country
-
+        placefull = place
         # These are the date of confinement and deconfinement + other. 
         # See function getDates on how to add or delete dates to put the focus on
-        Dates = getDates(country, verbose)
+        Dates = getDates(place, verbose)
+        if FrDatabase == True: 
+            placefull = France + place
+            Dates = getDates(France, verbose)
+
+        print('PROCESSING of ', placefull, ' in ', listplaces)
+        prefFig = './figures/Data_' + placefull
         
         # Lecture des données et copy of the observation
         #############################################################################
-        pd_exerpt, HeadData, N, readStartDateStr, readStopDateStr = readDataEurope(country, readStartDateStr, readStopDateStr, fileLocalCopy, verbose=0)
+        if FrDatabase == True:
+            pd_exerpt, HeadData, N, readStartDateStr, readStopDateStr = readDataFrance(place, readStartDateStr, readStopDateStr, fileLocalCopy, verbose=0)
+        else:
+            pd_exerpt, HeadData, N, readStartDateStr, readStopDateStr = readDataEurope(place, readStartDateStr, readStopDateStr, fileLocalCopy, verbose=0)
+
         readStartDate = datetime.strptime(readStartDateStr, "%Y-%m-%d")
         readStopDate  = datetime.strptime(readStopDateStr,  "%Y-%m-%d")
         dataLength = pd_exerpt.shape[0]
         if verbose>1:
-            print(readStartDateStr, readStopDateStr)
-            print(readStartDate, readStopDate)
+            print('readStartDateStr=', readStartDateStr, ', readStopDateStr=', readStopDateStr)
+            print('readStartDate=', readStartDate, ', readStopDate=', readStopDate)
             #input('pause')
 
         # On ajoute le gradient
-        pd_exerpt['Instant cases']  = pd_exerpt['cases'].diff()
-        pd_exerpt['Instant deaths'] = pd_exerpt['deaths'].diff()
+        pd_exerpt['Instant cases']  = pd_exerpt[HeadData[0]].diff()
+        pd_exerpt['Instant deaths'] = pd_exerpt[HeadData[1]].diff()
         # print('Head=', pd_exerpt.head())
         # print('tail=', pd_exerpt.tail())
         # print('HeadData=', HeadData)
         # print('liste=', list(pd_exerpt))
 
-        PlotData(pd_exerpt, titre=country, filenameFig=prefFig+'_Cases.png',      y=HeadData,           color='green', Dates=Dates)
-        PlotData(pd_exerpt, titre=country, filenameFig=prefFig+'_Deaths.png',     y=['deaths'],         color='red',   Dates=Dates)
-        PlotData(pd_exerpt, titre=country, filenameFig=prefFig+'_DiffCases.png',  y=['Instant cases'],  color='green', Dates=Dates)
-        PlotData(pd_exerpt, titre=country, filenameFig=prefFig+'_DiffDeaths.png', y=['Instant deaths'], color='red',   Dates=Dates)
-
-
+        PlotData(pd_exerpt, titre=placefull, filenameFig=prefFig+'_'    +HeadData[0]+'.png', y=HeadData[0],        color='green', Dates=Dates)
+        PlotData(pd_exerpt, titre=placefull, filenameFig=prefFig+'_'    +HeadData[1]+'.png', y=HeadData[1],        color='red',   Dates=Dates)
+        PlotData(pd_exerpt, titre=placefull, filenameFig=prefFig+'_Diff'+HeadData[0]+'.png', y=['Instant cases'],  color='green', Dates=Dates)
+        PlotData(pd_exerpt, titre=placefull, filenameFig=prefFig+'_Diff'+HeadData[1]+'.png', y=['Instant deaths'], color='red',   Dates=Dates)

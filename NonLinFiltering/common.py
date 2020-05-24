@@ -10,7 +10,7 @@ from sklearn.metrics import mean_squared_error
 from datetime           import datetime, timedelta
 from Covid_SpecialDates import Covid_SpecialDates
 
-dpi           = 150    # plot resolution of saved figures
+dpi           = 75    # plot resolution of saved figures
 figsize       = (8, 4) # figure's size (width, height)
 
 def getMaxEQM(sol_edo_R1, data, T):
@@ -79,24 +79,59 @@ def getDates(country, verbose):
 	
 	return Dates
 
-def readDataGouvFr(region='', dateMinStr=None, dateMaxStr=None, fileLocalCopy=False, verbose=0):
+def readDataFrance(place='69', dateMinStr=None, dateMaxStr=None, fileLocalCopy=False, verbose=0):
 	'''
 		Lecture des données du gouvernement français (data.gouv.fr)
 		Les données débutent à la date de confinement (pourquoi?)
 	''' 
 
-	url="https://static.data.gouv.fr/resources/donnees-hospitalieres-relatives-a-lepidemie-de-covid-19/20200504-190020/donnees-hospitalieres-covid19-2020-05-04-19h00.csv"
-	url_stable="https://www.data.gouv.fr/fr/datasets/r/63352e38-d353-4b54-bfd1-f1b3ee1cabd7"
-	covid_orig=pd.read_csv(url_stable, sep=';', parse_dates=[2])
+	covid_orig = None
+	if fileLocalCopy==True:
+		name = './data/csvFrance_2020-05-24.csv'
+		try:
+			covid_orig=pd.read_csv(name, sep=';', parse_dates=[2], dayfirst=True)
+		except:
+			fileLocalCopy = False
+
+	if fileLocalCopy==False:
+		url="https://static.data.gouv.fr/resources/donnees-hospitalieres-relatives-a-lepidemie-de-covid-19/20200504-190020/donnees-hospitalieres-covid19-2020-05-04-19h00.csv"
+		url_stable="https://www.data.gouv.fr/fr/datasets/r/63352e38-d353-4b54-bfd1-f1b3ee1cabd7"
+		covid_orig=pd.read_csv(url_stable, sep=';', parse_dates=[2], dayfirst=True)
+	
+	observ_label = ['rad', 'dc']
 	covid_orig.set_index('jour', inplace=True)
+	covid_orig.sort_index(inplace=True)
 
-	covid = covid_orig.query(expr='sexe==0').drop(columns=['dep', 'sexe'])
-	covid1 = covid.groupby(covid.index)[['hosp', 'rea', 'rad', 'dc']].sum()
-	print(covid1.head())
-	print(covid1.tail())
-	exit()
+	if verbose>0:
+		print('TAIL=', covid_orig.tail())
 
-	#return excerpt_country1, observ_label, pop_size, dateMinStr, dateMaxStr
+	covid_orig.drop(columns=['hosp', 'rea'], inplace=True)
+	covid_country0 = covid_orig.query(expr='sexe==0').drop(columns=['sexe'])
+	covid_country  = covid_country0.loc[covid_country0['dep'] == place]
+	
+	covid_country1 = covid_country[['rad', 'dc']].cumsum()
+	if verbose>1:
+		print('TAIL=', covid_country1.tail())
+	
+	# extraction entre dateMin et dateMaxStr
+	if dateMinStr==None:
+		dateMinStr = covid_country1.index[0].strftime("%Y-%m-%d")
+	if dateMaxStr==None:
+		dateMaxStr = addDaystoStrDate(covid_country1.index[-1].strftime("%Y-%m-%d"), 1)
+	if verbose>1:
+		print('dateMinStr=', dateMinStr, ', dateMaxStr=', dateMaxStr)
+	excerpt_country1 = covid_country1.loc[dateMinStr:dateMaxStr]
+	
+	if verbose>0:
+		print('HEAD=', excerpt_country1.head())
+		print('TAIL=', excerpt_country1.tail())
+	
+	# On recherche la taille de la population en Franc estimée en 2020
+	# site we dont est extrait le fichier local: https://www.insee.fr/fr/statistiques/1893198
+	db_pop_size = pd.read_csv('./data/popsizedpt_2020.csv', sep=';')
+	pop_size    = int(db_pop_size.loc[place]["popsize"])
+	
+	return excerpt_country1, observ_label, pop_size, dateMinStr, dateMaxStr
 
 
 def readDataEurope(country='France', dateMinStr=None, dateMaxStr=None, fileLocalCopy=False, verbose=0):
@@ -107,7 +142,7 @@ def readDataEurope(country='France', dateMinStr=None, dateMaxStr=None, fileLocal
 
 	covid_orig = None
 	if fileLocalCopy==True:
-		name = './data/csv_2020-05-21'
+		name = './data/csvEurope_2020-05-24.csv'
 		try:
 			covid_orig=pd.read_csv(name, sep=',', parse_dates=[0], dayfirst=True)
 		except:
@@ -119,7 +154,7 @@ def readDataEurope(country='France', dateMinStr=None, dateMaxStr=None, fileLocal
 
 
 	#covid_orig.dtypes
-	observ_label = ['cases']
+	observ_label = ['cases', 'deaths']
 	covid_orig.set_index('dateRep', inplace=True)
 	covid_orig.sort_index(inplace=True)
 
@@ -257,8 +292,8 @@ def PlotData(pd, titre, filenameFig, y, color='black', Dates=None):
 	# axes
 	ax.grid(True, which='major', axis='both')
 	ax.grid(True, which='minor', axis='both')
-	ax.grid(b=True, which='major', c='k', lw=0.5, ls='-', alpha=0.3)
-	ax.grid(b=True, which='minor', c='w', lw=0.5, ls='-')
+	ax.grid(True, which='major', c='k', lw=0.5, ls='-', alpha=0.3)
+	ax.grid(True, which='minor', c='w', lw=0.5, ls='-')
 	for spine in ('top', 'right', 'bottom', 'left'):
 		ax.spines[spine].set_visible(False)
 	plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0), useOffset=False, useLocale=False)

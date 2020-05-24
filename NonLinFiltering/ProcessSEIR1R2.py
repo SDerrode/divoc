@@ -18,10 +18,15 @@ def fit(sysargv):
  
         :Example:
 
+        For country (European database)
         >> python3 ProcessSEIR1R2.py 
         >> python3 ProcessSEIR1R2.py France 1 0 0 1 1
         >> python3 ProcessSEIR1R2.py France 3 8 0 1 1
         >> python3 ProcessSEIR1R2.py France,Germany 1 0 0 1 1
+
+        For French Region (French database)
+        >> python3 ProcessSEIR1R2.py France,69    3 8 0 1 1 # Dpt 69 (Rhône)
+        >> python3 ProcessSEIR1R2.py France,69,75 3 8 0 1 1 # Dpt 69 (Rhône) + Dpt 75
         
         argv[1] : Country (or list separeted by ',').            Default: France 
         argv[2] : Number of periods.                             Default: 1 
@@ -46,6 +51,15 @@ def fit(sysargv):
 
     # Parameters from argv
     if len(sysargv)>0: listcountries = list(sysargv[0].split(','))
+    FrDatabase = False
+    if listcountries[0]=='French' and len(listcountries)>1:
+        try:
+            int(listcountries[1])
+        except Exception as e:
+            FrDatabase=True
+    print(FrDatabase)
+    input('attente')
+
     if len(sysargv)>1: nbperiodes    = int(sysargv[1])
     if len(sysargv)>2: decalage      = int(sysargv[2])
     if len(sysargv)>3 and int(sysargv[3])==1: surplus = True
