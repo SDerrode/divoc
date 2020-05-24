@@ -10,7 +10,7 @@ from sklearn.metrics import mean_squared_error
 from datetime           import datetime, timedelta
 from Covid_SpecialDates import Covid_SpecialDates
 
-dpi           = 75    # plot resolution of saved figures
+dpi           = 150    # plot resolution of saved figures
 figsize       = (8, 4) # figure's size (width, height)
 
 def getMaxEQM(sol_edo_R1, data, T):
@@ -51,28 +51,28 @@ def getDates(country, verbose):
 	if country == 'France':
 		Dates = Covid_SpecialDates(country=country)
 		Dates.addConfDates      ('2020-03-16')
-		Dates.addDeconfDates    ('2020-05-11')
+		#Dates.addDeconfDates    ('2020-05-11')
 		#Dates.setListOtherDates(['2020-03-06'])
 	if country == 'Germany':
 		Dates = Covid_SpecialDates(country=country)
 		Dates.addConfDates      ('2020-03-22')
-		Dates.addDeconfDates    ('2020-04-20')
+		#Dates.addDeconfDates    ('2020-04-20')
 	if country == 'Italy':
 		Dates = Covid_SpecialDates(country=country)
 		Dates.addConfDates      ('2020-03-09')
-		Dates.addDeconfDates    ('2020-05-04')
+		#Dates.addDeconfDates    ('2020-05-04')
 	if country == 'Spain':
 		Dates = Covid_SpecialDates(country=country)
 		Dates.addConfDates      ('2020-03-15')
-		Dates.addDeconfDates    ('2020-05-10')
+		#Dates.addDeconfDates    ('2020-05-10')
 	if country == 'United_Kingdom':
 		Dates = Covid_SpecialDates(country=country)
 		Dates.addConfDates      ('2020-03-23')
-		#Dates.addDeconfDates    ('2020-05-13') # not now
+		##Dates.addDeconfDates    ('2020-05-13') # not now
 	if country == 'Belgium':
 		Dates = Covid_SpecialDates(country=country)
 		Dates.addConfDates      ('2020-03-18')
-		Dates.addDeconfDates    ('2020-05-18')
+		#Dates.addDeconfDates    ('2020-05-18')
 
 	if verbose>1:
 		print(Dates)
@@ -84,7 +84,6 @@ def readDataFrance(place='69', dateMinStr=None, dateMaxStr=None, fileLocalCopy=F
 		Lecture des données du gouvernement français (data.gouv.fr)
 		Les données débutent à la date de confinement (pourquoi?)
 	''' 
-	print(fileLocalCopy)
 	covid_orig = None
 	if fileLocalCopy==True:
 		name = './data/csvFrance_2020-05-24.csv'
@@ -145,14 +144,12 @@ def readDataEurope(country='France', dateMinStr=None, dateMaxStr=None, fileLocal
 		name = './data/csvEurope_2020-05-24.csv'
 		try:
 			covid_orig=pd.read_csv(name, sep=',', parse_dates=[0], dayfirst=True)
-			print('head=', covid_orig.head())
 		except:
 			fileLocalCopy = False
 
 	if fileLocalCopy==False:
 		url="https://opendata.ecdc.europa.eu/covid19/casedistribution/csv"
 		covid_orig=pd.read_csv(url, sep=',', parse_dates=[0], dayfirst=True)
-
 
 	#covid_orig.dtypes
 	observ_label = ['cases', 'deaths']

@@ -4,11 +4,11 @@
 import sys
 import numpy             as np
 import matplotlib.pyplot as plt
-from datetime        import datetime, timedelta
+from datetime          import datetime, timedelta
 
 from common            import readDataEurope, readDataFrance, getDates, Plot, addDaystoStrDate
 from common            import getLowerDateFromString, getNbDaysBetweenDateFromString
-from SolveEDO_SEIR1R2 import SolveEDO_SEIR1R2
+from SolveEDO_SEIR1R2  import SolveEDO_SEIR1R2
 
 strDate = "%Y-%m-%d"
 
@@ -26,10 +26,10 @@ def fit(sysargv):
 
 		For French Region (French database)
 		>> python3 ProcessSEIR1R2.py France,69    3 8 0 1 1 # Dpt 69 (Rhône)
-		>> python3 ProcessSEIR1R2.py France,69,01 3 8 0 1 1 # Dpt 69 (Rhône) + Dpt 01
+		>> python3 ProcessSEIR1R2.py France,69,01 3 8 0 1 1 # Dpt 69 (Rhône) + Dpt 01 (Ain)
 		
 		argv[1] : Country (or list separeted by ','), or 'France' followed by a list of regions. Default: France 
-		argv[2] : Number of periods.                             Default: 1 
+		argv[2] : Number of periods (1 or any number wichi means automatic). Default: 1 
 		argv[3] : Shift of periods (in days).                    Default: 0
 		argv[4] : Compensation strategy (0/1).                   Default: 0
 		argv[5] : Verbose level (debug: 3, ..., almost mute: 0). Default: 1
@@ -49,8 +49,8 @@ def fit(sysargv):
 	verbose    = 1
 	plot       = True
 
-	 # Parameters from argv
-	if len(sys.argv)>1: listplaces = list(sys.argv[1].split(','))
+	# Parameters from argv
+	if len(sysargv)>1: listplaces = list(sysargv[0].split(','))
 	FrDatabase = False
 	if listplaces[0]=='France' and len(listplaces)>1:
 		try:
@@ -61,18 +61,17 @@ def fit(sysargv):
 			FrDatabase = True
 			listplaces = listplaces[1:]
 			France     = 'France'
-
+	
 	if len(sysargv)>1: nbperiodes    = int(sysargv[1])
 	if len(sysargv)>2: decalage      = int(sysargv[2])
 	if len(sysargv)>3 and int(sysargv[3])==1: surplus = True
 	if len(sysargv)>4: verbose       = int(sysargv[4])
 	if len(sysargv)>5 and int(sysargv[5])==0: plot = False
-	if nbperiodes not in [1,3]: nbperiodes=1
 	if nbperiodes==1: decalage=0
 
 	# constante
-	fileLocalCopy    = True  # if we upload the file from the url (to get latest results) or from a local copy file
-	readStartDateStr = None #"2020-03-28" 
+	fileLocalCopy    = True  # if we upload the file from the url (to get latest data) or from a local copy file
+	readStartDateStr = "2020-03-01" 
 	readStopDateStr  = None
 
 	# Lecture des données pour connaitre le nombre de données
@@ -85,7 +84,7 @@ def fit(sysargv):
 	# For the derivatives
 	data_deriv     = np.zeros(shape=(len(listplaces), dataLength))
 	moldelR1_deriv = np.zeros(shape=(len(listplaces), dataLength))
-
+	listepd        = []
 	for indexplace, place in enumerate(listplaces):
 
 		placefull = place
@@ -93,10 +92,10 @@ def fit(sysargv):
 		# See function getDates on how to add or delete dates to put the focus on
 		DatesString = getDates(place, verbose)
 		if FrDatabase == True: 
-			placefull = France + place
+			placefull = France + '-' + place
 			DatesString = getDates(France, verbose)
 
-		print('PROCESSING of ', placefull, ' in ', listplaces)
+		print('PROCESSING of', placefull, 'in', listplaces)
 		prefFig = './figures/Data_' + placefull
 
 		# Lecture des données et copy of the observations
@@ -105,9 +104,16 @@ def fit(sysargv):
 			pd_exerpt, HeadData, N, readStartDateStr, readStopDateStr = readDataFrance(place, readStartDateStr, readStopDateStr, fileLocalCopy, verbose=0)
 		else:
 			pd_exerpt, HeadData, N, readStartDateStr, readStopDateStr = readDataEurope(place, readStartDateStr, readStopDateStr, fileLocalCopy, verbose=0)
-		
+
 		readStartDate = datetime.strptime(readStartDateStr, "%Y-%m-%d")
-		readStopDate  = datetime.strptime(readStopDateStr,  "%Y-%m-%d")
+		if readStartDate<pd_exerpt.index[0]:
+			readStartDate    = pd_exerpt.index[0]
+			readStartDateStr = pd_exerpt.index[0].strftime("%Y-%m-%d")
+		readStopDate = datetime.strptime(readStopDateStr, "%Y-%m-%d")
+		if readStopDate<pd_exerpt.index[-1]:
+			readStopDate    = pd_exerpt.index[-1]
+			readStopDateStr = pd_exerpt.index[-1].strftime("%Y-%m-%d")
+
 		dataLength = pd_exerpt.shape[0]
 		if verbose>1:
 			print('readStartDateStr=', readStartDateStr, ', readStopDateStr=', readStopDateStr)
@@ -115,11 +121,12 @@ def fit(sysargv):
 			#input('pause')
 
 		# Get the list od dates to process
-		ListDates, ListDatesStr = GetListDates(readStartDate, readStopDate, DatesString, decalage, nbperiodes)
+		recouvrement = -1
+		ListDates, ListDatesStr = GetListDates(readStartDate, readStopDate, DatesString, decalage, nbperiodes, recouvrement)
 		if verbose>1:
 			print('ListDates   =', ListDates)
 			print('ListDatesStr=', ListDatesStr)
-			input('pause')
+			#input('pause')
 		
 		# Modele d'edo non lineaires
 		#############################################################################
@@ -146,8 +153,8 @@ def fit(sysargv):
 				a0, b0, c0, f0   = 0.35, 0.29, 0.075, 0.0022
 				T  = 350
 
-				# pour 3 périodes
-				if nbperiodes==3:
+				# pour plusieurs périodes
+				if nbperiodes!=1:
 					l, b0, c0, f0 = 0.255, 1./5.2, 1./12, 0.08
 					a0 = (l+c0)*(1.+l/b0)
 					T  = 150
@@ -165,13 +172,14 @@ def fit(sysargv):
 				_, E0, I0, R10, R20 = map(int, sol_ode[ts+dataLengthPeriod-1, :]) # Le -1 vient du fait qu'on fait un petit recouvrement
 				_, a0, b0, c0, f0 = solveur.modele.getParam()
 				T = 50
-			#print('Reproductivité avant: ', a0/c0)
+			
+
 			time = np.linspace(0, T-1, T)
 
 			# date 
 			fitStartDate,   fitStopDate    = ListDates[i]
 			fitStartDateStr,fitStopDateStr = ListDatesStr[i]
-			
+
 			# Récupérations des données observées
 			dataLengthPeriod = 0
 			indMinPeriod     = getNbDaysBetweenDateFromString(readStartDateStr, fitStartDateStr)
@@ -181,12 +189,12 @@ def fit(sysargv):
 			timefocusdata      = slice(indMinPeriod, indMinPeriod+dataLengthPeriod)
 			timefocusdataderiv = slice(timefocusdata.start+1, timefocusdata.stop)
 			if verbose>1:
-				print('dataLength      =', dataLength)
-				print('indMinPeriod    =', indMinPeriod)
-				print('dataLengthPeriod=', dataLengthPeriod)
-				print('fitStartDateStr =', fitStartDateStr)
-				print('fitStopDateStr  =', fitStopDateStr)
-
+				print('  dataLength      =', dataLength)
+				print('  indMinPeriod    =', indMinPeriod)
+				print('  dataLengthPeriod=', dataLengthPeriod)
+				print('  fitStartDateStr =', fitStartDateStr)
+				print('  fitStopDateStr  =', fitStopDateStr)
+				#input('attente')
 
 			# Set initialisation data for the solveur
 			solveur.modele.setParam(N=N, a=a0,  b=b0,  c=c0,    f=f0)
@@ -233,10 +241,10 @@ def fit(sysargv):
 
 			timefocusedo      = slice(ts, min(ts+dataLengthPeriod, T))
 			timefocusedoderiv = slice(timefocusedo.start+1, timefocusedo.stop)
-			data_deriv_period     = (data_corrected[timefocusdataderiv] - data_corrected[timefocusdataderiv.start-1:timefocusdataderiv.stop-1 ]) / dt
-			moldelR1_deriv_period = (sol_ode[timefocusedoderiv, 3]      - sol_ode       [timefocusedoderiv.start-1 :timefocusedoderiv.stop-1,3]) / dt
+			data_deriv_period    = (data_corrected[timefocusdataderiv] - data_corrected[timefocusdataderiv.start-1:timefocusdataderiv.stop-1 ]) / dt
+			modelR1_deriv_period = (sol_ode[timefocusedoderiv, 3]      - sol_ode       [timefocusedoderiv.start-1 :timefocusedoderiv.stop-1,3]) / dt
 			# print('len(data_deriv_period)=', len(data_deriv_period))
-			# print('len(moldelR1_deriv_period)=', len(moldelR1_deriv_period))
+			# print('len(modelR1_deriv_period)=', len(modelR1_deriv_period))
 			# input('pause')
 
 			if plot==True:
@@ -304,36 +312,39 @@ def fit(sysargv):
 
 			# ajout des données dérivées
 			data_deriv    [indexplace, timefocusdata.start+1:timefocusdata.stop] = data_deriv_period
-			moldelR1_deriv[indexplace, timefocusdata.start+1:timefocusdata.stop] = moldelR1_deriv_period
-			
-			#input('attente')
-	return pd_exerpt, data_deriv, moldelR1_deriv
+			moldelR1_deriv[indexplace, timefocusdata.start+1:timefocusdata.stop] = modelR1_deriv_period
+
+		listepd.append(pd_exerpt)
+
+	return listepd, data_deriv, moldelR1_deriv
 
 
-def GetListDates(readStartDate, readStopDate, DatesString, decalage, nbperiodes):
+def GetListDates(readStartDate, readStopDate, DatesString, decalage, nbperiodes, recouvrement):
 
 	ListDates = [readStartDate, readStopDate]
-	if nbperiodes>1:
+	if nbperiodes!=1:
 		confin_decalage = None
 		if DatesString.listConfDates != []:
-			confin_decalage   = datetime.strptime(addDaystoStrDate(DatesString.listConfDates[0], decalage), "%Y-%m-%d")
+			confin_decalage = datetime.strptime(addDaystoStrDate(DatesString.listConfDates[0], decalage), "%Y-%m-%d")
+			if confin_decalage>ListDates[-2] and confin_decalage<ListDates[-1]:
+				ListDates.insert(-1, confin_decalage)
 		
 		deconfin_decalage = None
 		if DatesString.listDeconfDates != []:
 			deconfin_decalage = datetime.strptime(addDaystoStrDate(DatesString.listDeconfDates[0], decalage), "%Y-%m-%d")
-		
-		if confin_decalage>readStartDate and confin_decalage<readStopDate:
-			ListDates.insert(-1, confin_decalage)
-		if deconfin_decalage>confin_decalage and deconfin_decalage<readStopDate:
-			ListDates.insert(-1, deconfin_decalage)
+			if deconfin_decalage>ListDates[-2] and deconfin_decalage<ListDates[-1]:
+				ListDates.insert(-1, deconfin_decalage)
 
 	ListePairDates = []
 	for i in range(len(ListDates)-1):
-		ListePairDates.append((ListDates[i], ListDates[i+1]))
+		if i>0:
+			ListePairDates.append((ListDates[i]+timedelta(recouvrement), ListDates[i+1]))
+		else:
+			ListePairDates.append((ListDates[i], ListDates[i+1]))
 
 	# Conversion date chaine
 	ListePairDatesStr = [(date1.strftime(strDate), date2.strftime(strDate)) for date1, date2 in ListePairDates]
-
+	
 	return ListePairDates, ListePairDatesStr
 
 if __name__ == '__main__':

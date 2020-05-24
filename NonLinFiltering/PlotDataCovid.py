@@ -54,7 +54,7 @@ if __name__ == '__main__':
             listplaces = listplaces[1:]
             France     = 'France'
 
-    if len(sys.argv)>2: verbose       = int(sys.argv[2])
+    if len(sys.argv)>2: verbose = int(sys.argv[2])
 
     # Constantes
     dt = 1
@@ -72,7 +72,7 @@ if __name__ == '__main__':
             placefull   = France + place
             DatesString = getDates(France, verbose)
 
-        print('PROCESSING of ', placefull, ' in ', listplaces)
+        print('PROCESSING of', placefull, 'in', listplaces)
         prefFig = './figures/Data_' + placefull
         
         # Lecture des données et copy of the observation

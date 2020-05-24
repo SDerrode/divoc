@@ -60,7 +60,7 @@ def main():
 
 	for country in listcountries:
 
-		print('PROCESSING of ', country, ' in ', listcountries)
+		print('PROCESSING of', country, 'in', listcountries)
 		prefFig = './figures/' + solveur.modele.modelShortName + '_' + country
 
 		if country != 'France':
