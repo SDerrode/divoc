@@ -366,7 +366,7 @@ if __name__ == '__main__':
 	# MAJ des parametres
 	
 	E0, I0, R10, R20 = 0, 1, 0, 0
-	a, b, c, f       = 0.11, 0.24, 0.060, 0.0035
+	a, b, c, f       = 0.11, 0.24, 0.060, 0.20
 
 	solveur.setParamInit(N=N, E0=E0, I0=I0, R10=R10, R20=R20)
 	solveur.modele.setParam(N=N, a=a, b=b, c=c, f=f)

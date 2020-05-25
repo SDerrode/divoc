@@ -28,12 +28,12 @@ def fit(sysargv):
 		>> python3 ProcessSEIR1R2.py France,69    3 8 0 1 1 # Dpt 69 (Rhône)
 		>> python3 ProcessSEIR1R2.py France,69,01 3 8 0 1 1 # Dpt 69 (Rhône) + Dpt 01 (Ain)
 		
-		argv[1] : Country (or list separeted by ','), or 'France' followed by a list of regions. Default: France 
-		argv[2] : Number of periods (1 or any number wichi means automatic). Default: 1 
-		argv[3] : Shift of periods (in days).                    Default: 0
-		argv[4] : Compensation strategy (0/1).                   Default: 0
-		argv[5] : Verbose level (debug: 3, ..., almost mute: 0). Default: 1
-		argv[6] : Plot graphique (0/1).                          Default: 1
+		argv[1] : Country (or list separeted by ','), or 'France' followed by a list of departments. Default: France 
+		argv[2] : Number of periods (1, or any number which means automatic).                        Default: 1 
+		argv[3] : Shift of periods (in days).                                                        Default: 0
+		argv[4] : Compensation strategy (0/1).                                                       Default: 0
+		argv[5] : Verbose level (debug: 3, ..., almost mute: 0).                                     Default: 1
+		argv[6] : Plot graphique (0/1).                                                              Default: 1
 	"""
 
 	print('Command line : ', sysargv, flush=True)
@@ -70,7 +70,7 @@ def fit(sysargv):
 	if nbperiodes==1: decalage=0
 
 	# constante
-	fileLocalCopy    = True  # if we upload the file from the url (to get latest data) or from a local copy file
+	fileLocalCopy    = False  # if we upload the file from the url (to get latest data) or from a local copy file
 	readStartDateStr = "2020-03-01" 
 	readStopDateStr  = None
 

@@ -9,7 +9,7 @@ from datetime  import datetime, timedelta
 from common    import readDataEurope, readDataFrance, getDates, PlotData, addDaystoStrDate
 
 # constante
-fileLocalCopy = True         # if we upload the file from the url (to get latest results) or from a local copy file
+fileLocalCopy = False         # if we upload the file from the url (to get latest results) or from a local copy file
 
 if __name__ == '__main__':
     """
@@ -28,8 +28,8 @@ if __name__ == '__main__':
         >> python3 ProcessSEIR1R2.py France,69       # Dpt 69 (Rhône)
         >> python3 ProcessSEIR1R2.py France,69,75,01 # Dpt 69 (Rhône) + Dpt 75 + Dpt 01
        
-        argv[1] : Country (or list separeted by ','), or 'France' followed by a list of regions. Default: France 
-        argv[2] : Verbose level (debug: 3, ..., almost mute: 0). Default: 1
+        argv[1] : Country (or list separeted by ','), or 'France' followed by a list of departments. Default: France 
+        argv[2] : Verbose level (debug: 3, ..., almost mute: 0).                                     Default: 1
     """
 
     print('Command line : ', sys.argv, flush=True)
@@ -58,7 +58,7 @@ if __name__ == '__main__':
 
     # Constantes
     dt = 1
-    readStartDateStr = "2020-03-18" 
+    readStartDateStr = "2020-03-01" 
     readStopDateStr  = None
     
     # Loop for all places

@@ -42,7 +42,7 @@ def main():
     decalage   = 0
     surplus    = 0
     listepd, data_deriv_allinone, moldelR1_deriv_allinone = \
-        fitplace(places, listplaces, nbperiodes, decalage, surplus, verbose, plot, 'Piecewise')
+        fitplace(places, listplaces, nbperiodes, decalage, surplus, verbose, plot, 'AllInOne')
 
     # fit avec 3 périodes + décalage
     ##################################
@@ -50,7 +50,7 @@ def main():
     decalage   = 10
     surplus    = 0
     listepd, data_deriv_piecewise, moldelR1_deriv_piecewise = \
-        fitplace(places, listplaces, nbperiodes, decalage, surplus, verbose, plot, 'AllInOne')
+        fitplace(places, listplaces, nbperiodes, decalage, surplus, verbose, plot, 'Piecewise')
 
     # Plot all in one figure
     ##################################
