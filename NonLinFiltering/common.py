@@ -65,10 +65,14 @@ def getDates(country, verbose):
 		Dates = Covid_SpecialDates(country=country)
 		Dates.addConfDates      ('2020-03-15')
 		Dates.addDeconfDates    ('2020-05-10')
+	if country == 'South_Korea':
+		Dates = Covid_SpecialDates(country=country)
+		Dates.addConfDates      ('2020-02-23')
+		Dates.addDeconfDates    ('2020-05-10')
 	if country == 'United_Kingdom':
 		Dates = Covid_SpecialDates(country=country)
 		Dates.addConfDates      ('2020-03-23')
-		#Dates.addDeconfDates    ('2020-05-13') # not now
+		Dates.addDeconfDates    ('2020-05-05') # not now
 	if country == 'Belgium':
 		Dates = Covid_SpecialDates(country=country)
 		Dates.addConfDates      ('2020-03-18')
@@ -86,7 +90,7 @@ def readDataFrance(place='69', dateMinStr=None, dateMaxStr=None, fileLocalCopy=F
 	''' 
 	covid_orig = None
 	if fileLocalCopy==True:
-		name = './data/csvFrance_2020-05-24.csv'
+		name = './data/csvFrance_2020-05-27.csv'
 		try:
 			covid_orig=pd.read_csv(name, sep=';', parse_dates=[2], dayfirst=True)
 		except:
@@ -136,7 +140,7 @@ def readDataFrance(place='69', dateMinStr=None, dateMaxStr=None, fileLocalCopy=F
 def readDataEurope(country='France', dateMinStr=None, dateMaxStr=None, fileLocalCopy=False, verbose=0):
 	'''
 		Lecture des données recueillies au niveau du site européen
-		Remarque: ol semble qu'il y ai un décalage d'un jour avec les données françaises
+		Remarque: il semble qu'il y ai un décalage d'un jour avec les données françaises
 	'''
 
 	covid_orig = None
@@ -150,6 +154,9 @@ def readDataEurope(country='France', dateMinStr=None, dateMaxStr=None, fileLocal
 	if fileLocalCopy==False:
 		url="https://opendata.ecdc.europa.eu/covid19/casedistribution/csv"
 		covid_orig=pd.read_csv(url, sep=',', parse_dates=[0], dayfirst=True)
+
+	# Il manque des données de la date 2020-05-14 pour tous les départements
+
 
 	#covid_orig.dtypes
 	observ_label = ['cases', 'deaths']

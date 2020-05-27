@@ -351,7 +351,12 @@ def residual(paras, t, data, solveur):
 
 if __name__ == '__main__':
 
-	prefixFig = './figures/'
+	# Constantes
+	import os
+	repertoire = './figures/simulSEIR1R2'
+	if not os.path.exists(repertoire):
+		os.makedirs(repertoire)
+	prefFig = repertoire + '/'
 
 	# Solveur eq. diff.
 	verbose = 1
@@ -382,20 +387,20 @@ if __name__ == '__main__':
 		sliceedo = slice(0, 0+T)
 		
 		listePlot = [3]
-		filename  = prefixFig + 'SEIR1R2model_' + ''.join(map(str, listePlot)) + '.png'
+		filename  = prefFig + 'SEIR1R2model_' + ''.join(map(str, listePlot)) + '.png'
 		solveur.plot_SEIR1R2(filename, '', sliceedo, sliceedo, plot=listePlot, data='', text=solveur.getTextParam())
 		listePlot = [1,2,3]
-		filename  = prefixFig + 'SEIR1R2model_' + ''.join(map(str, listePlot)) + '.png'
+		filename  = prefFig + 'SEIR1R2model_' + ''.join(map(str, listePlot)) + '.png'
 		solveur.plot_SEIR1R2(filename, '', sliceedo, sliceedo, plot=listePlot, data='', text=solveur.getTextParam())
 		listePlot = [0,1,2,3,4]
-		filename  = prefixFig + 'SEIR1R2model_' + ''.join(map(str, listePlot)) + '.png'
+		filename  = prefFig + 'SEIR1R2model_' + ''.join(map(str, listePlot)) + '.png'
 		solveur.plot_SEIR1R2(filename, '', sliceedo, sliceedo, plot=listePlot, data='', text=solveur.getTextParam())
 
 
 	# call main function
 	# solveur.solve_SEIR1R2_withSwitch(T, xx)
 	# if plot==True:
-	#	solveur.plot_SEIR1R2(prefixFig+'simSEIR1R2model_bis.png', time)
+	#	solveur.plot_SEIR1R2(prefFig+'simSEIR1R2model_bis.png', time)
 
 	# Simulateur to get the theoretical behavior
 	########################################################################
@@ -403,4 +408,4 @@ if __name__ == '__main__':
 	# istePlot=[1,2,3]
 	# if plot==True:
 		# listePlot=[1,2,3]
-	# 	solveur.plot_SEIR1R2(prefixFig+'simSEIR1R2model_pop.png', time, plot=listePlot)
+	# 	solveur.plot_SEIR1R2(prefFig+'simSEIR1R2model_pop.png', time, plot=listePlot)

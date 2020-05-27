@@ -69,12 +69,16 @@ def fit(sysargv):
 	if len(sysargv)>3 and int(sysargv[3])==1: surplus = True
 	if len(sysargv)>4: verbose       = int(sysargv[4])
 	if len(sysargv)>5 and int(sysargv[5])==0: plot = False
-	if nbperiodes==1: decalage=0
+	if nbperiodes==1: 
+		decalage   = 0  # nécessairement pas de décalage
+	if surplus==True: 
+		decalage   = 0  # nécessairement pas de décalage
+		nbpériodes = 2  # necessairement plusieurs périodes
 
 	# Constantes
 	######################################################@
-	fileLocalCopy    = False  # if we upload the file from the url (to get latest data) or from a local copy file
-	readStartDateStr = "2020-03-01" 
+	fileLocalCopy    = True  # if we upload the file from the url (to get latest data) or from a local copy file
+	readStartDateStr = "2020-02-01" #"2020-03-01" 
 	readStopDateStr  = None
 	recouvrement     = -1
 	dt               = 1
@@ -149,7 +153,12 @@ def fit(sysargv):
 		solveur = SolveEDO_SEIR1R2(N, dt, verbose)
 
 		# Constantes
-		prefFig = './figures/' + solveur.modele.modelShortName + '_' + placefull
+		import os
+		repertoire = './figures/'+ placefull
+		if not os.path.exists(repertoire):
+			os.makedirs(repertoire)
+		prefFig = repertoire + '/' + solveur.modele.modelShortName + '_' + placefull
+		
 		columns = [r'$S(t)$', r'$E(t)$', r'$I(t)$', r'$R^1(t)$', r'$R^2(t)$', r'$R^2(t)=N-\sum(SEIR^1)$', r'$R(t)=R^1(t)+R^2(t)$']
 		E0, I0, R10, R20 = 0, 1, 0, 0
 		
@@ -352,7 +361,7 @@ def fit(sysargv):
 	# input('apuse')
 	ListeTextParam.append(ListeTextParamPlace)
 
-	return modelSEIR1R2, ListeTextParam, listepd, data_deriv, modelR1_deriv
+	return modelSEIR1R2, ListeTextParam, listepd, data_deriv, modelR1_deriv, decalage+recouvrement
 
 
 
@@ -385,5 +394,6 @@ def GetListDates(readStartDate, readStopDate, DatesString, decalage, nbperiodes,
 	
 	return ListePairDates, ListePairDatesStr
 
+
 if __name__ == '__main__':
-	modelSEIR1R2, ListeTextParam, listepd, data_deriv, modelR1_deriv = fit(sys.argv[1:])
+	modelSEIR1R2, ListeTextParam, listepd, data_deriv, modelR1_deriv, decalage_corrige = fit(sys.argv[1:])

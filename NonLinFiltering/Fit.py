@@ -4,11 +4,12 @@
 import sys
 import numpy             as np
 import matplotlib.pyplot as plt
-from datetime       import datetime, timedelta
-
-from common         import getDates, Plot, addDaystoStrDate, get_WE_indice, drawAnnotation
-from common         import getLowerDateFromString, getNbDaysBetweenDateFromString
-from ProcessSEIR1R2 import fit
+from datetime         import datetime, timedelta
+  
+from common           import getDates, Plot, addDaystoStrDate, get_WE_indice, drawAnnotation
+from common           import getLowerDateFromString, getNbDaysBetweenDateFromString
+from ProcessSEIR1R2   import fit
+from SolveEDO_SEIR1R2 import SolveEDO_SEIR1R2
 
 dpi     = 120    # plot resolution of saved figures
 figsize = (8, 4) # figure's size (width, height)
@@ -19,10 +20,10 @@ def main():
 
     # places     = 'France,Spain,Italy,United_Kingdom,Germany,Belgium'
     #places     = 'France,Spain,Italy,Germany'
-    places      = 'France'
+    places      = 'South_Korea'
     #places     = 'United_Kingdom'
     #places     = 'France,69,75,01'
-    #places     = 'France,93'
+    #places     = 'France,69'
     listplaces = list(places.split(','))
 
     # Detect si pays européen ou département français
@@ -39,9 +40,9 @@ def main():
     # fit avec une seule période
     ##################################
     nbperiodes = 1
-    decalage   = 0
+    decalage   = 0 # corrigé par le recouvrement
     surplus    = 0
-    modelSEIR1R2_allinone, ListeTextParamPlace_allinone, _, data_deriv_allinone, moldelR1_deriv_allinone = \
+    modelSEIR1R2_allinone, ListeTextParamPlace_allinone, _, data_deriv_allinone, moldelR1_deriv_allinone, decalage_corrige = \
         fitplace(places, listplaces, nbperiodes, decalage, surplus, verbose, plot, 'All-In-One')
 
     for indexplaces in range(len(listplaces)):
@@ -52,9 +53,9 @@ def main():
     # fit avec 3 périodes + décalage
     ##################################
     nbperiodes = -1
-    decalage   = 5
+    decalage   = 5 # corrigé par le recouvrement
     surplus    = 0
-    modelSEIR1R2_piecewise, ListeTextParamPlace_piecewise, listepd, data_deriv_piecewise, moldelR1_deriv_piecewise = \
+    modelSEIR1R2_piecewise, ListeTextParamPlace_piecewise, listepd, data_deriv_piecewise, moldelR1_deriv_piecewise, decalage_corrige = \
         fitplace(places, listplaces, nbperiodes, decalage, surplus, verbose, plot, 'Piecewise')
 
     for indexplaces in range(len(listplaces)):
@@ -68,8 +69,8 @@ def main():
         place    = listplaces[indexplaces]
 
         # schéma 1, moins joli que le suivant
-        # filename = './figures/DiffR1_BothFitbis_' + place + '_Shift' + str(decalage) + '.png'
-        # title    = place + ' - Shift=' + str(decalage) + ' day(s)'
+        # filename = './figures/DiffR1_BothFitbis_' + place + '_Shift' + str(decalage_corrige) + '.png'
+        # title    = place + ' - Shift=' + str(decalage_corrige) + ' day(s)'
         # PlotAll(data_deriv_allinone[indexplaces], moldelR1_deriv_allinone[indexplaces], moldelR1_deriv_piecewise[indexplaces], title, filename)
 
         # Preparation plot pandas
@@ -91,8 +92,8 @@ def main():
         listepd[indexplaces].loc[:, ('md_piecewise')]= moldelR1_deriv_piecewise[indexplaces, 0:longueur]
         #print('tail=', listepd[indexplaces].tail())
 
-        filename = './figures/DiffR1_BothFit_' + place + '_Shift' + str(decalage) + '.png'
-        title    = place + ' - Shift=' + str(decalage) + ' day(s)'
+        filename = './figures/DiffR1_BothFit_' + place + '_Shift' + str(decalage_corrige) + '.png'
+        title    = place + ' - Shift=' + str(decalage_corrige) + ' day(s)'
         PlotAllPandas(listepd[indexplaces], title, filename, y=['dcases', 'md_allinone', 'md_piecewise'], Dates=DatesString)
 
     # Plot the two SIER1R2
@@ -124,26 +125,37 @@ def main():
         # print(listepd[indexplaces].head())
         # input('pause')
 
-        title    = place + ' - Shift=' + str(decalage) + ' day(s)'
-        filename = './figures/EIR1_piecewise_' + place + '_Shift' + str(decalage) + '.png'
+        title    = place + ' - Shift=' + str(decalage_corrige) + ' day(s)'
+        filename = './figures/EIR1_piecewise_' + place + '_Shift' + str(decalage_corrige) + '.png'
         y=['Ep', 'Ip', 'R1p']
-        PlotSEIR1R2Pandas(listepd[indexplaces], title, filename, listeString=y, Dates=DatesString)
+        PlotSEIR1R2Pandas(listepd[indexplaces], title, filename, y=y, Dates=DatesString)
 
-        title    = place + ' - Shift=' + str(decalage) + ' day(s)'
-        filename = './figures/R1_piecewise_' + place + '_Shift' + str(decalage) + '.png'
+        title    = place + ' - Shift=' + str(decalage_corrige) + ' day(s)'
+        filename = './figures/R1_piecewise_' + place + '_Shift' + str(decalage_corrige) + '.png'
         y=['R1p']
-        PlotSEIR1R2Pandas(listepd[indexplaces], title, filename, listeString=y, Dates=DatesString)
+        PlotSEIR1R2Pandas(listepd[indexplaces], title, filename, y=y, Dates=DatesString)
 
 
-def PlotSEIR1R2Pandas(pd, titre, filenameFig, listeString, Dates=None):
+def PlotSEIR1R2Pandas(pd, titre, filenameFig, y, Dates=None):
     
-    if len(listeString)==0 or listeString is None: pass
+    if len(y)==0 or y is None: pass
+
+    # juste pour récupérer des couleurs sohérentes
+    solveur = SolveEDO_SEIR1R2(N=1, dt=1, verbose=0)
+    mod = solveur.modele
+    listeColor = []
+    for p in y:
+        if p=='Sp' : listeColor.append(mod.getColor(0))
+        if p=='Ep' : listeColor.append(mod.getColor(1))
+        if p=='Ip' : listeColor.append(mod.getColor(2))
+        if p=='R1p': listeColor.append(mod.getColor(3))
+        if p=='R2p': listeColor.append(mod.getColor(4))
 
     fig = plt.figure(facecolor='w', figsize=figsize)
     ax = fig.add_subplot(111, facecolor='#dddddd', axisbelow=True)
 
     # Dessin des courbes théoriques
-    pd.plot(ax=ax, y=listeString, title=titre)
+    pd.plot(ax=ax, y=y, title=titre, color=listeColor)
     
     # ajout des dates spéciales
     if Dates!=None:
@@ -188,16 +200,23 @@ def PlotAllPandas(pd, titre, filenameFig, y, Dates=None):
     # on supprime la première ligne de donnée (car ce sont des dérivées)
     pd = pd.iloc[1:]
 
+    # juste pour récupérer la bonne coukeur
+    solveur = SolveEDO_SEIR1R2(N=1, dt=1, verbose=0)
+    mod = solveur.modele
+    color=mod.getColor(3)
+
     fig = plt.figure(facecolor='w', figsize=figsize)
     ax = fig.add_subplot(111, facecolor='#dddddd', axisbelow=True)
 
     # Dessin des courbes
-    styles     = ['gx-','b-','g-']
+    linestyles = ['-','-','-']
+    markers    = ['x','','']
+    colors     = [color, 'blue', color]
     linewidths = [0.5, 1.5, 1.5]
     alphas     = [1.0, 0.55, 0.7]
     labels     = [r'$\frac{\partial R^1(n)}{\partial n}$', r'$\frac{\partial R^1(t)}{\partial t}$ - All in one', r'$\frac{\partial R^1(t)}{\partial t}$ - Piecewise']
-    for col, style, lw, label, alpha in zip(y, styles, linewidths, labels, alphas):
-        pd[col].plot(title=titre, style=style, lw=lw, ax=ax, alpha=alpha, label=label)
+    for col, ls, lw, l, a, c, m in zip(y, linestyles, linewidths, labels, alphas, colors, markers):
+        pd[col].plot(title=titre, ax=ax, ls=ls, lw=lw, label=l, alpha=a, color=c, marker=m)
  
     # ajout des dates spéciales
     if Dates!=None:
@@ -240,10 +259,15 @@ def PlotAll(data_deriv_allinone, moldelR1_deriv_allinone, moldelR1_deriv_piecewi
     fig = plt.figure(facecolor='w', figsize=figsize)
     ax  = fig.add_subplot(111, facecolor='#dddddd', axisbelow=True)
 
+    # juste pour récupérer la bonne coukeur
+    solveur = SolveEDO_SEIR1R2(N=1, dt=1, verbose=0)
+    mod   = solveur.modele
+    color = mod.getColor(3)
+
     time = np.linspace(1, len(data_deriv_allinone[1:]), len(data_deriv_allinone[1:]))
-    ax.plot(time, data_deriv_allinone     [1:], label=r'$\frac{\partial R^1(n)}{\partial n}$',              color='green', alpha=1.0,  lw=0.5, marker='x')
-    ax.plot(time, moldelR1_deriv_allinone [1:], label=r'$\frac{\partial R^1(t)}{\partial t}$ - All-in-one', color='blue',  alpha=0.55, lw=1.5)
-    ax.plot(time, moldelR1_deriv_piecewise[1:], label=r'$\frac{\partial R^1(t)}{\partial t}$ - Piecewise',  color='green', alpha=0.7,  lw=1.5)
+    ax.plot(time, data_deriv_allinone     [1:], label=r'$\frac{\partial R^1(n)}{\partial n}$',              color=color,  alpha=1.0,  lw=0.5, marker='x')
+    ax.plot(time, moldelR1_deriv_allinone [1:], label=r'$\frac{\partial R^1(t)}{\partial t}$ - All-in-one', color='blue', alpha=0.55, lw=1.5)
+    ax.plot(time, moldelR1_deriv_piecewise[1:], label=r'$\frac{\partial R^1(t)}{\partial t}$ - Piecewise',  color=color,  alpha=0.7,  lw=1.5)
 
     ax.set_xlabel('Time (days)')
     ax.yaxis.set_tick_params(length=0)
@@ -265,9 +289,14 @@ def PlotFit(data_deriv, model_deriv, title, ch, filename):
     fig = plt.figure(facecolor='w', figsize=figsize)
     ax  = fig.add_subplot(111, facecolor='#dddddd', axisbelow=True)
 
+    # juste pour récupérer la bonne coukeur
+    solveur = SolveEDO_SEIR1R2(N=1, dt=1, verbose=0)
+    mod   = solveur.modele
+    color = mod.getColor(3)
+
     time = np.linspace(1, len(data_deriv[1:]), len(data_deriv[1:]))
-    ax.plot(time, data_deriv[1:],  label=r'$\frac{\partial R^1(n)}{\partial n}$ - ' + ch, color='green', alpha=1.0, lw=0.5, marker='x')
-    ax.plot(time, model_deriv[1:], label=r'$\frac{\partial R^1(t)}{\partial t}$ - ' + ch, color='green', alpha=1.0, lw=1.5)
+    ax.plot(time, data_deriv[1:],  label=r'$\frac{\partial R^1(n)}{\partial n}$ - ' + ch, color=color, alpha=1.0, lw=0.5, marker='x')
+    ax.plot(time, model_deriv[1:], label=r'$\frac{\partial R^1(t)}{\partial t}$ - ' + ch, color=color, alpha=1.0, lw=1.5)
 
     ax.set_xlabel('Time (days)')
     ax.yaxis.set_tick_params(length=0)
@@ -286,17 +315,18 @@ def PlotFit(data_deriv, model_deriv, title, ch, filename):
 
 def fitplace(places, listplaces, nbperiodes, decalage, surplus, verbose, plot, ch):
 
-    modelSEIR1R2, ListeTextParamPlace, listepd, data_deriv, moldelR1_deriv = fit([places, nbperiodes, decalage, surplus, verbose, plot])
+    modelSEIR1R2, ListeTextParamPlace, listepd, data_deriv, moldelR1_deriv, decalage_corrige = \
+            fit([places, nbperiodes, decalage, surplus, verbose, plot])
     
     # Plot
     for indexplaces in range(len(listplaces)):
         place    = listplaces[indexplaces]
-        filename = './figures/DiffR1_' + place + '_' + ch + '_Shift' + str(decalage) + '.png'
-        title    = place + ' - Shift=' + str(decalage) + ' day(s)'
+        filename = './figures/DiffR1_' + place + '_' + ch + '_Shift' + str(decalage_corrige) + '.png'
+        title    = place + ' - Shift=' + str(decalage_corrige) + ' day(s)'
         #dataLength = listepd[indexplaces].shape[0]
         PlotFit(data_deriv[indexplaces], moldelR1_deriv[indexplaces], title, ch, filename)
 
-    return modelSEIR1R2, ListeTextParamPlace, listepd, data_deriv, moldelR1_deriv
+    return modelSEIR1R2, ListeTextParamPlace, listepd, data_deriv, moldelR1_deriv, decalage_corrige
 
 
 if __name__ == '__main__':

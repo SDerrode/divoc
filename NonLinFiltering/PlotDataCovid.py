@@ -73,7 +73,13 @@ if __name__ == '__main__':
             DatesString = getDates(France, verbose)
 
         print('PROCESSING of', placefull, 'in', listplaces)
-        prefFig = './figures/Data_' + placefull
+
+        # Constantes
+        import os
+        repertoire = './figures/'+ placefull
+        if not os.path.exists(repertoire):
+            os.makedirs(repertoire)
+        prefFig = repertoire + '/Data_' + placefull
         
         # Lecture des données et copy of the observation
         #############################################################################
