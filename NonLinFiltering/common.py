@@ -51,24 +51,24 @@ def getDates(country, verbose):
 	if country == 'France':
 		Dates = Covid_SpecialDates(country=country)
 		Dates.addConfDates      ('2020-03-16')
-		#Dates.addDeconfDates    ('2020-05-11')
+		Dates.addDeconfDates    ('2020-05-11')
 		#Dates.setListOtherDates(['2020-03-06'])
 	if country == 'Germany':
 		Dates = Covid_SpecialDates(country=country)
 		Dates.addConfDates      ('2020-03-22')
-		#Dates.addDeconfDates    ('2020-04-20')
+		Dates.addDeconfDates    ('2020-04-20')
 	if country == 'Italy':
 		Dates = Covid_SpecialDates(country=country)
 		Dates.addConfDates      ('2020-03-09')
-		#Dates.addDeconfDates    ('2020-05-04')
+		Dates.addDeconfDates    ('2020-05-04')
 	if country == 'Spain':
 		Dates = Covid_SpecialDates(country=country)
 		Dates.addConfDates      ('2020-03-15')
-		#Dates.addDeconfDates    ('2020-05-10')
+		Dates.addDeconfDates    ('2020-05-10')
 	if country == 'United_Kingdom':
 		Dates = Covid_SpecialDates(country=country)
 		Dates.addConfDates      ('2020-03-23')
-		##Dates.addDeconfDates    ('2020-05-13') # not now
+		#Dates.addDeconfDates    ('2020-05-13') # not now
 	if country == 'Belgium':
 		Dates = Covid_SpecialDates(country=country)
 		Dates.addConfDates      ('2020-03-18')
@@ -136,7 +136,7 @@ def readDataFrance(place='69', dateMinStr=None, dateMaxStr=None, fileLocalCopy=F
 def readDataEurope(country='France', dateMinStr=None, dateMaxStr=None, fileLocalCopy=False, verbose=0):
 	'''
 		Lecture des données recueillies au niveau du site européen
-		Remarque: ll semble qu'il y ai un décalage d'un jour avec les données françaises
+		Remarque: ol semble qu'il y ai un décalage d'un jour avec les données françaises
 	'''
 
 	covid_orig = None

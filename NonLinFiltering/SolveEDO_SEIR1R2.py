@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+import random
 import numpy             as np
 import matplotlib.pyplot as plt
-import random
+
+from matplotlib.ticker import MaxNLocator
 
 from scipy.integrate import odeint
 from lmfit           import minimize, Parameters, Parameter, report_fit
@@ -46,16 +48,15 @@ class SolveEDO_SEIR1R2:
 	def getTextParam(self, startDate=None):
 		S  = self.modele.getTextParam()
 		S += '\nSolveur init:\n'# + '\n  N=' + str(self.N) + '\n  dt='+str(self.dt) \
-		#S += '\n  y0='+ str(self.y0) + '\n'
 		S += r'  $S0=' + str(self.y0[0]) + r'$' + '\n'
 		S += '  E0=' + str(self.y0[1]) + ', I0='+str(self.y0[2]) + '\n'
 		S += r'  $R^1$0=' + str(self.y0[3]) + r', $R^2$0=' + str(self.y0[4])
-		# if self.TS != -1:
-		# 	if startDate==None:
-		# 		S += '\n' + r'  $TS='+str(self.TS)+'$'
-		# 	else:
-		# 		dateI0 = addDaystoStrDate(startDate, -self.TS)
-		# 		S += '\n  Start date:'+dateI0
+		if self.TS != -1:
+			if startDate==None:
+				S += '\n' + r'  $TS='+str(self.TS)+'$'
+			else:
+				dateI0 = addDaystoStrDate(startDate, -self.TS)
+				S += '\n  Start date:'+dateI0
 		return S
 
 	def setN(self, N):
@@ -83,11 +84,10 @@ class SolveEDO_SEIR1R2:
 	def compute_tsfromEQM(self, data, T):
 		
 		dataLength = len(data)
-		eqm=np.zeros(shape=(T-dataLength))
+		eqm = np.zeros(shape=(T-dataLength))
 		for t in range(T-dataLength):
 			eqm[t] = mean_squared_error(self.solution[t:t+dataLength, 3], data)
 		self.TS = np.argmin(eqm)
-
 		return self.TS
 
 	def solve_SEIR1R2_withSwitch(self, T, timeswitch=-1):
@@ -128,16 +128,16 @@ class SolveEDO_SEIR1R2:
 		params.add('I0',  value=I0,      vary=False) #True, min=0 , max=2000)
 		params.add('R10', value=R10,     vary=False) #True, min=0 , max=2000)
 		params.add('R20', value=R20,     vary=False) #True, min=0 , max=2000)
-		params.add('ts',  value=self.TS, vary=True, min=0,       max=len(time)-len(data)-2)
-		# params.add('f',   value=f0,      vary=True, min=0.4*f0, max=1./0.4*f0)
+		params.add('ts',  value=self.TS, vary=True, min=0,     max=len(time)-len(data)-2)
+		params.add('a',   value=a0,      vary=True, min=0.0001, max=0.85) 
+		params.add('b',   value=b0,      vary=True, min=0.100, max=0.6) 
+		params.add('c',   value=c0,      vary=True, min=0.010, max=0.2) 
+		params.add('f',   value=f0,      vary=True, min=0.001, max=0.4)
 		# params.add('a',   value=a0,      vary=True, min=0.3*a0, max=1./0.3*a0)
 		# params.add('b',   value=b0,      vary=True, min=0.5*b0, max=1./0.5*b0)
 		# params.add('c',   value=c0,      vary=True, min=0.5*c0, max=1./0.5*c0)
-		params.add('f',   value=f0,      vary=True, min=0.001, max=0.40)
-		params.add('a',   value=a0,      vary=True, min=0.001, max=0.5) 
-		params.add('b',   value=b0,      vary=True, min=0.100, max=0.6) 
-		params.add('c',   value=c0,      vary=True, min=0.010, max=0.2) 
-
+		# params.add('f',   value=f0,      vary=True, min=0.4*f0, max=1./0.4*f0)
+		
 		# fit model
 		result = minimize(residual, params, args=(time, data, self), method='powell') #powell, least_squares
 		if self.verbose>0:
@@ -218,32 +218,33 @@ class SolveEDO_SEIR1R2:
 
 	# 	return self.solution
 
-	def plot_SEIR1R2(self, name, title, timefocusedo, timefocusdata, plot, data='', text=''):
+	def plot_SEIR1R2(self, name, title, sliceedo, slicedata, plot, data='', text=''):
 
 		if len(plot)==0 or plot is None: pass
 
 		fig = plt.figure(facecolor='w', figsize=figsize)
 		ax  = fig.add_subplot(111, facecolor='#dddddd', axisbelow=True)
 
-		a = timefocusdata.start+timefocusedo.stop-timefocusedo.start-1
-		timeedo = np.linspace(timefocusdata.start, a, a-timefocusdata.start+1)
+		a = slicedata.start+sliceedo.stop-sliceedo.start-1
+		timeedo = np.linspace(slicedata.start, a, a-slicedata.start+1)
 		for p in plot:
-			ax.plot(timeedo, self.solution[timefocusedo.start:min(timefocusedo.stop, np.shape(self.solution)[0]), p], color=self.modele.getColor(p), alpha=1.0, lw=2, label=self.modele.getString(p))
+			ax.plot(timeedo, self.solution[sliceedo.start:min(sliceedo.stop, np.shape(self.solution)[0]), p], color=self.modele.getColor(p), alpha=1.0, lw=2, label=self.modele.getString(p))
 
 		# seconde estimation de R2
 		# R2bis = self.N-self.solution[:, 0]-self.solution[:, 1]-self.solution[:, 2]-self.solution[:, 3]
 		# ax.plot(timeedo, R2bis, color=self.modele.getColor(indice), alpha=1.0, lw=2, label='$R^2(t)=N-\sum{SEIR^1}$')
 
 		# les données observées
-		time = np.linspace(timefocusdata.start, timefocusdata.stop-1, timefocusdata.stop-timefocusdata.start)
+		time = np.linspace(slicedata.start, slicedata.stop-1, slicedata.stop-slicedata.start)
 		if len(data) != 0:
-			ax.plot(time, data[timefocusdata], color=self.modele.getColor(3), alpha=1.0, lw=2, label='Data $R^1$', marker='x', ls='')
+			ax.plot(time, data[slicedata], color=self.modele.getColor(3), alpha=1.0, lw=2, label='Data $R^1$', marker='x', ls='')
 
 		ax.set_xlabel('Time (days)')
 		ax.set_ylabel('Pop. size (' + str(int(self.N)) + ')')
 		ax.yaxis.set_tick_params(length=0)
 		ax.xaxis.set_tick_params(length=0)
 		ax.grid(b=True, which='major', c='w', lw=1, ls='-')
+		ax.xaxis.set_major_locator(MaxNLocator(integer=True))
 		
 		legend = ax.legend()
 		legend.get_frame().set_alpha(0.5)
@@ -259,25 +260,22 @@ class SolveEDO_SEIR1R2:
 		plt.close()
 
 
-	def plot_dR1(self, name, title, timefocusedo, timefocusdata, deriv_data='', text=''):
+	def plot_dR1(self, name, title, sliceedoderiv, slicedataderiv, deriv_data='', text=''):
 
-		time = np.linspace(timefocusdata.start, timefocusdata.stop-1, timefocusdata.stop-timefocusdata.start)
+		time = np.linspace(slicedataderiv.start, slicedataderiv.stop-1, slicedataderiv.stop-slicedataderiv.start)
 
 		deriv_sol3 = (self.solution[1:, 3] - self.solution[:-1, 3]) / self.dt
 
 		fig = plt.figure(facecolor='w', figsize=figsize)
 		ax  = fig.add_subplot(111, facecolor='#dddddd', axisbelow=True)
-		# print(time)
-		# print(len(time))
-		# print(len(deriv_sol3[timefocusedo.start:min(timefocusedo.stop, np.shape(deriv_sol3)[0])]))
-		ax.plot(time, deriv_sol3[timefocusedo.start:min(timefocusedo.stop, np.shape(deriv_sol3)[0])], color=self.modele.getColor(3), alpha=1.0, lw=2, label=r'$\frac{\partial R^1(t)}{\partial t}$')
+		
+		ax.plot(time, deriv_sol3[sliceedoderiv.start:min(sliceedoderiv.stop, np.shape(deriv_sol3)[0])], color=self.modele.getColor(3), alpha=1.0, lw=2, label=r'$\frac{\partial R^1(t)}{\partial t}$')
 
 		# seconde estimation de R2
 		# R2bis = self.N-self.solution[:, 0]-self.solution[:, 1]-self.solution[:, 2]-self.solution[:, 3]
 		# ax.plot(timeedo, R2bis, color=self.modele.getColor(indice), alpha=1.0, lw=2, label='$R^2(t)=N-\sum{SEIR^1}$')
 
 		# les données observées
-		#if deriv_data != None and len(deriv_data) != 0:
 		if len(deriv_data) != 0:
 			ax.plot(time, deriv_data, color=self.modele.getColor(3), alpha=1.0, lw=0.5, label=r'$\frac{\partial R^1(n)}{\partial n}$', marker='x')
 
@@ -285,6 +283,7 @@ class SolveEDO_SEIR1R2:
 		ax.yaxis.set_tick_params(length=0)
 		ax.xaxis.set_tick_params(length=0)
 		ax.grid(b=True, which='major', c='w', lw=1, ls='-')
+		ax.xaxis.set_major_locator(MaxNLocator(integer=True))
 		
 		legend = ax.legend()
 		legend.get_frame().set_alpha(0.5)
@@ -368,8 +367,8 @@ if __name__ == '__main__':
 	E0, I0, R10, R20 = 0, 1, 0, 0
 	a, b, c, f       = 0.11, 0.24, 0.060, 0.20
 
-	solveur.setParamInit(N=N, E0=E0, I0=I0, R10=R10, R20=R20)
-	solveur.modele.setParam(N=N, a=a, b=b, c=c, f=f)
+	solveur.setParamInit   (N=N, E0=E0, I0=I0, R10=R10, R20=R20)
+	solveur.modele.setParam(N=N,  a=a,   b=b,    c=c,     f=f)
 
 	# integration time grid
 	T    = 750
@@ -379,19 +378,18 @@ if __name__ == '__main__':
 	########################################################################
 	result = solveur.solve_SEIR1R2(time)
 	if plot==True:
-		listePlot=[3]
-		timefocusedo = slice(0, 0+T)
-		filename     = prefixFig + 'SEIR1R2model_' + ''.join(map(str, listePlot)) + '.png'
-		solveur.plot_SEIR1R2(filename, '', timefocusedo, timefocusedo, plot=listePlot, data='', text=solveur.getTextParam())
-		listePlot=[1,2,3]
-		timefocusedo = slice(0, 0+T)
-		filename     = prefixFig + 'SEIR1R2model_' + ''.join(map(str, listePlot)) + '.png'
-		solveur.plot_SEIR1R2(filename, '', timefocusedo, timefocusedo, plot=listePlot, data='', text=solveur.getTextParam())
-
-		listePlot=[0,1,2,3,4]
-		timefocusedo = slice(0, 0+T)
-		filename     = prefixFig + 'SEIR1R2model_' + ''.join(map(str, listePlot)) + '.png'
-		solveur.plot_SEIR1R2(filename, '', timefocusedo, timefocusedo, plot=listePlot, data='', text=solveur.getTextParam())
+		
+		sliceedo = slice(0, 0+T)
+		
+		listePlot = [3]
+		filename  = prefixFig + 'SEIR1R2model_' + ''.join(map(str, listePlot)) + '.png'
+		solveur.plot_SEIR1R2(filename, '', sliceedo, sliceedo, plot=listePlot, data='', text=solveur.getTextParam())
+		listePlot = [1,2,3]
+		filename  = prefixFig + 'SEIR1R2model_' + ''.join(map(str, listePlot)) + '.png'
+		solveur.plot_SEIR1R2(filename, '', sliceedo, sliceedo, plot=listePlot, data='', text=solveur.getTextParam())
+		listePlot = [0,1,2,3,4]
+		filename  = prefixFig + 'SEIR1R2model_' + ''.join(map(str, listePlot)) + '.png'
+		solveur.plot_SEIR1R2(filename, '', sliceedo, sliceedo, plot=listePlot, data='', text=solveur.getTextParam())
 
 
 	# call main function
@@ -406,4 +404,3 @@ if __name__ == '__main__':
 	# if plot==True:
 		# listePlot=[1,2,3]
 	# 	solveur.plot_SEIR1R2(prefixFig+'simSEIR1R2model_pop.png', time, plot=listePlot)
-

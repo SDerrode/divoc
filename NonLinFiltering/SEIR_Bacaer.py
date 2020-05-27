@@ -42,8 +42,8 @@ class SEIR1R2_Bacaer:
 		S  = 'Model '  + self.modelShortName + ':'
 		S += '\n' + r'  $a='  + str(np.round(self.a, decimals=4)) + r', b=' + str(np.round(self.b, decimals=4)) + '$'
 		S += '\n' + r'  $c='  + str(np.round(self.c, decimals=4)) + r', f=' + str(np.round(self.f, decimals=4)) + '$'
-		# if self.c!= 0.:
-		# 	S += '\n' + r'  $R_0=' + str(np.round(self.a/self.c, decimals=2)) + '$'
+		if self.c!= 0.:
+		 	S += '\n' + r'  $R_0=' + str(np.round(self.a/self.c, decimals=2)) + '$'
 		return S
 
 	def setParam(self, N, a, b, c, f):

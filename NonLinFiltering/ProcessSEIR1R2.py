@@ -29,12 +29,15 @@ def fit(sysargv):
 		>> python3 ProcessSEIR1R2.py France,69,01 3 8 0 1 1 # Dpt 69 (Rhône) + Dpt 01 (Ain)
 		
 		argv[1] : Country (or list separeted by ','), or 'France' followed by a list of departments. Default: France 
-		argv[2] : Number of periods (1, or any number which means automatic).                        Default: 1 
+		argv[2] : Periods (1 -> 1 period ('all-in-on'), 'x!=1' -> severall periods).                 Default: 1
 		argv[3] : Shift of periods (in days).                                                        Default: 0
 		argv[4] : Compensation strategy (0/1).                                                       Default: 0
 		argv[5] : Verbose level (debug: 3, ..., almost mute: 0).                                     Default: 1
 		argv[6] : Plot graphique (0/1).                                                              Default: 1
 	"""
+
+	# Interpetation of arguments - reparation
+	######################################################@
 
 	print('Command line : ', sysargv, flush=True)
 	if len(sysargv) > 6:
@@ -54,14 +57,13 @@ def fit(sysargv):
 	FrDatabase = False
 	if listplaces[0]=='France' and len(listplaces)>1:
 		try:
-			int(listplaces[1])
+			int(listplaces[1]) #If this is a number, then it is a french dpt
 		except Exception as e:
 			FrDatabase=False
 		else:
 			FrDatabase = True
 			listplaces = listplaces[1:]
-			France     = 'France'
-	
+
 	if len(sysargv)>1: nbperiodes    = int(sysargv[1])
 	if len(sysargv)>2: decalage      = int(sysargv[2])
 	if len(sysargv)>3 and int(sysargv[3])==1: surplus = True
@@ -69,126 +71,116 @@ def fit(sysargv):
 	if len(sysargv)>5 and int(sysargv[5])==0: plot = False
 	if nbperiodes==1: decalage=0
 
-	# constante
+	# Constantes
+	######################################################@
 	fileLocalCopy    = False  # if we upload the file from the url (to get latest data) or from a local copy file
 	readStartDateStr = "2020-03-01" 
 	readStopDateStr  = None
+	recouvrement     = -1
+	dt               = 1
 
-	# Lecture des données pour connaitre le nombre de données
+	# Data reading to get first and last date available in the data set
+	######################################################@
 	if FrDatabase == True: 
 		pd_exerpt, HeadData, N, readStartDateStr, readStopDateStr = readDataFrance('69', readStartDateStr, readStopDateStr, fileLocalCopy, verbose=0)
 	else:
 		pd_exerpt, HeadData, N, readStartDateStr, readStopDateStr = readDataEurope('France', readStartDateStr, readStopDateStr, fileLocalCopy, verbose=0)
 	dataLength = pd_exerpt.shape[0]
 
-	# For the derivatives
-	data_deriv     = np.zeros(shape=(len(listplaces), dataLength))
-	moldelR1_deriv = np.zeros(shape=(len(listplaces), dataLength))
-	listepd        = []
+	readStartDate = datetime.strptime(readStartDateStr, strDate)
+	if readStartDate<pd_exerpt.index[0]:
+		readStartDate    = pd_exerpt.index[0]
+		readStartDateStr = pd_exerpt.index[0].strftime(strDate)
+	readStopDate = datetime.strptime(readStopDateStr, strDate)
+	if readStopDate<pd_exerpt.index[-1]:
+		readStopDate     = pd_exerpt.index[-1]
+		readStopDateStr  = pd_exerpt.index[-1].strftime(strDate)
+
+	dataLength = pd_exerpt.shape[0]
+	if verbose>1:
+		print('readStartDateStr=', readStartDateStr, ', readStopDateStr=', readStopDateStr)
+		print('readStartDate   =', readStartDate,    ', readStopDate   =', readStopDate)
+		#input('pause')
+
+
+
+	# Collections of data return by this function
+	modelSEIR1R2  = np.zeros(shape=(len(listplaces), dataLength, 5))
+	data_deriv    = np.zeros(shape=(len(listplaces), dataLength))
+	modelR1_deriv = np.zeros(shape=(len(listplaces), dataLength))
+	listepd       = []
+
+	# Surplus and correction from previou period
+	data_surplus   = np.zeros(shape=(dataLength))
+	data_corrected = np.zeros(shape=(dataLength))
+
+	# Paramètres sou form de chaines
+	ListeTextParam = [] 
+
+	# Loop on the place to process
 	for indexplace, place in enumerate(listplaces):
 
-		placefull = place
-		# These are the date of confinement and deconfinement + other. 
-		# See function getDates on how to add or delete dates to put the focus on
-		DatesString = getDates(place, verbose)
+		# Get the full name of the place to process, and the special dates corresponding to the place
 		if FrDatabase == True: 
-			placefull = France + '-' + place
-			DatesString = getDates(France, verbose)
+			placefull   = 'France-' + place
+			DatesString = getDates('France', verbose)
+		else:
+			placefull   = place
+			DatesString = getDates(place, verbose)
 
 		print('PROCESSING of', placefull, 'in', listplaces)
-		prefFig = './figures/Data_' + placefull
+		
 
-		# Lecture des données et copy of the observations
+		# data reading of the observations
 		#############################################################################
 		if FrDatabase == True:
 			pd_exerpt, HeadData, N, readStartDateStr, readStopDateStr = readDataFrance(place, readStartDateStr, readStopDateStr, fileLocalCopy, verbose=0)
 		else:
 			pd_exerpt, HeadData, N, readStartDateStr, readStopDateStr = readDataEurope(place, readStartDateStr, readStopDateStr, fileLocalCopy, verbose=0)
 
-		readStartDate = datetime.strptime(readStartDateStr, "%Y-%m-%d")
-		if readStartDate<pd_exerpt.index[0]:
-			readStartDate    = pd_exerpt.index[0]
-			readStartDateStr = pd_exerpt.index[0].strftime("%Y-%m-%d")
-		readStopDate = datetime.strptime(readStopDateStr, "%Y-%m-%d")
-		if readStopDate<pd_exerpt.index[-1]:
-			readStopDate    = pd_exerpt.index[-1]
-			readStopDateStr = pd_exerpt.index[-1].strftime("%Y-%m-%d")
-
-		dataLength = pd_exerpt.shape[0]
-		if verbose>1:
-			print('readStartDateStr=', readStartDateStr, ', readStopDateStr=', readStopDateStr)
-			print('readStartDate   =', readStartDate,    ', readStopDate   =', readStopDate)
-			#input('pause')
-
-		# Get the list od dates to process
-		recouvrement = -1
+		# Get the list of dates to process
 		ListDates, ListDatesStr = GetListDates(readStartDate, readStopDate, DatesString, decalage, nbperiodes, recouvrement)
 		if verbose>1:
 			print('ListDates   =', ListDates)
 			print('ListDatesStr=', ListDatesStr)
 			#input('pause')
 		
-		# Modele d'edo non lineaires
-		#############################################################################
 		# Solveur edo
-		dt      = 1
 		solveur = SolveEDO_SEIR1R2(N, dt, verbose)
 
 		# Constantes
 		prefFig = './figures/' + solveur.modele.modelShortName + '_' + placefull
 		columns = [r'$S(t)$', r'$E(t)$', r'$I(t)$', r'$R^1(t)$', r'$R^2(t)$', r'$R^2(t)=N-\sum(SEIR^1)$', r'$R(t)=R^1(t)+R^2(t)$']
-
-		# Surplus de la précédente période (nulle pour le début)
-		data_surplus   = np.zeros(shape=(dataLength))
-		data_corrected = np.zeros(shape=(dataLength))
+		E0, I0, R10, R20 = 0, 1, 0, 0
+		
+		# Remise à 0 du surplus et de la correction
+		data_surplus.fill(0.)
+		data_corrected.fill(0.)
 
 		# Boucle pour traiter successivement les différentes fenêtres
-		#############################################################################
+		###############################################################
+		
+		ListeTextParamPlace = []
+
 		for i in range(len(ListDatesStr)):
 
-			# paramètres initiaux
-			if i==0:
-				E0, I0, R10, R20 = 0, 1, 0, 0
-				# pour une seule période
-				a0, b0, c0, f0   = 0.35, 0.29, 0.075, 0.0022
-				T  = 350
+			# dates of the current period
+			fitStartDate,    fitStopDate    = ListDates[i]
+			fitStartDateStr, fitStopDateStr = ListDatesStr[i]
 
-				# pour plusieurs périodes
-				if nbperiodes!=1:
-					l, b0, c0, f0 = 0.255, 1./5.2, 1./12, 0.08
-					a0 = (l+c0)*(1.+l/b0)
-					T  = 150
-
-			if i==1:
-				_, E0, I0, R10, R20 = map(int, sol_ode[ts+dataLengthPeriod-1, :]) # Le -1 vient du fait qu'on fait un petit recouvrement
-
-				if surplus==True:
-					a0, b0, c0, f0   = 0.100, 0.18, 0.09, 0.14 # en enlevant le surplus
-				else:
-					a0, b0, c0, f0   = 0.012, 0.25, 0.073, 0.057 # sans enlever le surplus
-				T = 120
-
-			if i==2:
-				_, E0, I0, R10, R20 = map(int, sol_ode[ts+dataLengthPeriod-1, :]) # Le -1 vient du fait qu'on fait un petit recouvrement
-				_, a0, b0, c0, f0 = solveur.modele.getParam()
-				T = 50
-			
-
-			time = np.linspace(0, T-1, T)
-
-			# date 
-			fitStartDate,   fitStopDate    = ListDates[i]
-			fitStartDateStr,fitStopDateStr = ListDatesStr[i]
+			if i>0:
+				DatesString.addOtherDates(fitStartDateStr)
 
 			# Récupérations des données observées
 			dataLengthPeriod = 0
-			indMinPeriod     = getNbDaysBetweenDateFromString(readStartDateStr, fitStartDateStr)
+			indMinPeriod     = (fitStartDate-readStartDate).days
+
 			for j, z in enumerate(pd_exerpt.loc[fitStartDateStr:addDaystoStrDate(fitStopDateStr, -1), (HeadData[0])]):
 				data_corrected[indMinPeriod+j] = z - data_surplus[indMinPeriod+j]
 				dataLengthPeriod +=1
-			timefocusdata      = slice(indMinPeriod, indMinPeriod+dataLengthPeriod)
-			timefocusdataderiv = slice(timefocusdata.start+1, timefocusdata.stop)
-			if verbose>1:
+			slicedata      = slice(indMinPeriod, indMinPeriod+dataLengthPeriod)
+			slicedataderiv = slice(slicedata.start+1, slicedata.stop)
+			if verbose>0:
 				print('  dataLength      =', dataLength)
 				print('  indMinPeriod    =', indMinPeriod)
 				print('  dataLengthPeriod=', dataLengthPeriod)
@@ -197,7 +189,28 @@ def fit(sysargv):
 				#input('attente')
 
 			# Set initialisation data for the solveur
-			solveur.modele.setParam(N=N, a=a0,  b=b0,  c=c0,    f=f0)
+			############################################################################
+
+			# paramètres initiaux à optimiser
+			if i==0:
+				if nbperiodes!=1: # pour plusieurs périodes
+					l, b0, c0, f0 = 0.255, 1./5.2, 1./12, 0.08
+					a0 = (l+c0)*(1.+l/b0)
+					T  = 150
+				else: # pour une période
+					a0, b0, c0, f0  = 0.35, 0.29, 0.075, 0.0022
+					T  = 350
+
+			if i==1 or i==2:
+				R10 = int(data_corrected[indMinPeriod]) # on corrige R1 à la valeur numérique 
+				_, a0, b0, c0, f0   = solveur.modele.getParam()
+				if i == 1:
+					a0 /= 3 # le confinement réduit drastiquement a (pour aider l'optimisation) 
+				T = 120
+
+			time = np.linspace(0, T-1, T)
+
+			solveur.modele.setParam(N=N,  a=a0,  b=b0,   c=c0,    f=f0)
 			solveur.setParamInit   (N=N, E0=E0, I0=I0, R10=R10, R20=R20)
 
 			# Before optimization
@@ -205,23 +218,23 @@ def fit(sysargv):
 
 			# Solve ode avant optimization
 			sol_ode = solveur.solve_SEIR1R2(time)
-			# calcul time shift initial (ts0) with respect to data
-			ts0 = solveur.compute_tsfromEQM(data_corrected[timefocusdata], T)
+			# calcul time shift initial (ts) with respect to data
+			ts       = solveur.compute_tsfromEQM(data_corrected[slicedata], T)
+			sliceedo = slice(ts, min(ts+dataLengthPeriod, T))
 			if verbose>0:
 				print(solveur)
-				print('  ts0='+str(ts0))
+				print('  ts='+str(ts))
 			
 			# plot
 			if plot==True:
-				listePlot    = [3]
-				filename     = prefFig + '_Period' + str(i) + '_' + str(len(ListDatesStr)-1) + '_Fitinit_' + ''.join(map(str, listePlot)) + '.png'
-				timefocusedo = slice(ts0, min(ts0+dataLengthPeriod, T))
-				solveur.plot_SEIR1R2(filename, placefull, timefocusedo, timefocusdata, plot=listePlot, data=data_corrected, text=solveur.getTextParam(readStartDateStr))
+				listePlot = [3]
+				filename  = prefFig + '_Period' + str(i) + '_' + str(len(ListDatesStr)-1) + '_Fitinit_' + ''.join(map(str, listePlot)) + '.png'
+				solveur.plot_SEIR1R2(filename, placefull, sliceedo, slicedata, plot=listePlot, data=data_corrected, text=solveur.getTextParam(readStartDateStr))
 
 			# Parameters optimization
 			############################################################################
 
-			solveur.paramOptimization(data_corrected[timefocusdata], time)
+			solveur.paramOptimization(data_corrected[slicedata], time)
 			if verbose>0:
 				print('Solver''s state after optimization=', solveur)
 				_, a1, b1, c1, f1 = solveur.modele.getParam()
@@ -231,38 +244,40 @@ def fit(sysargv):
 			# After optimization
 			###############################
 			
-			# Solve equa diff apres optimization
+			# Solve ode avant optimization
 			sol_ode = solveur.solve_SEIR1R2(time)
-			# calcul time shift (ts) with respect to data
-			ts = solveur.compute_tsfromEQM(data_corrected[timefocusdata], T)
+			# calcul time shift with respect to data
+			ts            = solveur.compute_tsfromEQM(data_corrected[slicedata], T)
+			sliceedo      = slice(ts, min(ts+dataLengthPeriod, T))
+			sliceedoderiv = slice(sliceedo.start+1, sliceedo.stop)
 			if verbose>0:
 				print(solveur)
 				print('  ts='+str(ts))
 
-			timefocusedo      = slice(ts, min(ts+dataLengthPeriod, T))
-			timefocusedoderiv = slice(timefocusedo.start+1, timefocusedo.stop)
-			data_deriv_period    = (data_corrected[timefocusdataderiv] - data_corrected[timefocusdataderiv.start-1:timefocusdataderiv.stop-1 ]) / dt
-			modelR1_deriv_period = (sol_ode[timefocusedoderiv, 3]      - sol_ode       [timefocusedoderiv.start-1 :timefocusedoderiv.stop-1,3]) / dt
-			# print('len(data_deriv_period)=', len(data_deriv_period))
+			ListeTextParamPlace.append(solveur.getTextParam(readStartDateStr))
+			
+			data_deriv_period    = (data_corrected[slicedataderiv] - data_corrected[slicedataderiv.start-1:slicedataderiv.stop-1  ]) / dt
+			modelR1_deriv_period = (sol_ode[sliceedoderiv, 3]      - sol_ode       [sliceedoderiv.start-1 :sliceedoderiv.stop-1, 3]) / dt
+			# print('len(data_deriv_period)   =', len(data_deriv_period))
 			# print('len(modelR1_deriv_period)=', len(modelR1_deriv_period))
-			# input('pause')
+			#input('pause')
 
 			if plot==True:
 				titre = placefull + '- Period ' + str(i) + '\\' + str(len(ListDatesStr)-1) + ' - Shift=' + str(decalage)
 				
 				listePlot =[0,1,2,3,4]
 				filename  = prefFig + '_Period' + str(i) + '_' + str(len(ListDatesStr)-1) + '_Fit_' + ''.join(map(str, listePlot)) + '.png'
-				solveur.plot_SEIR1R2(filename, titre, timefocusedo, timefocusdata, plot=listePlot, data=data_corrected, text=solveur.getTextParam(readStartDateStr))
+				solveur.plot_SEIR1R2(filename, titre, sliceedo, slicedata, plot=listePlot, data=data_corrected, text=solveur.getTextParam(readStartDateStr))
 				listePlot =[1,2,3]
 				filename  = prefFig + '_Period' + str(i) + '_' + str(len(ListDatesStr)-1) + '_Fit_' + ''.join(map(str, listePlot)) + '.png'
-				solveur.plot_SEIR1R2(filename, titre, timefocusedo, timefocusdata, plot=listePlot, data=data_corrected, text=solveur.getTextParam(readStartDateStr))
+				solveur.plot_SEIR1R2(filename, titre, sliceedo, slicedata, plot=listePlot, data=data_corrected, text=solveur.getTextParam(readStartDateStr))
 				listePlot =[3]
 				filename  = prefFig + '_Period' + str(i) + '_' + str(len(ListDatesStr)-1) + '_Fit_' + ''.join(map(str, listePlot)) + '.png'
-				solveur.plot_SEIR1R2(filename, titre, timefocusedo, timefocusdata, plot=listePlot, data=data_corrected, text=solveur.getTextParam(readStartDateStr))
+				solveur.plot_SEIR1R2(filename, titre, sliceedo, slicedata, plot=listePlot, data=data_corrected, text=solveur.getTextParam(readStartDateStr))
 
 				# dérivée  numérique de R1
 				filename = prefFig + '_Period' + str(i) + '_' + str(len(ListDatesStr)-1) + '_Fit_3Deriv.png'
-				solveur.plot_dR1(filename, titre, timefocusedoderiv, timefocusdataderiv, data_deriv_period, text=solveur.getTextParam(readStartDateStr))
+				solveur.plot_dR1(filename, titre, sliceedoderiv, slicedataderiv, data_deriv_period, text=solveur.getTextParam(readStartDateStr))
 
 			# sol_ode_withSwitch = solveur.solve_SEIR1R2_withSwitch(T, timeswitch=ts+dataLengthPeriod)
 			# if plot==True:
@@ -270,13 +285,13 @@ def fit(sysargv):
 			#
 			#     listePlot=[0,1,2,3,4]
 			#     filename = prefFig + '_Period' + str(i) + '_' + str(len(ListDatesStr)-1) + '_Fi_withSwitch_' + ''.join(map(str, listePlot)) + '.png'
-			#     solveur.plot_SEIR1R2(filename, titre, timefocusedo, timefocusdata, plot=listePlot, data=data_corrected, text=solveur.getTextParam(readStartDateStr))
+			#     solveur.plot_SEIR1R2(filename, titre, sliceedo, slicedata, plot=listePlot, data=data_corrected, text=solveur.getTextParam(readStartDateStr))
 			#     listePlot=[1,2,3]
 			#     filename = prefFig + '_Period' + str(i) + '_' + str(len(ListDatesStr)-1) + '_Fi_withSwitch_' + ''.join(map(str, listePlot)) + '.png'
-			#     solveur.plot_SEIR1R2(filename, titre, timefocusedo, timefocusdata, plot=listePlot, data=data_corrected, text=solveur.getTextParam(readStartDateStr))
+			#     solveur.plot_SEIR1R2(filename, titre, sliceedo, slicedata, plot=listePlot, data=data_corrected, text=solveur.getTextParam(readStartDateStr))
 			#     listePlot=[3]
 			#     filename = prefFig + '_Period' + str(i) + '_' + str(len(ListDatesStr)-1) + '_Fi_withSwitch_' + ''.join(map(str, listePlot)) + '.png'
-			#     solveur.plot_SEIR1R2(filename, titre, timefocusedo, timefocusdata, plot=listePlot, data=data_corrected, text=solveur.getTextParam(readStartDateStr))
+			#     solveur.plot_SEIR1R2(filename, titre, sliceedo, slicedata, plot=listePlot, data=data_corrected, text=solveur.getTextParam(readStartDateStr))
 
 			#     begDate = addDaystoStrDate(fitStartDate, -int(ts))
 			#     #print('begDate=', begDate)
@@ -311,12 +326,35 @@ def fit(sysargv):
 			#     plt.close()
 
 			# ajout des données dérivées
-			data_deriv    [indexplace, timefocusdata.start+1:timefocusdata.stop] = data_deriv_period
-			moldelR1_deriv[indexplace, timefocusdata.start+1:timefocusdata.stop] = modelR1_deriv_period
+			# print('len(modelR1_deriv[indexplace, slicedataderiv])=', len(modelR1_deriv[indexplace, slicedataderiv]))
+			# print('len(data_deriv    [indexplace, slicedataderiv])=', len(data_deriv    [indexplace, slicedataderiv]))
+			data_deriv   [indexplace, slicedataderiv] = data_deriv_period
+			modelR1_deriv[indexplace, slicedataderiv] = modelR1_deriv_period
+
+			# ajout des SEIR1R2
+			# print(np.shape(modelSEIR1R2[indexplace, slicedata, :]))
+			# print(np.shape(sol_ode[indMinPeriod+sliceedo.start:indMinPeriod+sliceedo.stop, :]))
+			# print(slicedata.start, slicedata.stop)
+			# print(ts, ts+sliceedo.stop-sliceedo.start)
+			# print(np.shape(modelSEIR1R2[indexplace, slicedata.start:slicedata.stop, :]))
+			# print(np.shape(sol_ode))
+			# print(np.shape(sol_ode[ts:ts+sliceedo.stop-sliceedo.start, :]))
+			# input('pause')
+			modelSEIR1R2[indexplace, slicedata.start:slicedata.stop, :] = sol_ode[ts:ts+sliceedo.stop-sliceedo.start, :]
+
+			# preparation for next ietration
+			_, E0, I0, R10, R20 = map(int, sol_ode[ts+dataLengthPeriod+recouvrement, :])
 
 		listepd.append(pd_exerpt)
 
-	return listepd, data_deriv, moldelR1_deriv
+	# udpate des listes pour transmission
+	# print('ListeTextParamPlace=', ListeTextParamPlace)
+	# input('apuse')
+	ListeTextParam.append(ListeTextParamPlace)
+
+	return modelSEIR1R2, ListeTextParam, listepd, data_deriv, modelR1_deriv
+
+
 
 
 def GetListDates(readStartDate, readStopDate, DatesString, decalage, nbperiodes, recouvrement):
@@ -325,13 +363,13 @@ def GetListDates(readStartDate, readStopDate, DatesString, decalage, nbperiodes,
 	if nbperiodes!=1:
 		confin_decalage = None
 		if DatesString.listConfDates != []:
-			confin_decalage = datetime.strptime(addDaystoStrDate(DatesString.listConfDates[0], decalage), "%Y-%m-%d")
+			confin_decalage = datetime.strptime(addDaystoStrDate(DatesString.listConfDates[0], decalage), strDate)
 			if confin_decalage>ListDates[-2] and confin_decalage<ListDates[-1]:
 				ListDates.insert(-1, confin_decalage)
 		
 		deconfin_decalage = None
 		if DatesString.listDeconfDates != []:
-			deconfin_decalage = datetime.strptime(addDaystoStrDate(DatesString.listDeconfDates[0], decalage), "%Y-%m-%d")
+			deconfin_decalage = datetime.strptime(addDaystoStrDate(DatesString.listDeconfDates[0], decalage), strDate)
 			if deconfin_decalage>ListDates[-2] and deconfin_decalage<ListDates[-1]:
 				ListDates.insert(-1, deconfin_decalage)
 
@@ -348,4 +386,4 @@ def GetListDates(readStartDate, readStopDate, DatesString, decalage, nbperiodes,
 	return ListePairDates, ListePairDatesStr
 
 if __name__ == '__main__':
-	fit(sys.argv[1:])
+	modelSEIR1R2, ListeTextParam, listepd, data_deriv, modelR1_deriv = fit(sys.argv[1:])
