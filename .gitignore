@@ -1,5 +1,5 @@
 # specific to this project
-*.png
+NonLinFiltering/figures/*.png
 NonLinFiltering/testPython/
 NonLinFiltering/old/
 
