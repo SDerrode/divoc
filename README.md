@@ -68,7 +68,7 @@ You have to modify manually the parameters at the beginning of the script (chang
     
 See what happens in the _figures_ repository.
 
-     > python3 TS_adjust.py
+    > python3 TS_adjust.py
 
 The program runs _ProcessSEIR1R2.py_ for several time-shift and plot parameters (a, b, c, f, R_0) evolution according to time-shift (to be set by hand into the _ProcessSEIR1R2.py_). The program also save the EQM between the derivative of R1 data and the derivative of model's R1.
 
