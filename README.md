@@ -35,7 +35,7 @@ Here is a result of using the script _Fit.py_ when France is selected (see text 
 	> python3 PlotDataCovid.py France,69,75
 
 
-    See what kind of plots is generated in the _figures_ repository.
+See what kind of plots is generated in the _figures_ repository.
 
 
 2. Then you will be interested in running the main program in _SolveEDO_SEIR1R2.py_ by
@@ -44,7 +44,7 @@ Here is a result of using the script _Fit.py_ when France is selected (see text 
 
     Modify the parameters in the main program (at the end of the file) to get different simulations. Here is an example of the plot generated (see _figures_ repo):
 
-    ![SEIR1R2 simulation](./SEIR1R2model_01234.png "SEIR1R2 simulation")
+![SEIR1R2 simulation](./SEIR1R2model_01234.png "SEIR1R2 simulation")
 
 3. The next step is to run the script _ProcessSEIR1R2.py_. This is the main script, with (nearly) all the parameters editable by command argument:
 >
