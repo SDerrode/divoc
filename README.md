@@ -63,8 +63,10 @@ Second: You can also deals with 2 periods, where the separation is 10 days after
     > python3 Fit.py
 
 The main goal of this program is to call the previous program with its two configurations (one period or two periods of estimation), and to generate plots to compare both strategies of estimation. 
+
 You have to modify manually the parameters at the beginning of the script (change the countries or the department, change the time shift from 10 to 5 for example).
 See what happens in the _figures_ repository.
+    
     > python3 TS_adjust.py
 
 This call runs _ProcessSEIR1R2.py_ for several time-shift (to be set by hand into the _ProcessSEIR1R2.py_) and plot parameters (a, b, c, f, R_0) evolution according to time-shift in figures. The program also saves the EQM between the derivative of R1 data and the derivative of model's R1, to find the "optimal" time-shift.
