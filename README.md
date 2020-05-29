@@ -47,28 +47,27 @@ Modify the parameters in the main program (at the end of the file) to get differ
 ![SEIR1R2 simulation](./SEIR1R2model_01234.png "SEIR1R2 simulation")
 
 3. The next step is to run the script _ProcessSEIR1R2.py_. This is the main script, with (nearly) all the parameters editable by command argument:
->
+
     > python3 ProcessSEIR1R2.py France,69 1 0 0 1 1
     > python3 ProcessSEIR1R2.py Italy,Spain 2 10 0 1 1
 
-    First: the program deals with the French department 69, and try to find the parameters that best fit all the data (only one period). 
+First: the program deals with the French department 69, and try to find the parameters that best fit all the data (only one period). 
     
-    Second: You can also deals with 2 periods, where the separation is 10 days after the lock-down date of the considered countries.
+Second: You can also deals with 2 periods, where the separation is 10 days after the lock-down date of the considered countries.
 
 4. Eventually, you can run these scripts for processing several countries or French counties at one
->
+
     > python3 Fit.py
 
-    The main goal of this program is to call the previous program with its two configurations (one period or two periods of estimation), and to generate plots to compare both strategies of estimation. 
+The main goal of this program is to call the previous program with its two configurations (one period or two periods of estimation), and to generate plots to compare both strategies of estimation. 
     
-    You have to modify manually the parameters at the beginning of the script (change the countries or the department, change the time shift from 10 to 5 for example).
+You have to modify manually the parameters at the beginning of the script (change the countries or the department, change the time shift from 10 to 5 for example).
     
-    See what happens in the _figures_ repository.
->
+See what happens in the _figures_ repository.
+
     > python3 TS_adjust.py
 
-    The program runs _ProcessSEIR1R2.py_ for several time-shift and plot parameters (a, b, c, f, R_0) evolution according to time-shift (to be set by hand into the _ProcessSEIR1R2.py_). The program also save the EQM between the derivative of R1 data and the derivative of model's R1.
-
+The program runs _ProcessSEIR1R2.py_ for several time-shift and plot parameters (a, b, c, f, R_0) evolution according to time-shift (to be set by hand into the _ProcessSEIR1R2.py_). The program also save the EQM between the derivative of R1 data and the derivative of model's R1.
 
 
 ## Notebooks repository
