@@ -29,7 +29,7 @@ Here is a result of using the script _Fit.py_ when France is selected (see text 
 ### Usages
 
 1. The first script to test is the _PlotDataCovid.py_ one, which generates plots of cases and deaths for whatever country, or for whatever department of France. Typical usages are:
- >
+
 	> python3 PlotDataCovid.py Germany
 	> python3 PlotDataCovid.py France,Spain,Italy,United_Kingdom,Germany,Belgium
 	> python3 PlotDataCovid.py France,69,75
@@ -39,10 +39,10 @@ See what kind of plots is generated in the _figures_ repository.
 
 
 2. Then you will be interested in running the main program in _SolveEDO_SEIR1R2.py_ by
->
+
     > python3 SolveEDO_SEIR1R2.py
 
-    Modify the parameters in the main program (at the end of the file) to get different simulations. Here is an example of the plot generated (see _figures_ repo):
+Modify the parameters in the main program (at the end of the file) to get different simulations. Here is an example of the plot generated (see _figures_ repo):
 
 ![SEIR1R2 simulation](./SEIR1R2model_01234.png "SEIR1R2 simulation")
 
