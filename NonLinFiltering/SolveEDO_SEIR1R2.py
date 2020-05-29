@@ -48,12 +48,12 @@ class SolveEDO_SEIR1R2:
 	def getTextParam(self, startDate=None):
 		S  = self.modele.getTextParam()
 		S += '\nSolveur init:\n'# + '\n  N=' + str(self.N) + '\n  dt='+str(self.dt) \
-		S += r'  $S0=' + str(self.y0[0]) + r'$' + '\n'
-		S += '  E0=' + str(self.y0[1]) + ', I0='+str(self.y0[2]) + '\n'
-		S += r'  $R^1$0=' + str(self.y0[3]) + r', $R^2$0=' + str(self.y0[4])
+		S += r'  $S_0=' + str(self.y0[0]) + '$\n'
+		S += r'  $E_0=' + str(self.y0[1]) + r', I_0='+str(self.y0[2]) + '$\n'
+		S += r'  $R^1_0=' + str(self.y0[3]) + r', R^2_0=' + str(self.y0[4])+ '$'
 		if self.TS != -1:
 			if startDate==None:
-				S += '\n' + r'  $TS='+str(self.TS)+'$'
+				S += '\n  Time Shift=$'+str(self.TS)+'$'
 			else:
 				dateI0 = addDaystoStrDate(startDate, -self.TS)
 				S += '\n  Start date:'+dateI0

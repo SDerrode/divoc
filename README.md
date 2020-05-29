@@ -24,7 +24,7 @@ Here is a result of using the script _Fit.py_ when France is seleted (see text b
       
 - The file _SolveEDO_SEIR1R2.py_ contains a class used by programs, but it is also runnable to simulate a SEIR1R2 model (see usage below)
    
-- The files _PlotDataCovid.py_, _ProcessSEIR1R2.py_ and _Fit.py_ are runnable scripts (see usage below).
+- The files _PlotDataCovid.py_, _ProcessSEIR1R2.py_, _Fit.py_ and _TS_adjust.py_ are runnable scripts (see usage below).
 
 ###Usages
 
@@ -54,7 +54,7 @@ Here is a result of using the script _Fit.py_ when France is seleted (see text b
     
     Second: You can also deals with 2 periods, where the separation is 10 days after the lock-down date of the considered countries.
 
-4. Eventually, the last step is to run
+4. Eventually, you can run these scripts for processing several countries or French counties at one
 >
     > python3 Fit.py
 
@@ -63,6 +63,11 @@ Here is a result of using the script _Fit.py_ when France is seleted (see text b
     You have to modify manually the parameters at the beginning of the script (change the countries or the department, change the time shift from 10 to 5 for example).
     
     See what happens in the _figures_ repository.
+>
+    > python3 TS_adjust.py
+
+    The program runs _ProcessSEIR1R2.py_ for several time-shift and plot parameters (a, b, c, f, R_0) evolution according to time-shift (to be set by hand into the _ProcessSEIR1R2.py_). The program also save the EQM between the derivative of R1 data and the derivative of model's R1.
+
 
 
 ## Notebooks repository

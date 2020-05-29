@@ -18,12 +18,10 @@ def main():
     verbose       = 0
     plot          = 0
 
-    # places     = 'France,Spain,Italy,United_Kingdom,Germany,Belgium'
-    #places     = 'France,Spain,Italy,Germany'
-    places      = 'South_Korea'
-    #places     = 'United_Kingdom'
-    #places     = 'France,69,75,01'
-    #places     = 'France,69'
+    #places     = 'France,Spain,Italy,United_Kingdom,South_Korea'
+    places     = 'France'#,South_Korea'
+    # places     = 'France'
+    # places     = 'France,69,75'
     listplaces = list(places.split(','))
 
     # Detect si pays européen ou département français
@@ -43,42 +41,54 @@ def main():
     decalage   = 0 # corrigé par le recouvrement
     surplus    = 0
     modelSEIR1R2_allinone, ListeTextParamPlace_allinone, _, data_deriv_allinone, moldelR1_deriv_allinone, decalage_corrige = \
-        fitplace(places, listplaces, nbperiodes, decalage, surplus, verbose, plot, 'All-In-One')
+        fitplace(places, listplaces, nbperiodes, decalage, surplus, verbose, plot, 'All-In-One', FrDatabase)
 
-    for indexplaces in range(len(listplaces)):
-        for texte in ListeTextParamPlace_allinone[indexplaces]:
+    for indexplace in range(len(listplaces)):
+        for texte in ListeTextParamPlace_allinone[indexplace]:
             print(texte)
     
 
     # fit avec 3 périodes + décalage
     ##################################
     nbperiodes = -1
-    decalage   = 5 # corrigé par le recouvrement
+    decalage   = 9 # corrigé par le recouvrement
     surplus    = 0
     modelSEIR1R2_piecewise, ListeTextParamPlace_piecewise, listepd, data_deriv_piecewise, moldelR1_deriv_piecewise, decalage_corrige = \
-        fitplace(places, listplaces, nbperiodes, decalage, surplus, verbose, plot, 'Piecewise')
+        fitplace(places, listplaces, nbperiodes, decalage, surplus, verbose, plot, 'Piecewise', FrDatabase)
 
-    for indexplaces in range(len(listplaces)):
-        for texte in ListeTextParamPlace_piecewise[indexplaces]:
+    for indexplace in range(len(listplaces)):
+        for texte in ListeTextParamPlace_piecewise[indexplace]:
             print(texte)
 
     # Plot the two stratégies in one figure
     ##################################
-    for indexplaces in range(len(listplaces)):
-    
-        place    = listplaces[indexplaces]
+    # Plot
+    for indexplace, place in enumerate(listplaces):
+
+        # Get the full name of the place to process, and the special dates corresponding to the place
+        if FrDatabase == True: 
+            placefull   = 'France-' + place
+        else:
+            placefull   = place
+
+        # Constantes
+        import os
+        repertoire = './figures/'+ placefull
+        if not os.path.exists(repertoire):
+            os.makedirs(repertoire)
+        prefFig = repertoire + '/' + placefull
 
         # schéma 1, moins joli que le suivant
-        # filename = './figures/DiffR1_BothFitbis_' + place + '_Shift' + str(decalage_corrige) + '.png'
+        # filename = prefFig + '_DiffR1_BothFitbis_Shift' + str(decalage_corrige) + '.png'
         # title    = place + ' - Shift=' + str(decalage_corrige) + ' day(s)'
-        # PlotAll(data_deriv_allinone[indexplaces], moldelR1_deriv_allinone[indexplaces], moldelR1_deriv_piecewise[indexplaces], title, filename)
+        # PlotAll(data_deriv_allinone[indexplace], moldelR1_deriv_allinone[indexplace], moldelR1_deriv_piecewise[indexplace], title, filename)
 
         # Preparation plot pandas
-        listheader = list(listepd[indexplaces])
+        listheader = list(listepd[indexplace])
         # on ajoute les dérivées numériques des cas et des morts
-        listepd[indexplaces]['dcases']  = listepd[indexplaces][listheader[0]].diff()
-        listepd[indexplaces]['ddeaths'] = listepd[indexplaces][listheader[1]].diff()
-        longueur = len(listepd[indexplaces].loc[:, ('dcases')])
+        listepd[indexplace]['dcases']  = listepd[indexplace][listheader[0]].diff()
+        listepd[indexplace]['ddeaths'] = listepd[indexplace][listheader[1]].diff()
+        longueur = len(listepd[indexplace].loc[:, ('dcases')])
 
         if FrDatabase==True:
             DatesString = getDates('France', verbose)
@@ -86,27 +96,36 @@ def main():
             DatesString = getDates(place, verbose)
 
         # on ajoute les 4 dérivées numériques des cas et des morts
-        # listepd[indexplaces].loc[:, ('dd_allinone')] = data_deriv_allinone     [indexplaces, :]
-        listepd[indexplaces].loc[:, ('md_allinone')] = moldelR1_deriv_allinone [indexplaces, 0:longueur]
-        #listepd[indexplaces].loc[:, ('dd_piecewise')]= data_deriv_piecewise    [indexplaces, :]
-        listepd[indexplaces].loc[:, ('md_piecewise')]= moldelR1_deriv_piecewise[indexplaces, 0:longueur]
-        #print('tail=', listepd[indexplaces].tail())
+        listepd[indexplace].loc[:, ('md_piecewise')]= moldelR1_deriv_piecewise[indexplace, 0:longueur]
+        #listepd[indexplace].loc[:, ('md_allinone')] = moldelR1_deriv_allinone [indexplace, 0:longueur]
+        #print('tail=', listepd[indexplace].tail())
 
-        filename = './figures/DiffR1_BothFit_' + place + '_Shift' + str(decalage_corrige) + '.png'
+        filename = prefFig + '_DiffR1_BothFit_Shift' + str(decalage_corrige) + '.png'
         title    = place + ' - Shift=' + str(decalage_corrige) + ' day(s)'
-        PlotAllPandas(listepd[indexplaces], title, filename, y=['dcases', 'md_allinone', 'md_piecewise'], Dates=DatesString)
+        PlotAllPandas(listepd[indexplace], title, filename, y=['dcases', 'md_piecewise'], Dates=DatesString)
 
     # Plot the two SIER1R2
     ##################################
 
-    for indexplaces in range(len(listplaces)):
-    
-        place    = listplaces[indexplaces]
+    for indexplace, place in enumerate(listplaces):
+
+        # Get the full name of the place to process, and the special dates corresponding to the place
+        if FrDatabase == True: 
+            placefull   = 'France-' + place
+        else:
+            placefull   = place
+
+        # Constantes
+        import os
+        repertoire = './figures/'+ placefull
+        if not os.path.exists(repertoire):
+            os.makedirs(repertoire)
+        prefFig = repertoire + '/' + placefull
 
         # Preparation plot pandas
-        listheader = list(listepd[indexplaces])
+        listheader = list(listepd[indexplace])
         # on ajoute les dérivées numériques des cas et des morts
-        longueur = len(listepd[indexplaces].loc[:, (listheader[0])])
+        longueur = len(listepd[indexplace].loc[:, (listheader[0])])
         # print('longueur=', longueur)
 
         if FrDatabase==True:
@@ -115,25 +134,25 @@ def main():
             DatesString = getDates(place, verbose)
 
         # on ajoute les 4 dérivées numériques des cas et des morts
-        # listepd[indexplaces].loc[:, ('dd_allinone')] = data_deriv_allinone     [indexplaces, :]
-        #print(len(modelSEIR1R2_piecewise [indexplaces, :, 0]))
-        listepd[indexplaces].loc[:, ('Sp')]  = modelSEIR1R2_piecewise [indexplaces, :, 0]
-        listepd[indexplaces].loc[:, ('Ep')]  = modelSEIR1R2_piecewise [indexplaces, :, 1]
-        listepd[indexplaces].loc[:, ('Ip')]  = modelSEIR1R2_piecewise [indexplaces, :, 2]
-        listepd[indexplaces].loc[:, ('R1p')] = modelSEIR1R2_piecewise [indexplaces, :, 3]
-        listepd[indexplaces].loc[:, ('R2p')] = modelSEIR1R2_piecewise [indexplaces, :, 4]
-        # print(listepd[indexplaces].head())
+        # listepd[indexplace].loc[:, ('dd_allinone')] = data_deriv_allinone     [indexplace, :]
+        #print(len(modelSEIR1R2_piecewise [indexplace, :, 0]))
+        listepd[indexplace].loc[:, ('Sp')]  = modelSEIR1R2_piecewise [indexplace, :, 0]
+        listepd[indexplace].loc[:, ('Ep')]  = modelSEIR1R2_piecewise [indexplace, :, 1]
+        listepd[indexplace].loc[:, ('Ip')]  = modelSEIR1R2_piecewise [indexplace, :, 2]
+        listepd[indexplace].loc[:, ('R1p')] = modelSEIR1R2_piecewise [indexplace, :, 3]
+        listepd[indexplace].loc[:, ('R2p')] = modelSEIR1R2_piecewise [indexplace, :, 4]
+        # print(listepd[indexplace].head())
         # input('pause')
 
         title    = place + ' - Shift=' + str(decalage_corrige) + ' day(s)'
-        filename = './figures/EIR1_piecewise_' + place + '_Shift' + str(decalage_corrige) + '.png'
+        filename = prefFig +'_EIR1_piecewise_Shift' + str(decalage_corrige) + '.png'
         y=['Ep', 'Ip', 'R1p']
-        PlotSEIR1R2Pandas(listepd[indexplaces], title, filename, y=y, Dates=DatesString)
+        PlotSEIR1R2Pandas(listepd[indexplace], title, filename, y=y, Dates=DatesString)
 
         title    = place + ' - Shift=' + str(decalage_corrige) + ' day(s)'
-        filename = './figures/R1_piecewise_' + place + '_Shift' + str(decalage_corrige) + '.png'
+        filename = prefFig +'_R1_piecewise_Shift' + str(decalage_corrige) + '.png'
         y=['R1p']
-        PlotSEIR1R2Pandas(listepd[indexplaces], title, filename, y=y, Dates=DatesString)
+        PlotSEIR1R2Pandas(listepd[indexplace], title, filename, y=y, Dates=DatesString)
 
 
 def PlotSEIR1R2Pandas(pd, titre, filenameFig, y, Dates=None):
@@ -209,12 +228,12 @@ def PlotAllPandas(pd, titre, filenameFig, y, Dates=None):
     ax = fig.add_subplot(111, facecolor='#dddddd', axisbelow=True)
 
     # Dessin des courbes
-    linestyles = ['-','-','-']
-    markers    = ['x','','']
-    colors     = [color, 'blue', color]
-    linewidths = [0.5, 1.5, 1.5]
-    alphas     = [1.0, 0.55, 0.7]
-    labels     = [r'$\frac{\partial R^1(n)}{\partial n}$', r'$\frac{\partial R^1(t)}{\partial t}$ - All in one', r'$\frac{\partial R^1(t)}{\partial t}$ - Piecewise']
+    linestyles = ['-', '-']#, '-']
+    markers    = ['x', '']#, '']
+    colors     = [color, color]#, 'blue']
+    linewidths = [0.5, 1.5]#, 1.5]
+    alphas     = [1.0, 0.7]#, 0.55]
+    labels     = [r'$\frac{\partial R^1(n)}{\partial n}$', r'$\frac{\partial R^1(t)}{\partial t}$ - Piecewise'] #, r'$\frac{\partial R^1(t)}{\partial t}$ - All in one']
     for col, ls, lw, l, a, c, m in zip(y, linestyles, linewidths, labels, alphas, colors, markers):
         pd[col].plot(title=titre, ax=ax, ls=ls, lw=lw, label=l, alpha=a, color=c, marker=m)
  
@@ -313,18 +332,31 @@ def PlotFit(data_deriv, model_deriv, title, ch, filename):
     plt.close()
 
 
-def fitplace(places, listplaces, nbperiodes, decalage, surplus, verbose, plot, ch):
+def fitplace(places, listplaces, nbperiodes, decalage, surplus, verbose, plot, ch, FrDatabase):
 
-    modelSEIR1R2, ListeTextParamPlace, listepd, data_deriv, moldelR1_deriv, decalage_corrige = \
+    modelSEIR1R2, ListeTextParamPlace, listepd, data_deriv, moldelR1_deriv, decalage_corrige, _, _ = \
             fit([places, nbperiodes, decalage, surplus, verbose, plot])
     
     # Plot
-    for indexplaces in range(len(listplaces)):
-        place    = listplaces[indexplaces]
-        filename = './figures/DiffR1_' + place + '_' + ch + '_Shift' + str(decalage_corrige) + '.png'
+    for indexplace, place in enumerate(listplaces):
+
+        # Get the full name of the place to process, and the special dates corresponding to the place
+        if FrDatabase == True: 
+            placefull   = 'France-' + place
+        else:
+            placefull   = place
+
+        # Constantes
+        import os
+        repertoire = './figures/'+ placefull
+        if not os.path.exists(repertoire):
+            os.makedirs(repertoire)
+        prefFig = repertoire + '/' + placefull
+
+        filename = prefFig + '_DiffR1_' + ch + '_Shift' + str(decalage_corrige) + '.png'
         title    = place + ' - Shift=' + str(decalage_corrige) + ' day(s)'
-        #dataLength = listepd[indexplaces].shape[0]
-        PlotFit(data_deriv[indexplaces], moldelR1_deriv[indexplaces], title, ch, filename)
+        #dataLength = listepd[indexplace].shape[0]
+        PlotFit(data_deriv[indexplace], moldelR1_deriv[indexplace], title, ch, filename)
 
     return modelSEIR1R2, ListeTextParamPlace, listepd, data_deriv, moldelR1_deriv, decalage_corrige
 

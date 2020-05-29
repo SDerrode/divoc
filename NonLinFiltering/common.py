@@ -68,7 +68,7 @@ def getDates(country, verbose):
 	if country == 'South_Korea':
 		Dates = Covid_SpecialDates(country=country)
 		Dates.addConfDates      ('2020-02-23')
-		Dates.addDeconfDates    ('2020-05-10')
+		Dates.addDeconfDates    ('2020-05-03')
 	if country == 'United_Kingdom':
 		Dates = Covid_SpecialDates(country=country)
 		Dates.addConfDates      ('2020-03-23')
@@ -172,8 +172,11 @@ def readDataEurope(country='France', dateMinStr=None, dateMaxStr=None, fileLocal
 
 	covid_country  = covid_orig.loc[covid_orig['countriesAndTerritories'] == country]
 	covid_country1 = covid_country[['cases', 'deaths']].cumsum()
+	#print(covid_country1.head())
 	# récupération de la taille de la population
 	pop_size = int(covid_country[['popData2018']].iloc[0])
+	#print('pop_size=', pop_size)
+	#input('pause pop')
 
 	# extraction entre dateMin et dateMaxStr
 	if dateMinStr==None:

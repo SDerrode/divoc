@@ -5,6 +5,7 @@ import sys
 import numpy             as np
 import matplotlib.pyplot as plt
 from datetime          import datetime, timedelta
+from sklearn.metrics   import mean_squared_error
 
 from common            import readDataEurope, readDataFrance, getDates, Plot, addDaystoStrDate
 from common            import getLowerDateFromString, getNbDaysBetweenDateFromString
@@ -80,7 +81,7 @@ def fit(sysargv):
 	fileLocalCopy    = True  # if we upload the file from the url (to get latest data) or from a local copy file
 	readStartDateStr = "2020-02-01" #"2020-03-01" 
 	readStopDateStr  = None
-	recouvrement     = -1
+	recouvrement     = -3
 	dt               = 1
 
 	# Data reading to get first and last date available in the data set
@@ -112,7 +113,8 @@ def fit(sysargv):
 	modelSEIR1R2  = np.zeros(shape=(len(listplaces), dataLength, 5))
 	data_deriv    = np.zeros(shape=(len(listplaces), dataLength))
 	modelR1_deriv = np.zeros(shape=(len(listplaces), dataLength))
-	listepd       = []
+	Listepd            = []
+	ListetabParamModel = []
 
 	# Surplus and correction from previou period
 	data_surplus   = np.zeros(shape=(dataLength))
@@ -166,10 +168,13 @@ def fit(sysargv):
 		data_surplus.fill(0.)
 		data_corrected.fill(0.)
 
+
 		# Boucle pour traiter successivement les différentes fenêtres
 		###############################################################
 		
-		ListeTextParamPlace = []
+		ListeTextParamPlace     = []
+		ListetabParamModelPlace = []
+		ListeEQM = []
 
 		for i in range(len(ListDatesStr)):
 
@@ -244,11 +249,15 @@ def fit(sysargv):
 			############################################################################
 
 			solveur.paramOptimization(data_corrected[slicedata], time)
+			_, a1, b1, c1, f1 = solveur.modele.getParam()
+			if c1 != 0.:
+				R0=a1/c1
+			else:
+				R0 = -1.
 			if verbose>0:
 				print('Solver''s state after optimization=', solveur)
-				_, a1, b1, c1, f1 = solveur.modele.getParam()
-				print('  Reproductivité après: ', a1/c1)
-
+				if c1 != 0.:
+					print('  Reproductivité après: ', R0)
 
 			# After optimization
 			###############################
@@ -263,7 +272,9 @@ def fit(sysargv):
 				print(solveur)
 				print('  ts='+str(ts))
 
-			ListeTextParamPlace.append(solveur.getTextParam(readStartDateStr))
+			# sauvegarde des param (tableau et texte)
+			ListetabParamModelPlace.append([a1, b1, c1, f1, R0])
+			ListeTextParamPlace    .append(solveur.getTextParam(readStartDateStr))
 			
 			data_deriv_period    = (data_corrected[slicedataderiv] - data_corrected[slicedataderiv.start-1:slicedataderiv.stop-1  ]) / dt
 			modelR1_deriv_period = (sol_ode[sliceedoderiv, 3]      - sol_ode       [sliceedoderiv.start-1 :sliceedoderiv.stop-1, 3]) / dt
@@ -351,17 +362,20 @@ def fit(sysargv):
 			# input('pause')
 			modelSEIR1R2[indexplace, slicedata.start:slicedata.stop, :] = sol_ode[ts:ts+sliceedo.stop-sliceedo.start, :]
 
-			# preparation for next ietration
+			# preparation for next iteration
 			_, E0, I0, R10, R20 = map(int, sol_ode[ts+dataLengthPeriod+recouvrement, :])
 
-		listepd.append(pd_exerpt)
+		Listepd.append(pd_exerpt)
 
-	# udpate des listes pour transmission
-	# print('ListeTextParamPlace=', ListeTextParamPlace)
-	# input('apuse')
-	ListeTextParam.append(ListeTextParamPlace)
+		# calcul de l'EQM
+		EQM = mean_squared_error(data_deriv[indexplace, :], modelR1_deriv[indexplace, :])
+		ListeEQM.append(EQM)
 
-	return modelSEIR1R2, ListeTextParam, listepd, data_deriv, modelR1_deriv, decalage+recouvrement
+		# udpate des listes pour transmission
+		ListeTextParam.append(ListeTextParamPlace)
+		ListetabParamModel.append(ListetabParamModelPlace)
+
+	return modelSEIR1R2, ListeTextParam, Listepd, data_deriv, modelR1_deriv, decalage+recouvrement, ListetabParamModel, ListeEQM
 
 
 
@@ -396,4 +410,4 @@ def GetListDates(readStartDate, readStopDate, DatesString, decalage, nbperiodes,
 
 
 if __name__ == '__main__':
-	modelSEIR1R2, ListeTextParam, listepd, data_deriv, modelR1_deriv, decalage_corrige = fit(sys.argv[1:])
+	modelSEIR1R2, ListeTextParam, Listepd, data_deriv, modelR1_deriv, decalage_corrige, ListetabParamModel, ListeEQM = fit(sys.argv[1:])
