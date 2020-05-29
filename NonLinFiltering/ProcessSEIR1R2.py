@@ -7,8 +7,8 @@ import matplotlib.pyplot as plt
 from datetime          import datetime, timedelta
 from sklearn.metrics   import mean_squared_error
 
-from common            import readDataEurope, readDataFrance, getDates, Plot, addDaystoStrDate
-from common            import getLowerDateFromString, getNbDaysBetweenDateFromString
+from Common            import readDataEurope, readDataFrance, getDates, Plot, addDaystoStrDate
+from Common            import getLowerDateFromString, getNbDaysBetweenDateFromString
 from SolveEDO_SEIR1R2  import SolveEDO_SEIR1R2
 
 strDate = "%Y-%m-%d"

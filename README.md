@@ -5,34 +5,35 @@ Collection of some  Python3 scripts (and some Jupyter Notebooks) to process Covi
 <!--The programs are based on the Kalman-like filters implemented by Roger R Labbe Jr. in the [FilterPy](https://filterpy.readthedocs.io/en/latest/index.html) python module. -->
 
 
-Here is a result of using the script _Fit.py_ when France is seleted (see text below).
+Here is a result of using the script _Fit.py_ when France is selected (see text below).
 
-![Image fit France](./DiffR1_BothFit_France_Shift10.png "Result of fit for France")
+![Image fit France](./France_DiffR1_BothFit_Shift6.png "Result of fit for France")
 
 
 
 ## NonLinFiltering repository
 
-###Presentations of python files
+### Presentations of python files
 
-- The files _common.py_, _Covid_SpecialDates.py_ are for internal use:
+- The files _Common.py_, _Covid_SpecialDates.py_ are for internal use:
    
-    + *common.py*: Collection of functions for reading data on the web (or in data repository), for plotting, and many others.
+    + *Common.py*: Collection of functions for reading data on the web (or in data repository), for plotting, and many others.
     + *Covid_SpecialDates*: Class to set-up and manage special Covid dates for a country (confinement date(s), deconfinement date(s), others dates).
 
-- The file _SEIR_Bacaer.py_ is the implementation of the pandemic model by N. Bacaert (see file for exact referencing). It is use in connection with _SolveEDO_SEIR1R2.py_. One objective is to develop other models than can be easily plug-in.
+- The file _SEIR_Bacaer.py_ is the implementation of the pandemic model by N. Bacaert (see file for exact referencing). It is use in connection with _SolveEDO_SEIR1R2.py_.
       
-- The file _SolveEDO_SEIR1R2.py_ contains a class used by programs, but it is also runnable to simulate a SEIR1R2 model (see usage below)
-   
+- The file _SolveEDO_SEIR1R2.py_ contains a class used by programs to solve the EDO SIER1R2, but it is also runnable to simulate a SEIR1R2 model (see usage below).
+
 - The files _PlotDataCovid.py_, _ProcessSEIR1R2.py_, _Fit.py_ and _TS_adjust.py_ are runnable scripts (see usage below).
 
-###Usages
+### Usages
 
 1. The first script to test is the _PlotDataCovid.py_ one, which generates plots of cases and deaths for whatever country, or for whatever department of France. Typical usages are:
  >
 	> python3 PlotDataCovid.py Germany
 	> python3 PlotDataCovid.py France,Spain,Italy,United_Kingdom,Germany,Belgium
 	> python3 PlotDataCovid.py France,69,75
+
 
     See what kind of plots is generated in the _figures_ repository.
 
