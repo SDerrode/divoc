@@ -63,19 +63,16 @@ Second: You can also deals with 2 periods, where the separation is 10 days after
     > python3 Fit.py
 
 The main goal of this program is to call the previous program with its two configurations (one period or two periods of estimation), and to generate plots to compare both strategies of estimation. 
-    
 You have to modify manually the parameters at the beginning of the script (change the countries or the department, change the time shift from 10 to 5 for example).
-    
 See what happens in the _figures_ repository.
-
     > python3 TS_adjust.py
 
-The program runs _ProcessSEIR1R2.py_ for several time-shift and plot parameters (a, b, c, f, R_0) evolution according to time-shift (to be set by hand into the _ProcessSEIR1R2.py_). The program also save the EQM between the derivative of R1 data and the derivative of model's R1.
+This call runs _ProcessSEIR1R2.py_ for several time-shift (to be set by hand into the _ProcessSEIR1R2.py_) and plot parameters (a, b, c, f, R_0) evolution according to time-shift in figures. The program also saves the EQM between the derivative of R1 data and the derivative of model's R1, to find the "optimal" time-shift.
 
 
 ## Notebooks repository
 
-Only very partial notebook to read data from 2 url. Processing of the data is (for now) only available through scripts above.
+Only very partial notebook to read data from two urls. Processing of the data is (for now) only available through scripts above.
 
   - *readPlotDataGouvFr.ipynb*: Data reading from the website [data.gouv.fr](data.gouv.fr) (more specifically [these ones](https://static.data.gouv.fr/resources/donnees-hospitalieres-relatives-a-lepidemie-de-covid-19/20200327-154414/metadonnees-donnees-hospitalieres-covid19.csv)) and production of some figures for verification.
 
