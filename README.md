@@ -31,8 +31,10 @@ Here is a result of using the script _Fit.py_ when France is selected (see text 
 1. The first script to test is the _PlotDataCovid.py_ one, which generates plots of cases and deaths for whatever country, or for whatever department of France. Typical usages are:
 
 	> python3 PlotDataCovid.py Germany
+
 	> python3 PlotDataCovid.py France,Spain,Italy,United_Kingdom,Germany,Belgium
-	> python3 PlotDataCovid.py France,69,75
+	
+    > python3 PlotDataCovid.py France,69,75
 
 
 See what kind of plots is generated in the _figures_ repository.
@@ -49,6 +51,7 @@ Modify the parameters in the main program (at the end of the file) to get differ
 3. The next step is to run the script _ProcessSEIR1R2.py_. This is the main script, with (nearly) all the parameters editable by command argument:
 
     > python3 ProcessSEIR1R2.py France,69 1 0 0 1 1
+    
     > python3 ProcessSEIR1R2.py Italy,Spain 2 10 0 1 1
 
 First: the program deals with the French department 69, and try to find the parameters that best fit all the data (only one period). 
