@@ -6,7 +6,7 @@ import pandas            as pd
 import numpy             as np
 import matplotlib.pyplot as plt
 from datetime  import datetime, timedelta
-from Common    import readDataEurope, readDataFrance, getDates, PlotData, addDaystoStrDate
+from common    import readDataEurope, readDataFrance, getDates, PlotData, addDaystoStrDate
 
 # constante
 fileLocalCopy = False         # if we upload the file from the url (to get latest results) or from a local copy file

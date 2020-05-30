@@ -15,9 +15,9 @@ Here is a result of using the script _Fit.py_ when France is selected (see text 
 
 ### Presentations of python files
 
-- The files _Common.py_, _Covid_SpecialDates.py_ are for internal use:
+- The files _common.py_, _Covid_SpecialDates.py_ are for internal use:
    
-    + *Common.py*: Collection of functions for reading data on the web (or in data repository), for plotting, and many others.
+    + *common.py*: Collection of functions for reading data on the web (or in data repository), for plotting, and many others.
     + *Covid_SpecialDates*: Class to set-up and manage special Covid dates for a country (confinement date(s), deconfinement date(s), others dates).
 
 - The file _SEIR_Bacaer.py_ is the implementation of the pandemic model by N. Bacaert (see file for exact referencing). It is use in connection with _SolveEDO_SEIR1R2.py_.

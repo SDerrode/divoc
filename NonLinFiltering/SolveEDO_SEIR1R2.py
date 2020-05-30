@@ -13,7 +13,7 @@ from scipy           import signal
 from sklearn.metrics import mean_squared_error
 
 from SEIR_Bacaer     import SEIR1R2_Bacaer
-from Common          import addDaystoStrDate
+from common          import addDaystoStrDate
 
 dpi     = 150    # plot resolution of saved figures
 figsize = (8, 4) # figure's size (width, height)
