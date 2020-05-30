@@ -5,13 +5,14 @@ import numpy         as np
 from datetime        import datetime as dt
 from dateutil.parser import parse
 
+
 class Covid_SpecialDates:
 
 	def __init__(self, country):
 
 		self.country = country
 
-		# Empty list of dates
+		# Empty lists of dates
 		self.listConfDates   = []
 		self.listDeconfDates = []
 		self.listOtherDates  = []
