@@ -69,12 +69,12 @@ See what happens in the _figures_ repository.
     
     > python3 TS_adjust.py
 
-This call runs _ProcessSEIR1R2.py_ for several time-shift (to be set by hand into the _ProcessSEIR1R2.py_) and plot parameters (a, b, c, f, R_0) evolution according to time-shift in figures. The program also saves the EQM between the derivative of R1 data and the derivative of model's R1, to find the "optimal" time-shift.
+This call runs _ProcessSEIR1R2.py_ for several time-shift (the range of values must be set by hand in the _ProcessSEIR1R2.py_ file) and plot parameters (a, b, c, f, R_0) evolution according to time-shift in figures. The program also saves the EQM between the derivative of R1 data and the derivative of model's R1, to find the "optimal" time-shift.
 
 
 ## Notebooks repository
 
-Only very partial notebook to read data from two urls. Processing of the data is (for now) only available through scripts above.
+Only very partial notebooks to read data from two urls. Processing of the data is (for now) only available through scripts above.
 
   - *readPlotDataGouvFr.ipynb*: Data reading from the website [data.gouv.fr](data.gouv.fr) (more specifically [these ones](https://static.data.gouv.fr/resources/donnees-hospitalieres-relatives-a-lepidemie-de-covid-19/20200327-154414/metadonnees-donnees-hospitalieres-covid19.csv)) and production of some figures for verification.
 
