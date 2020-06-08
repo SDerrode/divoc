@@ -10,8 +10,9 @@ from sklearn.metrics import mean_squared_error
 from datetime           import datetime, timedelta
 from Covid_SpecialDates import Covid_SpecialDates
 
-dpi           = 150    # plot resolution of saved figures
+dpi           = 120    # plot resolution of saved figures
 figsize       = (8, 4) # figure's size (width, height)
+strDate       = "%Y-%m-%d"
 
 def getMaxEQM(sol_edo_R1, data, T):
 	dataLength = len(data)
@@ -50,7 +51,7 @@ def getDates(country, verbose):
 	Dates = None
 	if country == 'France':
 		Dates = Covid_SpecialDates(country=country)
-		Dates.addConfDates      ('2020-03-16')
+		Dates.addConfDates      ('2020-03-17')
 		Dates.addDeconfDates    ('2020-05-11')
 		#Dates.setListOtherDates(['2020-03-06'])
 	if country == 'Germany':
@@ -82,6 +83,35 @@ def getDates(country, verbose):
 		print(Dates)
 	
 	return Dates
+
+
+def GetPairListDates(readStartDate, readStopDate, DatesString, decalage, nbperiodes, recouvrement):
+
+	ListDates = [readStartDate, readStopDate]
+	if nbperiodes!=1:
+		confin_decalage = None
+		if DatesString.listConfDates != []:
+			confin_decalage = datetime.strptime(addDaystoStrDate(DatesString.listConfDates[0], decalage), strDate)
+			if confin_decalage>ListDates[-2] and confin_decalage<ListDates[-1]:
+				ListDates.insert(-1, confin_decalage)
+		
+		deconfin_decalage = None
+		if DatesString.listDeconfDates != []:
+			deconfin_decalage = datetime.strptime(addDaystoStrDate(DatesString.listDeconfDates[0], decalage), strDate)
+			if deconfin_decalage>ListDates[-2] and deconfin_decalage<ListDates[-1]:
+				ListDates.insert(-1, deconfin_decalage)
+
+	ListePairDates = []
+	for i in range(len(ListDates)-1):
+		if i>0:
+			ListePairDates.append((ListDates[i]+timedelta(recouvrement), ListDates[i+1]))
+		else:
+			ListePairDates.append((ListDates[i], ListDates[i+1]))
+
+	# Conversion date chaine
+	ListePairDatesStr = [(date1.strftime(strDate), date2.strftime(strDate)) for date1, date2 in ListePairDates]
+	
+	return ListePairDates, ListePairDatesStr
 
 def readDataFrance(place='69', dateMinStr=None, dateMaxStr=None, fileLocalCopy=False, verbose=0):
 	'''

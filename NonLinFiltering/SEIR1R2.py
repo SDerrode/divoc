@@ -5,7 +5,7 @@ import numpy as np
 from scipy.integrate import odeint
 import matplotlib.pyplot as plt
 
-class SEIR1R2_Bacaer:
+class SEIR1R2:
 	''' Modèle SEIR1R2 du papier suivant 
 		"Un modèle mathématique des débuts de l'épidémie de coronavirus en France", Nicolas Bacaër
 	'''
@@ -63,7 +63,7 @@ class SEIR1R2_Bacaer:
 	def getParam(self):
 		return (self.N, self.a, self.b, self.c, self.f)
 
-	def h_bacaer(self, x):
+	def h(self, x):
 		return x[[3]] # on renvoie R1 (4ieme élément dans le vecteur SEIR1R2)
 
 	# The SEIR1R2 model differential equations.
@@ -82,8 +82,7 @@ class SEIR1R2_Bacaer:
 		if indice == 2: return r'$I(t)$'
 		if indice == 3: return r'$R^1(t)$'
 		if indice == 4: return r'$R^2(t)$'
-		print('PB getString - indice =', indice, ' does not exist!')
-		exit(1)
+		return indice
 
 	def getColor(self, indice):
 		if indice >= 0 and indice<5: return self.colorCycle[indice]
@@ -96,10 +95,9 @@ class SEIR1R2_Bacaer:
 		if string == r'$I(t)$'  : return self.colorCycle[2] 
 		if string == r'$R^1(t)$': return self.colorCycle[3] 
 		if string == r'$R^2(t)$': return self.colorCycle[4] 
+		return string
 
-		return 'black'
-
-	def f_bacaer(self, x, dt):
+	def f(self, x, dt):
 		'''State transition function for Bacaer's model SEIR1R2'''
 
 		# petite normalisation pour véiter des dérives

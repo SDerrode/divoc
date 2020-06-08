@@ -12,14 +12,14 @@ from lmfit           import minimize, Parameters, Parameter, report_fit
 from sklearn.metrics import mean_squared_error
 
 from SolveEDO        import SolveEDO
-from SEIR1R2         import SEIR1R2
+from SEIR1R2F        import SEIR1R2F
 from common          import addDaystoStrDate
 
 dpi     = 120    # plot resolution of saved figures
 figsize = (8, 4) # figure's size (width, height)
 
 
-class SolveEDO_SEIR1R2(SolveEDO):
+class SolveEDO_SEIR1R2F(SolveEDO):
 
 	def __init__(self, N, dt=1, verbose=1):
 
@@ -27,18 +27,18 @@ class SolveEDO_SEIR1R2(SolveEDO):
 		super().__init__(N, dt, verbose)
 
 		# Initial number of infected and recovered individuals, I0 and R0.
-		E0, I0, R10, R20 = 0, 13, 0, 0
+		E0, I0, R10, R20, F0 = 0, 13, 0, 0, 0
 		# Everyone else, S0, is susceptible to infection initially.
-		S0 = self.N - E0 - I0 - R10 - R20
+		S0 = self.N - E0 - I0 - R10 - R20 - F0
 		# Initial conditions vector
-		self.y0 = S0, E0, I0, R10, R20
+		self.y0 = S0, E0, I0, R10, R20, F0
 		self.nbparam = len(self.y0)
 
 		# Modèle d'eq. diff non linéaires
-		self.modele = SEIR1R2(self.N, dt=dt)
+		self.modele = SEIR1R2F(self.N, dt=self.dt)
 		
 	def __str__(self):
-		S  = 'Solveur:\n  N=' + str(self.N) + '\n  dt='+str(self.dt) + '\n  y0='+ str(self.y0) + '\n  TS='+ str(self.TS) + '\n'
+		S = 'Solveur:\n  N=' + str(self.N) + '\n  dt='+str(self.dt) + '\n  y0='+ str(self.y0) + '\n  TS='+ str(self.TS) + '\n'
 		S = self.modele.__str__()
 		return S
 
@@ -48,6 +48,7 @@ class SolveEDO_SEIR1R2(SolveEDO):
 		S += r'  $S_0=' + str(self.y0[0]) + '$\n'
 		S += r'  $E_0=' + str(self.y0[1]) + r', I_0='+str(self.y0[2]) + '$\n'
 		S += r'  $R^1_0=' + str(self.y0[3]) + r', R^2_0=' + str(self.y0[4])+ '$'
+		S += r'  $F_0=' + str(self.y0[5]) + '$'
 		if self.TS != -1:
 			if startDate==None:
 				S += '\n  Time Shift=$'+str(self.TS)+'$'
@@ -59,16 +60,16 @@ class SolveEDO_SEIR1R2(SolveEDO):
 	def setN(self, N):
 		self.N = N
 		# MAJ des autres paramètres en conséquence
-		_, E0, I0, R10, R20 = self.y0
-		S0 = self.N - E0 - I0 - R10 - R20
-		self.y0 = S0, E0, I0, R10, R20
+		_, E0, I0, R10, R20, F0 = self.y0
+		S0 = self.N - E0 - I0 - R10 - R20 - F0
+		self.y0 = S0, E0, I0, R10, R20, F0
 		# MAJ de N dans le modele
 		self.modele.setN(self.N)
 
-	def setParamInit(self, N, E0, I0, R10, R20):
+	def setParamInit(self, N, E0, I0, R10, R20, F0):
 		self.N = N
-		S0 = N - E0 - I0 - R10 - R20
-		self.y0 = S0, E0, I0, R10, R20
+		S0 = N - E0 - I0 - R10 - R20 - F0
+		self.y0 = S0, E0, I0, R10, R20, F0
 		# MAJ de N dans le modele
 		self.modele.setN(self.N)
 
@@ -76,8 +77,8 @@ class SolveEDO_SEIR1R2(SolveEDO):
 	def paramOptimization(self, data, time, ts=None):
 
 		# set parameters including bounds; you can also fix parameters (use vary=False)
-		S0, E0, I0, R10, R20 = self.y0 
-		_, a0, b0, c0, f0    = self.modele.getParam()
+		S0, E0, I0, R10, R20, F0     = self.y0 
+		_, a0, b0, c0, f0, muI0, xi0 = self.modele.getParam()
 
 		params = Parameters()
 		params.add('N',   value=self.N,  vary=False)
@@ -85,36 +86,30 @@ class SolveEDO_SEIR1R2(SolveEDO):
 		params.add('I0',  value=I0,      vary=False) #True, min=0 , max=2000)
 		params.add('R10', value=R10,     vary=False) #True, min=0 , max=2000)
 		params.add('R20', value=R20,     vary=False) #True, min=0 , max=2000)
-		# params.add('a',   value=a0,      vary=True, min=0.0001, max=0.85) 
-		# params.add('b',   value=b0,      vary=True, min=0.100, max=0.6) 
-		# params.add('c',   value=c0,      vary=True, min=0.010, max=0.2) 
-		# params.add('f',   value=f0,      vary=True, min=0.001, max=0.4)
-
+		params.add('F0',  value=F0,     vary=False) #True, min=0 , max=2000)
+		
 		params.add('a',   value=a0,      vary=True, min=0.0, max=0.99) 
 		params.add('b',   value=b0,      vary=True, min=0.0, max=0.99) 
 		params.add('c',   value=c0,      vary=True, min=0.0, max=0.99) 
 		params.add('f',   value=f0,      vary=True, min=0.0, max=0.99)
-
+		params.add('muI', value=muI0,    vary=True, min=0.00001, max=0.01)
+		params.add('xi',  value=xi0,     vary=False)
+		
 		if ts != None:
 			params.add('ts',  value=ts, vary=False)
 		else:
 			params.add('ts',  value=self.TS, vary=True, min=0, max=len(time)-np.shape(data)[0]-2)
 		
-		# params.add('a',   value=a0,      vary=True, min=0.3*a0, max=1./0.3*a0)
-		# params.add('b',   value=b0,      vary=True, min=0.5*b0, max=1./0.5*b0)
-		# params.add('c',   value=c0,      vary=True, min=0.5*c0, max=1./0.5*c0)
-		# params.add('f',   value=f0,      vary=True, min=0.4*f0, max=1./0.4*f0)
-		
 		# fit model
-		result = minimize(residual, params, args=(time, data, self), method='powell') #powell, least_squares, bfgs, emcee
+		result = minimize(residual, params, args=(time, data, self), method='powell') #powell, least_squares
 		if self.verbose>0:
 			result.params.pretty_print()
 			# display fitted statistics
 			report_fit(result)
 
 		# Update params with the optimized values
-		self.setParamInit(result.params['N'].value, result.params['E0'].value, result.params['I0'].value, result.params['R10'].value, result.params['R20'].value)
-		self.modele.setParam(result.params['N'].value, result.params['a'].value, result.params['b'].value, result.params['c'].value, result.params['f'].value)
+		self.setParamInit(result.params['N'].value, result.params['E0'].value, result.params['I0'].value, result.params['R10'].value, result.params['R20'].value, result.params['F0'].value)
+		self.modele.setParam(result.params['N'].value, result.params['a'].value, result.params['b'].value, result.params['c'].value, result.params['f'].value, result.params['muI'].value, result.params['xi'].value)
 		self.TS = result.params['ts'].value
 
 
@@ -123,8 +118,11 @@ def residual(paras, t, data, solveur):
 	compute the residual between actual data and fitted data
 	"""
 
-	solveur.setParamInit(paras['N'].value, paras['E0'].value, paras['I0'].value, paras['R10'].value, paras['R20'].value)
-	solveur.modele.setParam(paras['N'].value, paras['a'].value, paras['b'].value, paras['c'].value, paras['f'].value)
+	# print('current value', paras['E0'].value, paras['I0'].value, paras['R10'].value, paras['R20'].value, ' -- ', paras['a'].value, paras['b'].value, paras['c'].value, paras['f'].value)
+	# print('current ts', int(paras['ts'].value))
+	
+	solveur.setParamInit(paras['N'].value, paras['E0'].value, paras['I0'].value, paras['R10'].value, paras['R20'].value, paras['F0'].value)
+	solveur.modele.setParam(paras['N'].value, paras['a'].value, paras['b'].value, paras['c'].value, paras['f'].value, paras['muI'].value, paras['xi'].value)
 	model = solveur.solveEDO(t)
 
 	# Only R1 to calculate the residual
@@ -155,7 +153,7 @@ if __name__ == '__main__':
 
 	# Constantes
 	import os
-	repertoire = './figures/simul/simulSEIR1R2'
+	repertoire = './figures/simul/simulSEIR1R2F'
 	if not os.path.exists(repertoire):
 		os.makedirs(repertoire)
 	prefFig = repertoire + '/'
@@ -165,17 +163,16 @@ if __name__ == '__main__':
 	plot    = True
 	N       = 66987244 # Population de la France
 	dt      = 1
-	solveur = SolveEDO_SEIR1R2(N, dt, verbose)
+	solveur = SolveEDO_SEIR1R2F(N, dt, verbose)
 	if verbose>0:
 		print(solveur)
 
 	# MAJ des parametres
-	
-	E0, I0, R10, R20 = 0, 1, 0, 0
-	a, b, c, f       = 0.11, 0.24, 0.060, 0.20
+	E0, I0, R10, R20, F0 = 0, 1, 0, 0, 0
+	a, b, c, f, muI, xi  = 0.11, 0.24, 0.060, 0.05, 0.001, 0.0
 
-	solveur.setParamInit   (N=N, E0=E0, I0=I0, R10=R10, R20=R20)
-	solveur.modele.setParam(N=N,  a=a,   b=b,    c=c,     f=f)
+	solveur.setParamInit   (N=N, E0=E0, I0=I0, R10=R10, R20=R20,  F0=F0)
+	solveur.modele.setParam(N=N,  a=a,   b=b,    c=c,     f=f  , muI=muI, xi=xi)
 
 	# integration time grid
 	T    = 750
@@ -188,26 +185,12 @@ if __name__ == '__main__':
 		
 		sliceedo = slice(0, 0+T)
 		
-		listePlot = [3]
-		filename  = prefFig + 'SEIR1R2model_' + ''.join(map(str, listePlot)) + '.png'
+		listePlot = [3,5]
+		filename  = prefFig + 'SEIRFmodel_' + ''.join(map(str, listePlot)) + '.png'
 		solveur.plotEDO(filename, '', sliceedo, sliceedo, plot=listePlot, data='', text=solveur.getTextParam())
-		listePlot = [1,2,3]
-		filename  = prefFig + 'SEIR1R2model_' + ''.join(map(str, listePlot)) + '.png'
+		listePlot = [1,2,3,5]
+		filename  = prefFig + 'SEIRFmodel_' + ''.join(map(str, listePlot)) + '.png'
 		solveur.plotEDO(filename, '', sliceedo, sliceedo, plot=listePlot, data='', text=solveur.getTextParam())
-		listePlot = [0,1,2,3,4]
-		filename  = prefFig + 'SEIR1R2model_' + ''.join(map(str, listePlot)) + '.png'
+		listePlot = [0,1,2,3,4,5]
+		filename  = prefFig + 'SEIRFmodel_' + ''.join(map(str, listePlot)) + '.png'
 		solveur.plotEDO(filename, '', sliceedo, sliceedo, plot=listePlot, data='', text=solveur.getTextParam())
-
-
-	# call main function
-	# solveur.solveEDO_withSwitch(T, xx)
-	# if plot==True:
-	#	solveur.plotEDO(prefFig+'simSEIR1R2model_bis.png', time)
-
-	# Simulateur to get the theoretical behavior
-	########################################################################
-	# solveur.simulEDO(T)
-	# istePlot=[1,2,3]
-	# if plot==True:
-		# listePlot=[1,2,3]
-	# 	solveur.plotEDO(prefFig+'simSEIR1R2model_pop.png', time, plot=listePlot)

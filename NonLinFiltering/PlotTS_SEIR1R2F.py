@@ -8,10 +8,10 @@ import matplotlib.pyplot as plt
 from matplotlib.ticker import MaxNLocator
 from datetime          import datetime, timedelta
   
-from common           import getDates, Plot, addDaystoStrDate, get_WE_indice, drawAnnotation
-from common           import getLowerDateFromString, getNbDaysBetweenDateFromString
-from ProcessSEIR1R2   import fit
-from SolveEDO_SEIR1R2 import SolveEDO_SEIR1R2
+from common            import getDates, Plot, addDaystoStrDate, get_WE_indice, drawAnnotation
+from common            import getLowerDateFromString, getNbDaysBetweenDateFromString
+from ProcessSEIR1R2F   import fit
+from SolveEDO_SEIR1R2F import SolveEDO_SEIR1R2F
 
 dpi     = 120    # plot resolution of saved figures
 figsize = (8, 4) # figure's size (width, height)
@@ -24,7 +24,7 @@ def main():
     #places     = 'France,Spain,Italy,United_Kingdom,Germany,Belgium'
     #places     = 'France,Spain,Italy,Germany'
     #places     = 'France,69,75,01'
-    places     = 'Italy'#,South_Korea'
+    places     = 'France'#,South_Korea'
     listplaces = list(places.split(','))
 
     # Detect si pays européen ou département français
@@ -48,7 +48,7 @@ def main():
     TAB_param_model      = []
     TAB_ListeEQM         = []
     
-    decalagemini, decalagemaxi = 4,14 #1, 11
+    decalagemini, decalagemaxi = 5, 14
     for decalage in range(decalagemini, decalagemaxi):
 
         print('TIME-SHIFT', str(decalage), 'OVER', str(decalagemaxi))
@@ -72,14 +72,14 @@ def main():
 
         # Constantes
         import os
-        repertoire = './figures/'+ placefull
+        repertoire = './figures/SEIR1R2F/'+ placefull
         if not os.path.exists(repertoire):
             os.makedirs(repertoire)
         prefFig = repertoire + '/' + placefull
 
         nbperiodes = len(TAB_param_model[0][indexplace][:])
         X = np.linspace(decalagemini, decalagemaxi-1, decalagemaxi-decalagemini)
-        labelsparam  = [r'$a$', r'$b$', r'$c$', r'$f$', r'$R_O$']
+        labelsparam  = [r'$a$', r'$b$', r'$c$', r'$f$', r'$f\mu_I$', r'$\xi$', r'$R_O$']
         labelsperiod = ['Period 1', 'Period 2', 'Period 3']
 
         # plot pour les 3 périodes
@@ -87,16 +87,16 @@ def main():
         Y1 = np.zeros(shape=(decalagemaxi-decalagemini, len(labelsparam)))
         for period in range(nbperiodes):
 
+            for decalage in range(decalagemaxi-decalagemini):
                 try:
                     Y1[decalage, :] = TAB_param_model[decalage][indexplace][period][:]
                 except IndexError:
                     Y1[decalage, :] = 0.
-                
 
-            titre    = placefull + ' - SEIR1R2 parameters evolution for ' + labelsperiod[period]
+            titre    = placefull + ' - SEIR1R2F parameters evolution for ' + labelsperiod[period]
             filename = prefFig   + '_ParamEvol_Period' + str(period) + '_abcd.png'
             plotData(TAB_decalage_corrige, Y1[:, :-1], titre, filename, labelsparam[:-1])
-            titre    = placefull + ' - SEIR1R2 parameters evolution for ' + labelsperiod[period]
+            titre    = placefull + ' - SEIR1R2F parameters evolution for ' + labelsperiod[period]
             filename = prefFig   + '_ParamEvol_Period' + str(period) + '_R0.png'
             plotData(TAB_decalage_corrige, Y1[:, -1].reshape(decalagemaxi-decalagemini, 1), titre, filename, [labelsparam[-1]])
 
@@ -111,9 +111,14 @@ def main():
                         Y2[decalage, period] = TAB_param_model[decalage][indexplace][period][param]
                     except IndexError:
                         Y2[decalage, period] = 0.
-            titre    = placefull + ' - SEIR1R2 periods evolution for param ' + labelsparam[param]
+            titre    = placefull + ' - SEIR1R2F periods evolution for param ' + labelsparam[param]
             filename = prefFig   + '_PeriodEvol_Param' + labelsparam[param] + '.png'
             plotData(TAB_decalage_corrige, Y2, titre, filename, labelsperiod)
+
+            print('Param : ', labelsparam[param])
+            for period in range(len(labelsperiod)):
+                print('  -->Period : ', labelsperiod[period])
+                print(Y2[:, period])
 
         # plot de l'EQM
         ##########################################
@@ -143,8 +148,8 @@ def main():
         #plt.ylim([0, 1.0])
 
         # ajout d'un text d'annotation
-        plt.title(placefull + ' - SEIR1R2, EQM on the number of detected cases' )
-        plt.savefig(prefFig + '_EQM_Deriv.png', dpi=dpi)
+        plt.title(placefull + ' - SEIR1R2F, EQM on the number of detected cases' )
+        plt.savefig(prefFig + '_EQM_Deriv_SEIR1R2F.png', dpi=dpi)
         plt.close()
 
 

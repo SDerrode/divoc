@@ -88,6 +88,8 @@ if __name__ == '__main__':
         else:
             pd_exerpt, HeadData, N, readStartDateStr, readStopDateStr = readDataEurope(place, readStartDateStr, readStopDateStr, fileLocalCopy, verbose=0)
 
+
+
         readStartDate = datetime.strptime(readStartDateStr, "%Y-%m-%d")
         readStopDate  = datetime.strptime(readStopDateStr,  "%Y-%m-%d")
         dataLength = pd_exerpt.shape[0]
@@ -104,7 +106,7 @@ if __name__ == '__main__':
         # print('HeadData=', HeadData)
         # print('liste=', list(pd_exerpt))
 
-        PlotData(pd_exerpt, titre=placefull, filenameFig=prefFig+'_'    +HeadData[0]+'.png', y=HeadData[0],        color='green', Dates=DatesString)
-        PlotData(pd_exerpt, titre=placefull, filenameFig=prefFig+'_'    +HeadData[1]+'.png', y=HeadData[1],        color='red',   Dates=DatesString)
-        PlotData(pd_exerpt, titre=placefull, filenameFig=prefFig+'_Diff'+HeadData[0]+'.png', y=['Instant cases'],  color='green', Dates=DatesString)
-        PlotData(pd_exerpt, titre=placefull, filenameFig=prefFig+'_Diff'+HeadData[1]+'.png', y=['Instant deaths'], color='red',   Dates=DatesString)
+        PlotData(pd_exerpt, titre=placefull, filenameFig=prefFig+'_'    +HeadData[0]+'.png', y=HeadData[0],        color='red', Dates=DatesString)
+        PlotData(pd_exerpt, titre=placefull, filenameFig=prefFig+'_'    +HeadData[1]+'.png', y=HeadData[1],        color='black',   Dates=DatesString)
+        PlotData(pd_exerpt, titre=placefull, filenameFig=prefFig+'_Diff'+HeadData[0]+'.png', y=['Instant cases'],  color='red', Dates=DatesString)
+        PlotData(pd_exerpt, titre=placefull, filenameFig=prefFig+'_Diff'+HeadData[1]+'.png', y=['Instant deaths'], color='black',   Dates=DatesString)
