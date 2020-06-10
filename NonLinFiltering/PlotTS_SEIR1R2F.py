@@ -23,7 +23,7 @@ def main():
 
     #places     = 'France,Spain,Italy,United_Kingdom,Germany,Belgium'
     #places     = 'France,Spain,Italy,Germany'
-    #places     = 'France,69,75,01'
+    #places     = 'France ,69,75,01'
     places     = 'France'#,South_Korea'
     listplaces = list(places.split(','))
 

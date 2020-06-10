@@ -106,7 +106,7 @@ class SolveEDO_SEIR1R2(SolveEDO):
 		# params.add('f',   value=f0,      vary=True, min=0.4*f0, max=1./0.4*f0)
 		
 		# fit model
-		result = minimize(residual, params, args=(time, data, self), method='powell') #powell, least_squares, bfgs, emcee
+		result = minimize(residual, params, args=(time, data, self), method='powell') #powell, least_squares, bfgs, emcee, leastsq
 		if self.verbose>0:
 			result.params.pretty_print()
 			# display fitted statistics

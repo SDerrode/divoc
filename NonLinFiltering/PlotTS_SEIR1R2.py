@@ -23,8 +23,8 @@ def main():
 
     #places     = 'France,Spain,Italy,United_Kingdom,Germany,Belgium'
     #places     = 'France,Spain,Italy,Germany'
-    #places     = 'France,69,75,01'
-    places     = 'France'#,South_Korea'
+    places     = 'France,69'
+    #places     = 'Germany'#,South_Korea'
     listplaces = list(places.split(','))
 
     # Detect si pays européen ou département français
@@ -48,7 +48,7 @@ def main():
     TAB_param_model      = []
     TAB_ListeEQM         = []
     
-    decalagemini, decalagemaxi = 5, 14
+    decalagemini, decalagemaxi = 7, 22
     for decalage in range(decalagemini, decalagemaxi):
 
         print('TIME-SHIFT', str(decalage), 'OVER', str(decalagemaxi))
