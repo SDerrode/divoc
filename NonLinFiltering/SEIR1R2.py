@@ -63,9 +63,6 @@ class SEIR1R2:
 	def getParam(self):
 		return (self.N, self.a, self.b, self.c, self.f)
 
-	def h(self, x):
-		return x[[3]] # on renvoie R1 (4ieme élément dans le vecteur SEIR1R2)
-
 	# The SEIR1R2 model differential equations.
 	def deriv(self, y, t, N, a, b, c, f):
 	    S, E, I, R1, R2 = y
@@ -97,10 +94,13 @@ class SEIR1R2:
 		if string == r'$R^2(t)$': return self.colorCycle[4] 
 		return string
 
-	def f(self, x, dt):
+	def fx(self, x, dt):
 		'''State transition function for Bacaer's model SEIR1R2'''
 
-		# petite normalisation pour véiter des dérives
+		# petite normalisation pour éviter des dérives
 		x /= abs(np.sum(x))/self.N
 		ret = odeint(self.deriv, x, [0, dt], args=self.getParam())
 		return ret.T[:, -1]
+
+	def hx(self, x):
+		return x[[3]] # on renvoie R1 (4ieme élément dans le vecteur SEIR1R2)

@@ -110,14 +110,14 @@ def fit(sysargv):
 
 	# Collections of data return by this function
 	modelSEIR1R2  = np.zeros(shape=(len(listplaces), dataLength, 5))
-	data_deriv    = np.zeros(shape=(len(listplaces), dataLength, len(indexdata))) # '1' is for R1 data
-	modelR1_deriv = np.zeros(shape=(len(listplaces), dataLength, len(indexdata))) # '1' is for R1 data
+	data_deriv    = np.zeros(shape=(len(listplaces), dataLength, len(indexdata)))
+	modelR1_deriv = np.zeros(shape=(len(listplaces), dataLength, len(indexdata)))
 	Listepd            = []
 	ListetabParamModel = []
 
 	# Surplus and correction from previou period
-	data_surplus   = np.zeros(shape=(dataLength, len(indexdata))) # '1' is for R1 data
-	data_corrected = np.zeros(shape=(dataLength, len(indexdata))) # '1' is for R1 data
+	data_surplus   = np.zeros(shape=(dataLength, len(indexdata))) 
+	data_corrected = np.zeros(shape=(dataLength, len(indexdata)))
 
 	# Paramètres sous forme de chaines de caractères
 	ListeTextParam = [] 
@@ -157,7 +157,7 @@ def fit(sysargv):
 
 		# Constantes
 		import os
-		repertoire = './figures/SEIR1R2/'+ placefull
+		repertoire = './figures/SEIR1R2/' + placefull
 		if not os.path.exists(repertoire):
 			os.makedirs(repertoire)
 		prefFig = repertoire + '/' + solveur.modele.modelShortName + '_' + placefull
@@ -214,7 +214,7 @@ def fit(sysargv):
 				else: # pour une période
 					#a0, b0, c0, f0  = 0.35, 0.29, 0.075, 0.0022
 					a0, b0, c0, f0  = 0.10, 0.29, 0.10, 0.0022
-					T  = 350
+					T = 350
 
 			if i==1 or i==2:
 				R10 = int(data_corrected[indMinPeriod, 0]) # on corrige R1 à la valeur numérique 

@@ -185,9 +185,6 @@ def readDataEurope(country='France', dateMinStr=None, dateMaxStr=None, fileLocal
 		url="https://opendata.ecdc.europa.eu/covid19/casedistribution/csv"
 		covid_orig=pd.read_csv(url, sep=',', parse_dates=[0], dayfirst=True)
 
-	# Il manque des données de la date 2020-05-14 pour tous les départements
-
-
 	#covid_orig.dtypes
 	observ_label = ['cases', 'deaths']
 	covid_orig.set_index('dateRep', inplace=True)
@@ -198,16 +195,17 @@ def readDataEurope(country='France', dateMinStr=None, dateMaxStr=None, fileLocal
 
 	covid_orig.drop(columns=['day', 'year', 'month', 'geoId', 'countryterritoryCode'], inplace=True)
 	if verbose>1:
-		print(covid_orig.head())
+		print('covid_orig.head()=', covid_orig.head())
+		print('country=', country)
 
-	covid_country  = covid_orig.loc[covid_orig['countriesAndTerritories'] == country]
-	covid_country1 = covid_country[['cases', 'deaths']].cumsum()
-	#print(covid_country1.head())
+	covid_country = covid_orig.loc[covid_orig['countriesAndTerritories'] == country]
 	# récupération de la taille de la population
-	pop_size = int(covid_country[['popData2018']].iloc[0])
-	#print('pop_size=', pop_size)
-	#input('pause pop')
-
+	pop_size = int(covid_country[['popData2018']].iloc[1])
+	# print('pop_size=', pop_size)
+	# input('pause pop')
+	covid_country1 = covid_country[['cases', 'deaths']].cumsum()
+	# print(covid_country1.head())
+	
 	# extraction entre dateMin et dateMaxStr
 	if dateMinStr==None:
 		dateMinStr = covid_country1.index[0].strftime("%Y-%m-%d")
@@ -251,19 +249,31 @@ def Plot(pd, titre, filenameFig, modele, y, Dates=None, data=''):
 
 	if len(y)==0 or y is None: pass
 
-	listeString, listeColor = [], []
-	for p in y:
-		listeString.append(modele.getString(p))
-		listeColor.append(modele.getColor(p))
-
 	fig = plt.figure(facecolor='w', figsize=figsize)
 	ax = fig.add_subplot(111, facecolor='#dddddd', axisbelow=True)
 
-	# Dessin des courbes théoriques
-	pd.plot(ax=ax, y=listeString, color=listeColor, title=titre)
-	# Dessin des observations
-	if data != None:
-		pd.plot(ax=ax, y=data, marker='x', ls='', color=modele.getColorFromString('$R^1(t)$') )
+	listeString, listeColor, lineStyles, listeMarkers, listeLW, listeAlphas = [], [], [], [], [], []
+	for p in y:
+		listeString.append(modele.getString(p))
+		listeColor.append(modele.getColor(p))
+		lineStyles.append('-')
+		listeMarkers.append('')
+		listeLW.append(1.5)
+		listeAlphas.append(0.7)
+	# pour les données numériques
+	if data != '':
+		listeString.append(data)
+		listeColor.append(modele.getColor(3))
+		lineStyles.append('-')
+		listeMarkers.append('x')
+		listeLW.append(0.5)
+		listeAlphas.append(1.)
+
+
+	for col, ls, lw, l, a, c, m in zip(listeString, lineStyles, listeLW, listeString, listeAlphas, listeColor, listeMarkers):
+		print('col=', col)
+		pd[col].plot(title=titre, ax=ax, ls=ls, lw=lw, label=l, alpha=a, color=c, marker=m)
+
 	
 	# ajout des dates spéciales
 	if Dates!=None:

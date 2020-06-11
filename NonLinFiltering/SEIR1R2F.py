@@ -55,9 +55,6 @@ class SEIR1R2F(SEIR1R2):
 	def getParam(self):
 		return (self.N, self.a, self.b, self.c, self.f, self.muI, self.xi)
 
-	def h(self, x):
-		return x[[3, 5]] # on renvoie R1 et F (4ieme et 6ième éléments dans le vecteur SEIR1R2F)
-
 	# The SEIR1R2F model differential equations.
 	def deriv(self, y, t, N, a, b, c, f, muI, xi):
 		S, E, I, R1, R2, F = y
@@ -84,4 +81,16 @@ class SEIR1R2F(SEIR1R2):
 		col = super().getColorFromString(string)
 		if string == r'$F(t)$'  : return self.colorCycle[5] 
 		return col
+
+	def fx(self, x, dt):
+		'''State transition function for Bacaer's model SEIR1R2'''
+
+		# petite normalisation pour éviter des dérives
+		input('verifier si cette deriv est reelle - SEIR1R2F')
+		x /= abs(np.sum(x))/self.N
+		ret = odeint(self.deriv, x, [0, dt], args=self.getParam())
+		return ret.T[:, -1]
+
+	def hx(self, x):
+		return x[[3, 5]] # on renvoie R1 et F (4ieme et 6ième éléments dans le vecteur SEIR1R2F)
 

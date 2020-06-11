@@ -63,7 +63,7 @@ class SolveEDO:
 			if i == timeswitch:
 				self.modele.seta(0.)
 				self.modele.setb(0.)
-			ret = odeint(self.modele.deriv, self.solution[i-1], [0, 1], args=self.modele.getParam())
+			ret = odeint(self.modele.deriv, self.solution[i-1], [0, self.dt], args=self.modele.getParam())
 			self.solution[i, :] = ret.T[:, -1]
 
 		return self.solution

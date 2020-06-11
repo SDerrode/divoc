@@ -9,7 +9,7 @@ from datetime  import datetime, timedelta
 from common    import readDataEurope, readDataFrance, getDates, PlotData, addDaystoStrDate
 
 # constante
-fileLocalCopy = False         # if we upload the file from the url (to get latest results) or from a local copy file
+fileLocalCopy = False # if we upload the file from the url (to get latest results) or from a local copy file
 
 if __name__ == '__main__':
     """
@@ -110,3 +110,4 @@ if __name__ == '__main__':
         PlotData(pd_exerpt, titre=placefull, filenameFig=prefFig+'_'    +HeadData[1]+'.png', y=HeadData[1],        color='black',   Dates=DatesString)
         PlotData(pd_exerpt, titre=placefull, filenameFig=prefFig+'_Diff'+HeadData[0]+'.png', y=['Instant cases'],  color='red', Dates=DatesString)
         PlotData(pd_exerpt, titre=placefull, filenameFig=prefFig+'_Diff'+HeadData[1]+'.png', y=['Instant deaths'], color='black',   Dates=DatesString)
+        
