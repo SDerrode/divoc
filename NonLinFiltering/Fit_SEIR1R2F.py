@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 
 from datetime          import datetime, timedelta
   
-from common            import getDates, Plot, addDaystoStrDate, get_WE_indice, drawAnnotation
+from common            import getDates, addDaystoStrDate, get_WE_indice, drawAnnotation
 from common            import getLowerDateFromString, getNbDaysBetweenDateFromString
 from ProcessSEIR1R2F   import fit
 from SolveEDO_SEIR1R2F import SolveEDO_SEIR1R2F

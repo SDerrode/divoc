@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 from matplotlib.ticker import MaxNLocator
 from datetime          import datetime, timedelta
   
-from common           import getDates, Plot, addDaystoStrDate, get_WE_indice, drawAnnotation
+from common           import getDates, addDaystoStrDate, get_WE_indice, drawAnnotation
 from common           import getLowerDateFromString, getNbDaysBetweenDateFromString
 from ProcessSEIR1R2   import fit
 from SolveEDO_SEIR1R2 import SolveEDO_SEIR1R2
