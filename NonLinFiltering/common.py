@@ -245,72 +245,6 @@ def drawAnnotation(ax, strin, date, color='black'):
 			fontsize=6, bbox=bbox, arrowprops=arrowprops, ha="center", va="center")
 
 
-def Plot(pd, titre, filenameFig, modele, y, Dates=None, data=''):
-
-	if len(y)==0 or y is None: pass
-
-	fig = plt.figure(facecolor='w', figsize=figsize)
-	ax = fig.add_subplot(111, facecolor='#dddddd', axisbelow=True)
-
-	listeString, listeColor, lineStyles, listeMarkers, listeLW, listeAlphas = [], [], [], [], [], []
-	for p in y:
-		listeString.append(modele.getString(p))
-		listeColor.append(modele.getColor(p))
-		lineStyles.append('-')
-		listeMarkers.append('')
-		listeLW.append(1.5)
-		listeAlphas.append(0.7)
-	# pour les données numériques
-	if data != '':
-		listeString.append(data)
-		listeColor.append(modele.getColor(3))
-		lineStyles.append('-')
-		listeMarkers.append('x')
-		listeLW.append(0.5)
-		listeAlphas.append(1.)
-
-
-	for col, ls, lw, l, a, c, m in zip(listeString, lineStyles, listeLW, listeString, listeAlphas, listeColor, listeMarkers):
-		print('col=', col)
-		pd[col].plot(title=titre, ax=ax, ls=ls, lw=lw, label=l, alpha=a, color=c, marker=m)
-
-	
-	# ajout des dates spéciales
-	if Dates!=None:
-		for d in Dates.listConfDates:
-			drawAnnotation(ax, 'Conf. date\n', d, color='red')
-		for d in Dates.listDeconfDates:
-			drawAnnotation(ax, 'Deconf. date\n', d, color='green')
-		for d in Dates.listOtherDates:
-			drawAnnotation(ax, 'Other date\n', d)
-
-	# surlignage des jours de WE
-	WE_indices = get_WE_indice(pd)
-	i = 0
-	while i < len(WE_indices)-1:
-		ax.axvspan(pd.index[WE_indices[i]], pd.index[WE_indices[i+1]], facecolor='gray', edgecolor='none', alpha=.15, zorder=-100)
-		i += 2
-
-	# axes
-	ax.grid(True, which='major', axis='both')
-	ax.grid(True, which='minor', axis='both')
-	ax.grid(True, which='major', c='k', lw=0.5, ls='-', alpha=0.3)
-	ax.grid(True, which='minor', c='w', lw=0.5, ls='-')
-	for spine in ('top', 'right', 'bottom', 'left'):
-		ax.spines[spine].set_visible(False)
-	plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0), useOffset=False, useLocale=False)
-
-	# On enlève le label sur l'axe x
-	x_label = ax.axes.get_xaxis().get_label().set_visible(False)
-
-	# legende
-	legend = ax.legend().get_frame().set_alpha(0.8)
-	plt.legend(fontsize=7)
-	plt.tight_layout()
-	plt.savefig(filenameFig, dpi=dpi)
-	plt.close()
-
-
 def PlotData(pd, titre, filenameFig, y, color='black', Dates=None):
 
 	if len(y)==0 or y is None: pass
@@ -319,7 +253,7 @@ def PlotData(pd, titre, filenameFig, y, color='black', Dates=None):
 	ax = fig.add_subplot(111, facecolor='#dddddd', axisbelow=True)
 
 	# Dessin des courbes théoriques
-	pd.plot(ax=ax, y=y, color=color, title=titre, marker='x', ls='')
+	pd.plot(ax=ax, y=y, color=color, title=titre, marker='x', ls='-')
 	
 	# ajout des dates spéciales
 	if Dates!=None:

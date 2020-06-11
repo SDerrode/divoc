@@ -5,13 +5,27 @@ import sys
 import pandas            as pd
 import numpy             as np
 import matplotlib.pyplot as plt
-from datetime  import datetime, timedelta
-from common    import readDataEurope, readDataFrance, getDates, PlotData, addDaystoStrDate
+
+from datetime         import datetime, timedelta
+
+from filterpy.kalman  import UnscentedKalmanFilter as UKF
+from filterpy.kalman  import JulierSigmaPoints, MerweScaledSigmaPoints, rts_smoother
+from filterpy.common  import Q_discrete_white_noise
+
+from common           import readDataEurope, readDataFrance, getDates, PlotData, addDaystoStrDate
 
 # constante
 fileLocalCopy = False # if we upload the file from the url (to get latest results) or from a local copy file
 
-if __name__ == '__main__':
+
+def fR1(r1, dt):
+    return r1 # on renvoie R1
+
+def hR1(r1):
+    return r1 # on renvoie R1
+
+
+def main(sysargv):
     """
         Program to perform UKF filtering on Covid Data.
  
@@ -32,8 +46,8 @@ if __name__ == '__main__':
         argv[2] : Verbose level (debug: 3, ..., almost mute: 0).                                     Default: 1
     """
 
-    print('Command line : ', sys.argv, flush=True)
-    if len(sys.argv) > 3:
+    print('Command line : ', sysargv, flush=True)
+    if len(sysargv) > 3:
         print('  CAUTION : bad number of arguments - see help')
         exit(1)
 
@@ -42,7 +56,7 @@ if __name__ == '__main__':
     verbose    = 2
     
     # Parameters from argv
-    if len(sys.argv)>1: listplaces = list(sys.argv[1].split(','))
+    if len(sysargv)>1: listplaces = list(sysargv[1].split(','))
     FrDatabase = False
     if listplaces[0]=='France' and len(listplaces)>1:
         try:
@@ -54,7 +68,7 @@ if __name__ == '__main__':
             listplaces = listplaces[1:]
             France     = 'France'
 
-    if len(sys.argv)>2: verbose = int(sys.argv[2])
+    if len(sysargv)>2: verbose = int(sysargv[2])
 
     # Constantes
     dt = 1
@@ -99,15 +113,65 @@ if __name__ == '__main__':
             #input('pause')
 
         # On ajoute le gradient
-        pd_exerpt['Instant cases']  = pd_exerpt[HeadData[0]].diff()
-        pd_exerpt['Instant deaths'] = pd_exerpt[HeadData[1]].diff()
+        pd_exerpt['instant cases']  = pd_exerpt[HeadData[0]].diff()
+        pd_exerpt['instant deaths'] = pd_exerpt[HeadData[1]].diff()
         # print('Head=', pd_exerpt.head())
         # print('tail=', pd_exerpt.tail())
         # print('HeadData=', HeadData)
         # print('liste=', list(pd_exerpt))
 
-        PlotData(pd_exerpt, titre=placefull, filenameFig=prefFig+'_'    +HeadData[0]+'.png', y=HeadData[0],        color='red', Dates=DatesString)
-        PlotData(pd_exerpt, titre=placefull, filenameFig=prefFig+'_'    +HeadData[1]+'.png', y=HeadData[1],        color='black',   Dates=DatesString)
-        PlotData(pd_exerpt, titre=placefull, filenameFig=prefFig+'_Diff'+HeadData[0]+'.png', y=['Instant cases'],  color='red', Dates=DatesString)
-        PlotData(pd_exerpt, titre=placefull, filenameFig=prefFig+'_Diff'+HeadData[1]+'.png', y=['Instant deaths'], color='black',   Dates=DatesString)
+        PlotData(pd_exerpt, titre=placefull, filenameFig=prefFig+'_'    +HeadData[0]+'.png', y=HeadData[0],        color='red',   Dates=DatesString)
+        PlotData(pd_exerpt, titre=placefull, filenameFig=prefFig+'_'    +HeadData[1]+'.png', y=HeadData[1],        color='black', Dates=DatesString)
+        PlotData(pd_exerpt, titre=placefull, filenameFig=prefFig+'_Diff'+HeadData[0]+'.png', y=['instant cases'],  color='red',   Dates=DatesString)
+        PlotData(pd_exerpt, titre=placefull, filenameFig=prefFig+'_Diff'+HeadData[1]+'.png', y=['instant deaths'], color='black', Dates=DatesString)
         
+
+        # on filtre R1 par UKF
+        #############################################################################
+        data   = pd_exerpt['cases'].tolist()
+        dt     = 1
+        sigmas = MerweScaledSigmaPoints(n=1, alpha=.5, beta=2., kappa=1.) #1-3.)
+        ukf    = UKF(dim_x=1, dim_z=1, fx=fR1, hx=hR1, dt=dt, points=sigmas)
+        # Filter init
+        ukf.x[0] = data[0]
+        ukf.Q    = np.diag([30.])
+        ukf.R    = np.diag([170.])
+        if verbose>1:
+            print('ukf.x[0]=', ukf.x[0])
+            print('ukf.R   =', ukf.R)
+            print('ukf.Q   =', ukf.Q)
+            
+        # UKF filtering and smoothing, batch mode
+        R1filt, _ = ukf.batch_filter(data)
+        pd_exerpt['R1Filt'] = R1filt
+        PlotData(pd_exerpt, titre=placefull, filenameFig=prefFig+'_casesfilt'+HeadData[0]+'.png', y=[HeadData[0], 'R1Filt'], color=['red', 'darkred'], Dates=DatesString)
+
+        pd_exerpt['Diff R1Filt']  = pd_exerpt['R1Filt'].diff()
+        PlotData(pd_exerpt, titre=placefull, filenameFig=prefFig+'_diff_casesfilt'+HeadData[0]+'.png', y=['instant cases', 'diff R1Filt'], color=['red', 'darkred'], Dates=DatesString)
+
+
+        # on filtre diff R1 par UKF
+        # Ca marche mais identique au précédent
+        #############################################################################
+        # data    = pd_exerpt['instant cases'].tolist()
+        # data[0] = data[1]
+        # print('data=', data)
+        # dt     = 1
+        # sigmas = MerweScaledSigmaPoints(n=1, alpha=.5, beta=2., kappa=1.) #1-3.)
+        # ukf    = UKF(dim_x=1, dim_z=1, fx=fR1, hx=hR1, dt=dt, points=sigmas)
+        # # Filter init
+        # ukf.x[0] = data[0]
+        # ukf.Q    = np.diag([30.])
+        # ukf.R    = np.diag([170.])
+        # if verbose>1:
+        #     print('ukf.x[0]=', ukf.x[0])
+        #     print('ukf.R   =', ukf.R)
+        #     print('ukf.Q   =', ukf.Q)
+            
+        # # UKF filtering and smoothing, batch mode
+        # diffR1filt, _ = ukf.batch_filter(data)
+        # pd_exerpt['diffR1 filt'] = diffR1filt
+        # PlotData(pd_exerpt, titre=placefull, filenameFig=prefFig+'_diffcases_filt'+HeadData[0]+'.png', y=['instant cases', 'diffR1 filt'], color=['red', 'darkred'], Dates=DatesString)
+
+if __name__ == '__main__':
+    main(sys.argv)

@@ -12,13 +12,13 @@ from filterpy.kalman  import UnscentedKalmanFilter as UKF
 from filterpy.kalman  import JulierSigmaPoints, MerweScaledSigmaPoints, rts_smoother
 from filterpy.common  import Q_discrete_white_noise
 
-from common            import readDataEurope, readDataFrance, getDates, Plot, addDaystoStrDate
+from common            import readDataEurope, readDataFrance, getDates, addDaystoStrDate
 from common            import getLowerDateFromString, getNbDaysBetweenDateFromString, GetPairListDates
+from common            import drawAnnotation, get_WE_indice
 from SolveEDO_SEIR1R2  import SolveEDO_SEIR1R2
 
-
-# dpi     = 120    # plot resolution of saved figures
-# figsize = (8, 4) # figure's size (width, height)
+dpi     = 120    # plot resolution of saved figures
+figsize = (8, 4) # figure's size (width, height)
 strDate = "%Y-%m-%d"
 
 def main(argv):
@@ -164,6 +164,8 @@ def main(argv):
                 dataLengthPeriod +=1
             slicedata      = slice(indMinPeriod, indMinPeriod+dataLengthPeriod)
             slicedataderiv = slice(slicedata.start+1, slicedata.stop)
+            sliceedo       = slice(0, dataLengthPeriod)
+            sliceedoderiv  = slice(sliceedo.start+1, sliceedo.stop)
             if verbose>0:
                 print('  dataLength      =', dataLength)
                 print('  indMinPeriod    =', indMinPeriod)
@@ -172,7 +174,7 @@ def main(argv):
                 print('  fitStopDateStr  =', fitStopDateStr)
                 #input('attente')
 
-            # Set initialisation data for the solveur
+            # Set initialisation values for the solver
             ############################################################################
             # pour une période
             a0, b0, c0, f0  = 0.10, 0.29, 0.10, 0.0022
@@ -234,6 +236,11 @@ def main(argv):
             if verbose>1:
                 print(pd_exerpt.tail())
             
+            # Les dérivées numériques
+            data_deriv_period    = (data[slicedataderiv, :] - data[slicedataderiv.start-1:slicedataderiv.stop-1, :])        / dt
+            modelR1_deriv_period = (xMean_est[sliceedoderiv, indexdata] - xMean_est[sliceedoderiv.start-1:sliceedoderiv.stop-1, indexdata]) / dt
+
+            
             # save the generated data in csv form
             pd_exerpt.to_csv(prefFig + '_all.csv', header=True, index=False)
 
@@ -241,17 +248,85 @@ def main(argv):
 
                 titre = placefull
 
-                listePlot =[0,1,2,3,4]
-                filename  = prefFig + '_' + ''.join(map(str, listePlot)) + '.png'
-                Plot(pd_exerpt, titre, filename, solveur.modele, y=listePlot, Dates=DatesString)
-                listePlot =[1,2,3]
-                filename  = prefFig + '_' + ''.join(map(str, listePlot)) + '.png'
-                Plot(pd_exerpt, titre, filename, solveur.modele, y=listePlot, Dates=DatesString, data='cases')
+                # listePlot =[0,1,2,3,4]
+                # filename  = prefFig + '_' + ''.join(map(str, listePlot)) + '.png'
+                # Plot(pd_exerpt, titre, filename, solveur.modele, y=listePlot, Dates=DatesString)
+                # listePlot =[1,2,3]
+                # filename  = prefFig + '_' + ''.join(map(str, listePlot)) + '.png'
+                # Plot(pd_exerpt, titre, filename, solveur.modele, y=listePlot, Dates=DatesString, data='cases')
                 listePlot =[3]
                 filename  = prefFig + '_' + ''.join(map(str, listePlot)) + '.png'
                 Plot(pd_exerpt, titre, filename, solveur.modele, y=listePlot, Dates=DatesString, data='cases')
+
+                listePlot =[3]
+                filename  = prefFig + '_' + ''.join(map(str, listePlot)) + '_bis.png'
+                solveur.plotEDO(filename, titre, sliceedo, slicedata, plot=listePlot, data=data, text=solveur.getTextParam(readStartDateStr))
+
+                #plotEDO(self, name, title, sliceedo, slicedata, plot, data='', text=''):
                 
 
+def Plot(pd, titre, filenameFig, modele, y, Dates=None, data=''):
+
+    if len(y)==0 or y is None: pass
+
+    fig = plt.figure(facecolor='w', figsize=figsize)
+    ax = fig.add_subplot(111, facecolor='#dddddd', axisbelow=True)
+
+    listeString, listeColor, lineStyles, listeMarkers, listeLW, listeAlphas = [], [], [], [], [], []
+    for p in y:
+        listeString.append(modele.getString(p))
+        listeColor.append(modele.getColor(p))
+        lineStyles.append('-')
+        listeMarkers.append('')
+        listeLW.append(1.5)
+        listeAlphas.append(0.7)
+    # pour les données numériques
+    if data != '':
+        listeString.append(data)
+        listeColor.append(modele.getColor(3))
+        lineStyles.append('-')
+        listeMarkers.append('x')
+        listeLW.append(0.5)
+        listeAlphas.append(1.)
+
+
+    for col, ls, lw, l, a, c, m in zip(listeString, lineStyles, listeLW, listeString, listeAlphas, listeColor, listeMarkers):
+        pd[col].plot(title=titre, ax=ax, ls=ls, lw=lw, label=l, alpha=a, color=c, marker=m)
+
+    # ajout des dates spéciales
+    if Dates!=None:
+        for d in Dates.listConfDates:
+            drawAnnotation(ax, 'Conf. date\n', d, color='red')
+        for d in Dates.listDeconfDates:
+            drawAnnotation(ax, 'Deconf. date\n', d, color='green')
+        for d in Dates.listOtherDates:
+            drawAnnotation(ax, 'Other date\n', d)
+
+    # surlignage des jours de WE
+    WE_indices = get_WE_indice(pd)
+    i = 0
+    while i < len(WE_indices)-1:
+        ax.axvspan(pd.index[WE_indices[i]], pd.index[WE_indices[i+1]], facecolor='gray', edgecolor='none', alpha=.15, zorder=-100)
+        i += 2
+
+    # axes
+    ax.grid(True, which='major', axis='both')
+    ax.grid(True, which='minor', axis='both')
+    ax.grid(True, which='major', c='k', lw=0.5, ls='-', alpha=0.3)
+    ax.grid(True, which='minor', c='w', lw=0.5, ls='-')
+    for spine in ('top', 'right', 'bottom', 'left'):
+        ax.spines[spine].set_visible(False)
+    plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0), useOffset=False, useLocale=False)
+
+    # On enlève le label sur l'axe x
+    x_label = ax.axes.get_xaxis().get_label().set_visible(False)
+
+    # legende
+    legend = ax.legend().get_frame().set_alpha(0.8)
+    plt.legend(fontsize=7)
+    plt.tight_layout()
+    plt.savefig(filenameFig, dpi=dpi)
+    plt.close()
 
 if __name__ == '__main__':
     main(sys.argv)
