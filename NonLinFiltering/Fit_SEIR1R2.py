@@ -17,14 +17,14 @@ figsize = (8, 4) # figure's size (width, height)
 
 def main(argv):
 
-    # Le decalalge ets traité comme argument pour faciliter les traitements systématiques
+    # Le decalage est traité comme argument pour faciliter les traitements systématiques
     if len(argv)>1:
         decalage3periodes = int(sys.argv[1])
     else:
         decalage3periodes = 5
     
-    verbose       = 0
-    # plot          = 0
+    verbose    = 0
+    UKF_filt   = True #False #True
 
     # places     = 'France,Spain,Italy,United_Kingdom,South_Korea'
     # places     = 'Germany'#,South_Korea'
@@ -49,7 +49,7 @@ def main(argv):
     # decalage   = 1 # corrigé par le recouvrement
     # UKF_filt   = 0
     # model_allinone, ListeTextParamPlace_allinone, _, data_deriv_allinone, moldelR1_deriv_allinone, decalage_corrige = \
-    #     fitplace(places, listplaces, nbperiodes, decalage, UKF_filt, verbose, 0, 'All-In-One', FrDatabase, fitplace)
+    #     fitplace(places, listplaces, nbperiodes, decalage, UKF_filt, verbose, 0, 'All-In-One', FrDatabase)
 
     # for indexplace in range(len(listplaces)):
     #     for texte in ListeTextParamPlace_allinone[indexplace]:
@@ -59,9 +59,9 @@ def main(argv):
     # fit avec 3 périodes + décalage
     ##################################
     nbperiodes = -1
-    UKF_filt   = True #False #True
+    
     model_piecewise, ListeTextParamPlace_piecewise, listepd, data_deriv_piecewise, moldelR1_deriv_piecewise, decalage_corrige = \
-        fitplace(places, listplaces, nbperiodes, decalage3periodes, UKF_filt, verbose, 0, 'Piecewise', FrDatabase, fitplace)
+        fitplace(places, listplaces, nbperiodes, decalage3periodes, UKF_filt, verbose, 0, 'Piecewise', FrDatabase)
 
     for indexplace in range(len(listplaces)):
         for texte in ListeTextParamPlace_piecewise[indexplace]:
@@ -159,7 +159,7 @@ def main(argv):
         PlotSEIR1R2Pandas(listepd[indexplace], title, filename, y=y, Dates=DatesString)
 
         title    = place + ' - Shift=' + str(decalage_corrige) + ' day(s)'
-        filename = prefFig +'_R1_piecewise_Shift' + str(decalage_corrige) + '.png'
+        filename = prefFig + '_R1_piecewise_Shift' + str(decalage_corrige) + '.png'
         y=['R1p']
         PlotSEIR1R2Pandas(listepd[indexplace], title, filename, y=y, Dates=DatesString)
 
@@ -341,10 +341,10 @@ def PlotFit(data_deriv, model_deriv, title, ch, filename):
     plt.close()
 
 
-def fitplace(places, listplaces, nbperiodes, decalage, surplus, verbose, plot, ch, FrDatabase, UKF_filt):
+def fitplace(places, listplaces, nbperiodes, decalage, UKF_filt, verbose, plot, ch, FrDatabase):
 
     modelSEIR1R2, ListeTextParamPlace, listepd, data_deriv, moldelR1_deriv, decalage_corrige, _, _ = \
-            fit([places, nbperiodes, decalage, surplus, verbose, plot])
+            fit([places, nbperiodes, decalage, UKF_filt, verbose, plot])
     
     # Plot
     for indexplace, place in enumerate(listplaces):

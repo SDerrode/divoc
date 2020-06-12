@@ -8,10 +8,10 @@ import matplotlib.pyplot as plt
 from matplotlib.ticker import MaxNLocator
 from datetime          import datetime, timedelta
   
-from common           import getDates, addDaystoStrDate, get_WE_indice, drawAnnotation
-from common           import getLowerDateFromString, getNbDaysBetweenDateFromString
-from ProcessSEIR1R2   import fit
-from SolveEDO_SEIR1R2 import SolveEDO_SEIR1R2
+from common            import getDates, addDaystoStrDate, get_WE_indice, drawAnnotation
+from common            import getLowerDateFromString, getNbDaysBetweenDateFromString
+from ProcessSEIR1R2    import fit
+from SolveEDO_SEIR1R2  import SolveEDO_SEIR1R2
 
 dpi     = 120    # plot resolution of saved figures
 figsize = (8, 4) # figure's size (width, height)
@@ -22,9 +22,9 @@ def main():
     plot          = 0
 
     #places     = 'France,Spain,Italy,United_Kingdom,Germany,Belgium'
-    places     = 'Spain,Italy,Germany'
-    #places     = 'France,69'
-    #places     = 'France'
+    # places     = 'Spain,Italy,Germany'
+    # places     = 'France,69'
+    places     = 'France'
     #places     = 'Germany'#,South_Korea'
     listplaces = list(places.split(','))
 
@@ -44,7 +44,7 @@ def main():
     ##################################
     UKF_filt   = True
     nbperiodes = -1
-    decalagemini, decalagemaxi = 2, 15 #4, 18
+    decalagemini, decalagemaxi = 8, 18 #4, 18
 
     TAB_decalage_corrige = []
     TAB_param_model      = []
