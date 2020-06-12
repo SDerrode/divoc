@@ -49,12 +49,12 @@ def fit(sysargv):
 	listplaces = ['France']
 	nbperiodes = 1
 	decalage   = 0
-	surplus    = False
+	UKF_filt    = False
 	verbose    = 1
 	plot       = True
 
 	# Parameters from argv
-	if len(sysargv)>1: listplaces = list(sysargv[0].split(','))
+	if len(sysargv)>0: listplaces = list(sysargv[0].split(','))
 	FrDatabase = False
 	if listplaces[0]=='France' and len(listplaces)>1:
 		try:
@@ -67,14 +67,11 @@ def fit(sysargv):
 
 	if len(sysargv)>1: nbperiodes    = int(sysargv[1])
 	if len(sysargv)>2: decalage      = int(sysargv[2])
-	if len(sysargv)>3 and int(sysargv[3])==1: surplus = True
+	if len(sysargv)>3 and int(sysargv[3])==1: UKF_filt = True
 	if len(sysargv)>4: verbose       = int(sysargv[4])
 	if len(sysargv)>5 and int(sysargv[5])==0: plot = False
 	if nbperiodes==1: 
 		decalage   = 0  # nécessairement pas de décalage
-	if surplus==True: 
-		decalage   = 0  # nécessairement pas de décalage
-		nbpériodes = 2  # necessairement plusieurs périodes
 
 	# Constantes
 	######################################################@
@@ -115,9 +112,8 @@ def fit(sysargv):
 	Listepd            = []
 	ListetabParamModel = []
 
-	# Surplus and correction from previou period
-	data_surplus   = np.zeros(shape=(dataLength, len(indexdata))) # '2' is for R1 and F data
-	data_corrected = np.zeros(shape=(dataLength, len(indexdata))) # '2' is for R1 and F data
+	# data observed
+	data = np.zeros(shape=(dataLength, len(indexdata))) # '2' is for R1 and F data
 
 	# Paramètres sous forme de chaines de caractères
 	ListeTextParam = [] 
@@ -162,9 +158,8 @@ def fit(sysargv):
 			os.makedirs(repertoire)
 		prefFig = repertoire + '/' + solveur.modele.modelShortName + '_' + placefull
 		
-		# Remise à 0 du surplus et de la correction
-		data_surplus.fill(0.)
-		data_corrected.fill(0.)
+		# Remise à 0 des données
+		data.fill(0.)
 
 
 		# Boucle pour traiter successivement les différentes fenêtres
@@ -188,10 +183,10 @@ def fit(sysargv):
 			indMinPeriod     = (fitStartDate-readStartDate).days
 
 			for j, z in enumerate(pd_exerpt.loc[fitStartDateStr:addDaystoStrDate(fitStopDateStr, -1), HeadData[0]]):
-				data_corrected[indMinPeriod+j, 0] = z - data_surplus[indMinPeriod+j, 0]
+				data[indMinPeriod+j, 0] = z
 				dataLengthPeriod +=1
 			for j, z in enumerate(pd_exerpt.loc[fitStartDateStr:addDaystoStrDate(fitStopDateStr, -1), HeadData[1]]):
-				data_corrected[indMinPeriod+j, 1] = z - data_surplus[indMinPeriod+j, 1]
+				data[indMinPeriod+j, 1] = z
 			slicedata      = slice(indMinPeriod, indMinPeriod+dataLengthPeriod)
 			slicedataderiv = slice(slicedata.start+1, slicedata.stop)
 			if verbose>0:
@@ -219,8 +214,8 @@ def fit(sysargv):
 					T  = 350
 
 			if i==1 or i==2:
-				R10 = int(data_corrected[indMinPeriod, 0]) # on corrige R1 à la valeur numérique 
-				F0  = int(data_corrected[indMinPeriod, 1]) # on corrige muI à la valeur numérique 
+				R10 = int(data[indMinPeriod, 0]) # on corrige R1 à la valeur numérique 
+				F0  = int(data[indMinPeriod, 1]) # on corrige muI à la valeur numérique 
 				_, a0, b0, c0, f0, muI0, xi0 = solveur.modele.getParam()
 				if i == 1:
 					a0 /= 2. # le confinement réduit drastiquement (pour aider l'optimisation) 
@@ -238,7 +233,7 @@ def fit(sysargv):
 			# Solve ode avant optimization
 			sol_ode = solveur.solveEDO(time)
 			# calcul time shift initial (ts) with respect to data
-			#ts       = solveur.compute_tsfromEQM(data_corrected[slicedata, :], T, indexdata)
+			#ts       = solveur.compute_tsfromEQM(data[slicedata, :], T, indexdata)
 			sliceedo = slice(ts, min(ts+dataLengthPeriod, T))
 			if verbose>0:
 				print(solveur)
@@ -248,13 +243,13 @@ def fit(sysargv):
 			if plot==True:
 				listePlot = [3, 5]
 				filename  = prefFig + '_Period' + str(i) + '_' + str(len(ListDatesStr)-1) + '_Fitinit_' + ''.join(map(str, listePlot)) + '.png'
-				solveur.plotEDO(filename, placefull, sliceedo, slicedata, plot=listePlot, data=data_corrected, text=solveur.getTextParam(readStartDateStr))
+				solveur.plotEDO(filename, placefull, sliceedo, slicedata, plot=listePlot, data=data, text=solveur.getTextParam(readStartDateStr))
 
 
 			# Parameters optimization
 			############################################################################
 
-			solveur.paramOptimization(data_corrected[slicedata, :], time, ts)
+			solveur.paramOptimization(data[slicedata, :], time, ts)
 			_, a1, b1, c1, f1, muI1, xi1 = solveur.modele.getParam()
 			if c1 != 0.:
 				R0=a1/c1
@@ -272,7 +267,7 @@ def fit(sysargv):
 			# Solve ode avant optimization
 			sol_ode = solveur.solveEDO(time)
 			# calcul time shift with respect to data
-			#ts            = solveur.compute_tsfromEQM(data_corrected[slicedata, :], T, indexdata)
+			#ts            = solveur.compute_tsfromEQM(data[slicedata, :], T, indexdata)
 			ts = solveur.TS
 			#print('ts=', ts)
 			sliceedo      = slice(ts, min(ts+dataLengthPeriod, T))
@@ -285,8 +280,8 @@ def fit(sysargv):
 			ListetabParamModelPlace.append([a1, b1, c1, f1, muI1, xi1, R0])
 			ListeTextParamPlace    .append(solveur.getTextParam(readStartDateStr))
 			
-			data_deriv_period    = (data_corrected[slicedataderiv, :] - data_corrected[slicedataderiv.start-1:slicedataderiv.stop-1, :])        / dt
-			modelR1_deriv_period = (sol_ode[sliceedoderiv, indexdata] - sol_ode       [sliceedoderiv.start-1 :sliceedoderiv.stop-1, indexdata]) / dt
+			data_deriv_period    = (data[slicedataderiv, :]           - data   [slicedataderiv.start-1:slicedataderiv.stop-1, :])        / dt
+			modelR1_deriv_period = (sol_ode[sliceedoderiv, indexdata] - sol_ode[sliceedoderiv.start-1 :sliceedoderiv.stop-1, indexdata]) / dt
 			# print('np.shape(data_deriv_period)   =', np.shape(data_deriv_period))
 			# print('np.shape(modelR1_deriv_period)=', np.shape(modelR1_deriv_period))
 			# input('pause')
@@ -296,35 +291,19 @@ def fit(sysargv):
 				
 				listePlot =[0,1,2,3,4,5]
 				filename  = prefFig + '_Period' + str(i) + '_' + str(len(ListDatesStr)-1) + '_Fit_' + ''.join(map(str, listePlot)) + '.png'
-				solveur.plotEDO(filename, titre, sliceedo, slicedata, plot=listePlot, data=data_corrected, text=solveur.getTextParam(readStartDateStr))
+				solveur.plotEDO(filename, titre, sliceedo, slicedata, plot=listePlot, data=data, text=solveur.getTextParam(readStartDateStr))
 				listePlot =[1,2,3,5]
 				filename  = prefFig + '_Period' + str(i) + '_' + str(len(ListDatesStr)-1) + '_Fit_' + ''.join(map(str, listePlot)) + '.png'
-				solveur.plotEDO(filename, titre, sliceedo, slicedata, plot=listePlot, data=data_corrected, text=solveur.getTextParam(readStartDateStr))
+				solveur.plotEDO(filename, titre, sliceedo, slicedata, plot=listePlot, data=data, text=solveur.getTextParam(readStartDateStr))
 				listePlot =[3,5]
 				filename  = prefFig + '_Period' + str(i) + '_' + str(len(ListDatesStr)-1) + '_Fit_' + ''.join(map(str, listePlot)) + '.png'
-				solveur.plotEDO(filename, titre, sliceedo, slicedata, plot=listePlot, data=data_corrected, text=solveur.getTextParam(readStartDateStr))
+				solveur.plotEDO(filename, titre, sliceedo, slicedata, plot=listePlot, data=data, text=solveur.getTextParam(readStartDateStr))
 
 				# dérivée  numérique de R1
 				filename = prefFig + '_Period' + str(i) + '_' + str(len(ListDatesStr)-1) + '_Fit_3Deriv.png'
 				solveur.plotEDO_deriv(filename, titre, sliceedoderiv, slicedataderiv, data_deriv_period, indexdata, text=solveur.getTextParam(readStartDateStr))
 
 			# sol_ode_withSwitch = solveur.solveEDO_withSwitch(T, timeswitch=ts+dataLengthPeriod)
-			
-			# if surplus == True:
-			#     # get the residuals
-			#     bout  = min(T, ts+dataLengthPeriod +(dataLength-indMinPeriod+dataLengthPeriod))
-			#     debut = ts+dataLengthPeriod
-			#     # print('bout=', bout)
-			#     # print('debut=', debut)
-			#     # print('data_corrected[indMinPeriod+dataLengthPeriod-1]=', data_corrected[indMinPeriod+dataLengthPeriod-1])
-			#     data_surplus[indMinPeriod+dataLengthPeriod:indMinPeriod+dataLengthPeriod+(bout-debut)] += sol_ode_withSwitch[debut:bout, 3]-data_corrected[indMinPeriod+dataLengthPeriod-1]
-			#
-			#     fig = plt.figure(facecolor='w', figsize=(8, 4))
-			#     ax  = fig.add_subplot(111, facecolor='#dddddd', axisbelow=True)
-			#     ax.plot(data_surplus, label='data_surplus')
-			#     plt.legend()
-			#     plt.savefig(prefFig + '_Period' + str(i) + '_' + str(len(ListDatesStr)-1) + '_surplus.png')
-			#     plt.close()
 
 			# ajout des données dérivées
 			data_deriv   [indexplace, slicedataderiv, :] = data_deriv_period

@@ -144,6 +144,8 @@ def main(sysargv):
             
         # UKF filtering and smoothing, batch mode
         R1filt, _ = ukf.batch_filter(data)
+
+        # plotting
         pd_exerpt[listeHead[0] + ' filt'] = R1filt
         PlotData(pd_exerpt, titre=placefull, filenameFig=prefFig+'_casesfilt'+HeadData[0]+'.png', y=[HeadData[0], listeHead[0] + ' filt'], color=['red', 'darkred'], Dates=DatesString)
 

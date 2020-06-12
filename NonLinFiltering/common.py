@@ -175,7 +175,7 @@ def readDataEurope(country='France', dateMinStr=None, dateMaxStr=None, fileLocal
 
 	covid_orig = None
 	if fileLocalCopy==True:
-		name = './data/csvEurope_2020-05-24.csv'
+		name = './data/csvFrance_2020-06-11.csv'
 		try:
 			covid_orig=pd.read_csv(name, sep=',', parse_dates=[0], dayfirst=True)
 		except:

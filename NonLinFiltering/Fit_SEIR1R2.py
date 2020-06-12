@@ -47,9 +47,9 @@ def main(argv):
     ##################################
     # nbperiodes = 1
     # decalage   = 1 # corrigé par le recouvrement
-    # surplus    = 0
+    # UKF_filt   = 0
     # model_allinone, ListeTextParamPlace_allinone, _, data_deriv_allinone, moldelR1_deriv_allinone, decalage_corrige = \
-    #     fitplace(places, listplaces, nbperiodes, decalage, surplus, verbose, 0, 'All-In-One', FrDatabase)
+    #     fitplace(places, listplaces, nbperiodes, decalage, UKF_filt, verbose, 0, 'All-In-One', FrDatabase, fitplace)
 
     # for indexplace in range(len(listplaces)):
     #     for texte in ListeTextParamPlace_allinone[indexplace]:
@@ -59,9 +59,9 @@ def main(argv):
     # fit avec 3 périodes + décalage
     ##################################
     nbperiodes = -1
-    surplus    = 0
+    UKF_filt   = True #False #True
     model_piecewise, ListeTextParamPlace_piecewise, listepd, data_deriv_piecewise, moldelR1_deriv_piecewise, decalage_corrige = \
-        fitplace(places, listplaces, nbperiodes, decalage3periodes, surplus, verbose, 0, 'Piecewise', FrDatabase)
+        fitplace(places, listplaces, nbperiodes, decalage3periodes, UKF_filt, verbose, 0, 'Piecewise', FrDatabase, fitplace)
 
     for indexplace in range(len(listplaces)):
         for texte in ListeTextParamPlace_piecewise[indexplace]:
@@ -79,7 +79,10 @@ def main(argv):
 
         # Constantes
         import os
-        repertoire = './figures/SEIR1R2/'+ placefull
+        if UKF_filt == True:
+            repertoire = './figures/SEIR1R2_UKFilt/' + placefull
+        else:
+            repertoire = './figures/SEIR1R2/' + placefull
         if not os.path.exists(repertoire):
             os.makedirs(repertoire)
         prefFig = repertoire + '/' + placefull
@@ -123,7 +126,10 @@ def main(argv):
 
         # Constantes
         import os
-        repertoire = './figures/SEIR1R2/'+ placefull
+        if UKF_filt == True:
+            repertoire = './figures/SEIR1R2_UKFilt/' + placefull
+        else:
+            repertoire = './figures/SEIR1R2/' + placefull
         if not os.path.exists(repertoire):
             os.makedirs(repertoire)
         prefFig = repertoire + '/' + placefull
@@ -335,7 +341,7 @@ def PlotFit(data_deriv, model_deriv, title, ch, filename):
     plt.close()
 
 
-def fitplace(places, listplaces, nbperiodes, decalage, surplus, verbose, plot, ch, FrDatabase):
+def fitplace(places, listplaces, nbperiodes, decalage, surplus, verbose, plot, ch, FrDatabase, UKF_filt):
 
     modelSEIR1R2, ListeTextParamPlace, listepd, data_deriv, moldelR1_deriv, decalage_corrige, _, _ = \
             fit([places, nbperiodes, decalage, surplus, verbose, plot])
@@ -351,7 +357,10 @@ def fitplace(places, listplaces, nbperiodes, decalage, surplus, verbose, plot, c
 
         # Constantes
         import os
-        repertoire = './figures/SEIR1R2/'+ placefull
+        if UKF_filt == True:
+            repertoire = './figures/SEIR1R2_UKFilt/' + placefull
+        else:
+            repertoire = './figures/SEIR1R2/' + placefull
         if not os.path.exists(repertoire):
             os.makedirs(repertoire)
         prefFig = repertoire + '/' + placefull

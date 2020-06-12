@@ -22,8 +22,9 @@ def main():
     plot          = 0
 
     #places     = 'France,Spain,Italy,United_Kingdom,Germany,Belgium'
-    #places     = 'France,Spain,Italy,Germany'
-    places     = 'France,69'
+    places     = 'Spain,Italy,Germany'
+    #places     = 'France,69'
+    #places     = 'France'
     #places     = 'Germany'#,South_Korea'
     listplaces = list(places.split(','))
 
@@ -41,19 +42,19 @@ def main():
 
     # fit avec 3 périodes + décalage
     ##################################
-    surplus    = 0
+    UKF_filt   = True
     nbperiodes = -1
+    decalagemini, decalagemaxi = 2, 15 #4, 18
 
     TAB_decalage_corrige = []
     TAB_param_model      = []
     TAB_ListeEQM         = []
-    
-    decalagemini, decalagemaxi = 7, 22
+
     for decalage in range(decalagemini, decalagemaxi):
 
         print('TIME-SHIFT', str(decalage), 'OVER', str(decalagemaxi))
     
-        _, _, _, _, _, decalage_corrige, tabParamModel, ListeEQM = fit([places, nbperiodes, decalage, surplus, verbose, plot])
+        _, _, _, _, _, decalage_corrige, tabParamModel, ListeEQM = fit([places, nbperiodes, decalage, UKF_filt, verbose, plot])
 
         TAB_decalage_corrige.append(float(decalage_corrige))
         TAB_param_model.append(tabParamModel)
@@ -72,7 +73,10 @@ def main():
 
         # Constantes
         import os
-        repertoire = './figures/SEIR1R2/'+ placefull
+        if UKF_filt == True:
+            repertoire = './figures/SEIR1R2_UKFilt/' + placefull
+        else:
+            repertoire = './figures/SEIR1R2/' + placefull
         if not os.path.exists(repertoire):
             os.makedirs(repertoire)
         prefFig = repertoire + '/' + placefull
