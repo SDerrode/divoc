@@ -85,7 +85,6 @@ def fit(sysargv):
 	if nbperiodes==1: 
 		decalage = 2  # nécessairement pas de décalage (on compense le recouvrement)
 
-	
 	# Constantes
 	######################################################@
 	fileLocalCopy    = True  # if we upload the file from the url (to get latest data) or from a local copy file
@@ -244,7 +243,7 @@ def fit(sysargv):
 				R10 = int(data[indMinPeriod, 0]) # on corrige R1 à la valeur numérique 
 				_, a0, b0, c0, f0 = solveur.modele.getParam()
 				if i == 1:
-				 	a0 /= 4. # le confinement réduit drastiquement (pour aider l'optimisation) 
+					a0 /= 4. # le confinement réduit drastiquement (pour aider l'optimisation) 
 				# if i == 2:
 				#  	a0 /= 1.
 				#  	b0 /= 2.5

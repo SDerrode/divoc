@@ -9,7 +9,7 @@ from datetime          import datetime, timedelta
   
 from common            import getDates, addDaystoStrDate, get_WE_indice, drawAnnotation
 from common            import getLowerDateFromString, getNbDaysBetweenDateFromString, getRepertoire
-from ProcessSEIR1R2F   import fit
+from ProcessSEIR1R2F   import fit 
 from SolveEDO_SEIR1R2F import SolveEDO_SEIR1R2F
 
 dpi     = 120    # plot resolution of saved figures
