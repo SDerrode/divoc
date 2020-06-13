@@ -44,7 +44,7 @@ def fit(sysargv):
 		argv[1] : Country (or list separeted by ','), or 'France' followed by a list of dpts. Default: France 
 		argv[2] : Periods ('1' -> 1 period ('all-in-on'), '!=1' -> severall periods).          Default: 1
 		argv[3] : Shift of periods (in days).                                                 Default: 0
-		argv[4] : UKF filtering of data (0/1).                                                Default: 1
+		argv[4] : UKF filtering of data (0/1).                                                Default: 0
 		argv[5] : Verbose level (debug: 3, ..., almost mute: 0).                              Default: 1
 		argv[6] : Plot graphique (0/1).                                                       Default: 1
 	"""
@@ -61,7 +61,7 @@ def fit(sysargv):
 	listplaces = ['France']
 	nbperiodes = 1
 	decalage   = 2
-	UKF_filt   = True
+	UKF_filt   = False
 	verbose    = 1
 	plot       = True
 
@@ -79,7 +79,7 @@ def fit(sysargv):
 
 	if len(sysargv)>1: nbperiodes    = int(sysargv[1])
 	if len(sysargv)>2: decalage      = int(sysargv[2])
-	if len(sysargv)>3 and int(sysargv[3])==0: UKF_filt = False
+	if len(sysargv)>3 and int(sysargv[3])==1: UKF_filt = True
 	if len(sysargv)>4: verbose       = int(sysargv[4])
 	if len(sysargv)>5 and int(sysargv[5])==0: plot     = False
 	if nbperiodes==1: 
@@ -244,10 +244,6 @@ def fit(sysargv):
 				_, a0, b0, c0, f0 = solveur.modele.getParam()
 				if i == 1:
 					a0 /= 4. # le confinement réduit drastiquement (pour aider l'optimisation) 
-				# if i == 2:
-				#  	a0 /= 1.
-				#  	b0 /= 2.5
-				#  	c0 /= 3.
 				T  = 120
 				ts = 0
 
@@ -262,7 +258,8 @@ def fit(sysargv):
 			# Solve ode avant optimization
 			sol_ode = solveur.solveEDO(time)
 			# calcul time shift initial (ts) with respect to data
-			# ts       = solveur.compute_tsfromEQM(data[slicedata, :], T, indexdata)
+			# ts         = solveur.compute_tsfromEQM(data[slicedata, :], T, indexdata)
+			solveur.TS = ts
 			sliceedo = slice(ts, min(ts+dataLengthPeriod, T))
 			if verbose>0:
 				print(solveur)
@@ -272,7 +269,7 @@ def fit(sysargv):
 			if plot==True:
 				listePlot = [3]
 				filename  = prefFig + '_Period' + str(i) + '_' + str(len(ListDatesStr)-1) + '_Fitinit_' + ''.join(map(str, listePlot)) + '.png'
-				solveur.plotEDO(filename, placefull, sliceedo, slicedata, plot=listePlot, data=data, text=solveur.getTextParam(readStartDateStr))
+				solveur.plotEDO(filename, placefull, sliceedo, slicedata, plot=listePlot, data=data, text=solveur.getTextParam(fitStartDateStr))
 
 			# Parameters optimization
 			############################################################################
@@ -305,7 +302,7 @@ def fit(sysargv):
 
 			# sauvegarde des param (tableau et texte)
 			ListetabParamModelPlace.append([a1, b1, c1, f1, R0])
-			ListeTextParamPlace    .append(solveur.getTextParamWeak(readStartDateStr))
+			ListeTextParamPlace    .append(solveur.getTextParamWeak(fitStartDateStr))
 			
 			data_deriv_period    = (data[slicedataderiv, :]           - data   [slicedataderiv.start-1:slicedataderiv.stop-1, :])        / dt
 			modelR1_deriv_period = (sol_ode[sliceedoderiv, indexdata] - sol_ode[sliceedoderiv.start-1 :sliceedoderiv.stop-1, indexdata]) / dt
@@ -315,17 +312,17 @@ def fit(sysargv):
 				
 				# listePlot =[0,1,2,3,4]
 				# filename  = prefFig + '_Period' + str(i) + '_' + str(len(ListDatesStr)-1) + '_Fit_' + ''.join(map(str, listePlot)) + '.png'
-				# solveur.plotEDO(filename, titre, sliceedo, slicedata, plot=listePlot, data=data, text=solveur.getTextParam(readStartDateStr))
+				# solveur.plotEDO(filename, titre, sliceedo, slicedata, plot=listePlot, data=data, text=solveur.getTextParam(fitStartDateStr))
 				listePlot =[1,2,3]
 				filename  = prefFig + '_Period' + str(i) + '_' + str(len(ListDatesStr)-1) + '_Fit_' + ''.join(map(str, listePlot)) + '.png'
-				solveur.plotEDO(filename, titre, sliceedo, slicedata, plot=listePlot, data=data, text=solveur.getTextParam(readStartDateStr))
+				solveur.plotEDO(filename, titre, sliceedo, slicedata, plot=listePlot, data=data, text=solveur.getTextParam(fitStartDateStr))
 				listePlot =[3]
 				filename  = prefFig + '_Period' + str(i) + '_' + str(len(ListDatesStr)-1) + '_Fit_' + ''.join(map(str, listePlot)) + '.png'
-				solveur.plotEDO(filename, titre, sliceedo, slicedata, plot=listePlot, data=data, text=solveur.getTextParam(readStartDateStr))
+				solveur.plotEDO(filename, titre, sliceedo, slicedata, plot=listePlot, data=data, text=solveur.getTextParam(fitStartDateStr))
 
 				# dérivée  numérique de R1
 				filename = prefFig + '_Period' + str(i) + '_' + str(len(ListDatesStr)-1) + '_Fit_' + ''.join(map(str, listePlot)) + 'Deriv.png'
-				solveur.plotEDO_deriv(filename, titre, sliceedoderiv, slicedataderiv, data_deriv_period, indexdata, text=solveur.getTextParam(readStartDateStr))
+				solveur.plotEDO_deriv(filename, titre, sliceedoderiv, slicedataderiv, data_deriv_period, indexdata, text=solveur.getTextParam(fitStartDateStr))
 
 			# sol_ode_withSwitch = solveur.solveEDO_withSwitch(T, timeswitch=ts+dataLengthPeriod)
 
