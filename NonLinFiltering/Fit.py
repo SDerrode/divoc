@@ -25,11 +25,11 @@ def main(sysargv):
         For countries (European database)
         >> python3 Fit.py 
         >> python3 Fit.py France SEIR1R2 10 0 1 1
-        >> python3 Fit.py Italy,Spain SEIR1R2 10 1 1 1 # Iatly and Spain, with UKF filtering
+        >> python3 Fit.py Italy,Spain SEIR1R2F 10 1 1 1 # Italy and Spain, with UKF filtering
 
         For French Region (French database)
-        >> python3 Fit.py France,69    SEIR1R2 10 0 1 1 # Dpt 69 (Rhône)
-        >> python3 Fit.py France,69,01 SEIR1R2 10 1 1 1 # Dpt 69 (Rhône) + Dpt 01 (Ain) with UKF filtering
+        >> python3 Fit.py France,69    SEIR1R2  10 0 1 1 # Dpt 69 (Rhône)
+        >> python3 Fit.py France,69,01 SEIR1R2F 10 1 1 1 # Dpt 69 (Rhône) + Dpt 01 (Ain) with UKF filtering
         
         argv[1] : Country (or list separeted by ','), or 'France' followed by a list of dpts. Default: France 
         argv[2] : EDO model (SEIR1R2 or SEIR1R2F)                                             Default: SEIR2R2         
