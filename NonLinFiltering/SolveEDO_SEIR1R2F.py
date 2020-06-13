@@ -44,6 +44,10 @@ class SolveEDO_SEIR1R2F(SolveEDO):
 		S += '\n' + r'  $F_0=' + str(self.y0[5]) + '$'
 		return S
 
+	def getTextParamWeak(self, startDate=None):
+		S = super().getTextParamWeak(startDate)
+		return S
+
 	def setN(self, N):
 		self.N = N
 		# MAJ des autres paramètres en conséquence

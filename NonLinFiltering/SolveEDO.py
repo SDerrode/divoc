@@ -51,6 +51,16 @@ class SolveEDO:
 				S += '\n  Start date:'+dateI0
 		return S
 
+	def getTextParamWeak(self, startDate=None):
+		S  = self.modele.getTextParam()
+		if self.TS != -1:
+			if startDate==None:
+				S += '\n  Time Shift=$'+str(self.TS)+'$'
+			else:
+				dateI0 = addDaystoStrDate(startDate, -self.TS)
+				S += '\n  Start date:'+dateI0
+		return S
+
 	def getParamInit(self):
 		return self.y0
 

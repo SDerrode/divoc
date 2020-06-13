@@ -60,7 +60,7 @@ def fit(sysargv):
 	# Default value for parameters
 	listplaces = ['France']
 	nbperiodes = 1
-	decalage   = 0
+	decalage   = 2
 	UKF_filt   = True
 	verbose    = 1
 	plot       = True
@@ -83,7 +83,7 @@ def fit(sysargv):
 	if len(sysargv)>4: verbose       = int(sysargv[4])
 	if len(sysargv)>5 and int(sysargv[5])==0: plot     = False
 	if nbperiodes==1: 
-		decalage = 0  # nécessairement pas de décalage
+		decalage = 2  # nécessairement pas de décalage (on compense le recouvrement)
 
 	
 	# Constantes
@@ -306,7 +306,7 @@ def fit(sysargv):
 
 			# sauvegarde des param (tableau et texte)
 			ListetabParamModelPlace.append([a1, b1, c1, f1, R0])
-			ListeTextParamPlace    .append(solveur.getTextParam(readStartDateStr))
+			ListeTextParamPlace    .append(solveur.getTextParamWeak(readStartDateStr))
 			
 			data_deriv_period    = (data[slicedataderiv, :]           - data   [slicedataderiv.start-1:slicedataderiv.stop-1, :])        / dt
 			modelR1_deriv_period = (sol_ode[sliceedoderiv, indexdata] - sol_ode[sliceedoderiv.start-1 :sliceedoderiv.stop-1, indexdata]) / dt

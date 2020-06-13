@@ -45,27 +45,39 @@ def main(argv):
 
     # fit avec une seule période
     ##################################
-    # nbperiodes = 1
-    # decalage   = 0 # corrigé par le recouvrement
-    # surplus    = 0
-    # model_allinone, ListeTextParamPlace_allinone, _, data_deriv_allinone, moldelR1_deriv_allinone, decalage_corrige = \
-    #     fitplace(places, listplaces, nbperiodes, decalage, surplus, verbose, 0, 'All-In-One', FrDatabase)
-
-    # for indexplace in range(len(listplaces)):
-    #     for texte in ListeTextParamPlace_allinone[indexplace]:
-    #         print(texte)
+    nbperiodes = 1
+    decalage   = 2
     
+    model_allinone, ListeTextParamPlace_allinone, liste_pd_allinone, data_deriv_allinone, modelR1_deriv_allinone, decalage_corrige, _, _ = \
+            fit([places, nbperiodes, decalage, UKF_filt, verbose, 0])
 
+    ListeTestPlace = []
+    for indexplace in range(len(listplaces)):
+        texteplace = ''
+        for texte in ListeTextParamPlace_allinone[indexplace]:
+            texteplace += '\n' + texte
+            print(texte.replace('$', '').replace('\\', ''))
+        ListeTestPlace.append(texteplace)
+
+    PlotPlace(data_deriv_allinone, modelR1_deriv_allinone, listplaces, decalage_corrige, UKF_filt, FrDatabase, 'All-In-One', ListeTestPlace)
+ 
     # fit avec 3 périodes + décalage
     ##################################
     nbperiodes = -1
-    
-    model_piecewise, ListeTextParamPlace_piecewise, listepd, data_deriv_piecewise, moldelR1_deriv_piecewise, decalage_corrige = \
-        fitplace(places, listplaces, nbperiodes, decalage3periodes, UKF_filt, verbose, 0, 'Piecewise', FrDatabase)
 
+    model_piecewise, ListeTextParamPlace_piecewise, liste_pd_piecewise, data_deriv_piecewise, modelR1_deriv_piecewise, decalage_corrige, _, _ = \
+            fit([places, nbperiodes, decalage3periodes, UKF_filt, verbose, 0])
+    
+    ListeTestPlace = []
     for indexplace in range(len(listplaces)):
+        texteplace = ''
         for texte in ListeTextParamPlace_piecewise[indexplace]:
+            texteplace += '\n' + texte
             print(texte.replace('$', '').replace('\\', ''))
+        ListeTestPlace.append(texteplace)
+
+    PlotPlace(data_deriv_piecewise, modelR1_deriv_piecewise, listplaces, decalage_corrige, UKF_filt, FrDatabase, 'Piecewise', ListeTestPlace)
+
 
     # Plot the two strategies in one figure
     ##################################
@@ -79,14 +91,14 @@ def main(argv):
 
         # Repertoire des figures
         repertoire = getRepertoire(UKF_filt, './figures/SEIR1R2F_UKFilt/'+placefull, './figures/SEIR1R2F/' + placefull)
-        prefFig = repertoire + '/' + placefull
+        prefFig    = repertoire + '/' + placefull
         
         # Preparation plot pandas
-        listheader = list(listepd[indexplace])
+        listheader = list(liste_pd_piecewise[indexplace])
         # on ajoute les dérivées numériques des cas et des morts
-        listepd[indexplace]['dcases']  = listepd[indexplace][listheader[0]].diff()
-        listepd[indexplace]['ddeaths'] = listepd[indexplace][listheader[1]].diff()
-        longueur = len(listepd[indexplace].loc[:, ('dcases')])
+        liste_pd_piecewise[indexplace]['dcases']  = liste_pd_piecewise[indexplace][listheader[0]].diff()
+        liste_pd_piecewise[indexplace]['ddeaths'] = liste_pd_piecewise[indexplace][listheader[1]].diff()
+        longueur = len(liste_pd_piecewise[indexplace].loc[:, ('dcases')])
 
         if FrDatabase==True:
             DatesString = getDates('France', verbose)
@@ -94,12 +106,12 @@ def main(argv):
             DatesString = getDates(place, verbose)
 
         # on ajoute les dérivées numériques des cas et des morts
-        listepd[indexplace].loc[:, ('mc_piecewise')] = moldelR1_deriv_piecewise[indexplace, 0:longueur, 0]
-        listepd[indexplace].loc[:, ('md_piecewise')] = moldelR1_deriv_piecewise[indexplace, 0:longueur, 1]
+        liste_pd_piecewise[indexplace].loc[:, ('mc_piecewise')] = modelR1_deriv_piecewise[indexplace, 0:longueur, 0]
+        liste_pd_piecewise[indexplace].loc[:, ('md_piecewise')] = modelR1_deriv_piecewise[indexplace, 0:longueur, 1]
         
-        filename = prefFig + '_DiffR1F_BothFit_Shift' + str(decalage_corrige) + '.png'
-        title    = place + ' - Shift=' + str(decalage_corrige) + ' day(s)'
-        PlotAllPandas(listepd[indexplace], title, filename, y=['dcases', 'mc_piecewise', 'ddeaths', 'md_piecewise'], Dates=DatesString)
+        # filename = prefFig + '_Diff_BothFit_Shift' + str(decalage_corrige) + '.png'
+        # title    = place + ' - Shift=' + str(decalage_corrige) + ' day(s)'
+        # PlotAllPandas(liste_pd_piecewise[indexplace], title, filename, y=['dcases', 'mc_piecewise', 'ddeaths', 'md_piecewise'], Dates=DatesString, textannotation=ListeTestPlace[indexplace])
 
     # Plot the two SEIR1R2F
     ##################################
@@ -117,8 +129,8 @@ def main(argv):
         prefFig = repertoire + '/' + placefull
 
         # Preparation plot pandas
-        listheader = list(listepd[indexplace])
-        longueur = len(listepd[indexplace].loc[:, (listheader[0])])
+        listheader = list(liste_pd_piecewise[indexplace])
+        longueur = len(liste_pd_piecewise[indexplace].loc[:, (listheader[0])])
         # print('longueur=', longueur)
 
         if FrDatabase==True:
@@ -126,27 +138,27 @@ def main(argv):
         else:
             DatesString = getDates(place, verbose)
 
-        listepd[indexplace].loc[:, ('Sp')]  = model_piecewise [indexplace, :, 0]
-        listepd[indexplace].loc[:, ('Ep')]  = model_piecewise [indexplace, :, 1]
-        listepd[indexplace].loc[:, ('Ip')]  = model_piecewise [indexplace, :, 2]
-        listepd[indexplace].loc[:, ('R1p')] = model_piecewise [indexplace, :, 3]
-        listepd[indexplace].loc[:, ('R2p')] = model_piecewise [indexplace, :, 4]
-        listepd[indexplace].loc[:, ('Fp')]  = model_piecewise [indexplace, :, 5]
-        # print(listepd[indexplace].head())
+        liste_pd_piecewise[indexplace].loc[:, ('Sp')]  = model_piecewise [indexplace, :, 0]
+        liste_pd_piecewise[indexplace].loc[:, ('Ep')]  = model_piecewise [indexplace, :, 1]
+        liste_pd_piecewise[indexplace].loc[:, ('Ip')]  = model_piecewise [indexplace, :, 2]
+        liste_pd_piecewise[indexplace].loc[:, ('R1p')] = model_piecewise [indexplace, :, 3]
+        liste_pd_piecewise[indexplace].loc[:, ('R2p')] = model_piecewise [indexplace, :, 4]
+        liste_pd_piecewise[indexplace].loc[:, ('Fp')]  = model_piecewise [indexplace, :, 5]
+        # print(liste_pd_piecewise[indexplace].head())
         # input('pause')
 
         title    = place + ' - Shift=' + str(decalage_corrige) + ' day(s)'
-        filename = prefFig +'_EIR1F_piecewise_Shift' + str(decalage_corrige) + '.png'
-        y=['Ep', 'Ip', 'R1p', 'Fp']
-        PlotSEIR1R2Pandas(listepd[indexplace], title, filename, y=y, Dates=DatesString)
+        listePlot=['Ep', 'Ip', 'R1p', 'Fp']
+        filename = prefFig +'_' + ''.join(map(str, listePlot)) + '_piecewise_Shift' + str(decalage_corrige) + '.png'
+        PlotSEIR1R2Pandas(liste_pd_piecewise[indexplace], title, filename, y=listePlot, Dates=DatesString, textannotation=ListeTestPlace[indexplace])
 
         title    = place + ' - Shift=' + str(decalage_corrige) + ' day(s)'
-        filename = prefFig +'_R1F_piecewise_Shift' + str(decalage_corrige) + '.png'
-        y=['R1p', 'Fp']
-        PlotSEIR1R2Pandas(listepd[indexplace], title, filename, y=y, Dates=DatesString)
+        listePlot=['R1p', 'Fp']
+        filename = prefFig +'_' + ''.join(map(str, listePlot)) + '_piecewise_Shift' + str(decalage_corrige) + '.png'
+        PlotSEIR1R2Pandas(liste_pd_piecewise[indexplace], title, filename, y=listePlot, Dates=DatesString, textannotation=ListeTestPlace[indexplace])
 
 
-def PlotSEIR1R2Pandas(pd, titre, filenameFig, y, Dates=None):
+def PlotSEIR1R2Pandas(pd, titre, filenameFig, y, Dates=None, textannotation=''):
     
     if len(y)==0 or y is None: pass
 
@@ -184,6 +196,11 @@ def PlotSEIR1R2Pandas(pd, titre, filenameFig, y, Dates=None):
         ax.axvspan(pd.index[WE_indices[i]], pd.index[WE_indices[i+1]], facecolor='gray', edgecolor='none', alpha=.15, zorder=-100)
         i += 2
 
+    # ajout d'un text d'annotation
+    if textannotation != '':
+        bbox=dict(boxstyle='round4, pad=.3', alpha=0.5, color='xkcd:light turquoise') #, facecolor='0.8', edgecolor='xkcd:light turquoise', lw=0.5)
+        ax.annotate(textannotation, xy=(ax.get_xlim()[1], ax.get_ylim()[0]+(ax.get_ylim()[1]-ax.get_ylim()[0])/3.), fontsize=6, bbox=bbox, ha="left", va="center") 
+
     # axes
     ax.grid(True, which='major', axis='both')
     ax.grid(True, which='minor', axis='both')
@@ -198,13 +215,14 @@ def PlotSEIR1R2Pandas(pd, titre, filenameFig, y, Dates=None):
 
     # legende
     legend = ax.legend().get_frame().set_alpha(0.8)
-    plt.legend(fontsize=7)
+    plt.tight_layout(rect=(0, 0, 1., 0.95))
+    plt.legend(fontsize=8)
     plt.tight_layout()
     plt.savefig(filenameFig, dpi=dpi)
     plt.close()
 
 
-def PlotAllPandas(pd, titre, filenameFig, y, Dates=None):
+def PlotAllPandas(pd, titre, filenameFig, y, Dates=None, textannotation=''):
 
     if len(y)==0 or y is None: pass
 
@@ -217,7 +235,7 @@ def PlotAllPandas(pd, titre, filenameFig, y, Dates=None):
     colori  = [mod.getColor(3), mod.getColor(5)]
 
     fig = plt.figure(facecolor='w', figsize=figsize)
-    ax = fig.add_subplot(111, facecolor='#dddddd', axisbelow=True)
+    ax  = fig.add_subplot(111, facecolor='#dddddd', axisbelow=True)
 
     # Dessin des courbes
     linestyles = ['-', '-', '-', '-']#, '-']
@@ -246,6 +264,11 @@ def PlotAllPandas(pd, titre, filenameFig, y, Dates=None):
         ax.axvspan(pd.index[WE_indices[i]], pd.index[WE_indices[i+1]], facecolor='gray', edgecolor='none', alpha=.15, zorder=-100)
         i += 2
 
+    # ajout d'un text d'annotation
+    if textannotation != '':
+        bbox=dict(boxstyle='round4, pad=.3', alpha=0.5, color='xkcd:light turquoise') #, facecolor='0.8', edgecolor='xkcd:light turquoise', lw=0.5)
+        ax.annotate(textannotation, xy=(ax.get_xlim()[1], ax.get_ylim()[0]+(ax.get_ylim()[1]-ax.get_ylim()[0])/3.), fontsize=6, bbox=bbox, ha="left", va="center") 
+
     # axes
     ax.grid(True, which='major', axis='both')
     ax.grid(True, which='minor', axis='both')
@@ -260,49 +283,13 @@ def PlotAllPandas(pd, titre, filenameFig, y, Dates=None):
 
     # legende
     legend = ax.legend().get_frame().set_alpha(0.5)
-    plt.legend(fontsize=9)
-    #plt.tight_layout()
+    plt.legend(fontsize=8)
+    plt.tight_layout(rect=(0, 0, 1., 0.95))
     plt.savefig(filenameFig, dpi=dpi)
     plt.close()
 
 
-def PlotFit(data_deriv, model_deriv, title, ch, filename):
-
-    fig = plt.figure(facecolor='w', figsize=figsize)
-    ax  = fig.add_subplot(111, facecolor='#dddddd', axisbelow=True)
-
-    # juste pour récupérer la bonne coukeur
-    solveur = SolveEDO_SEIR1R2F(N=1, dt=1, verbose=0)
-    mod     = solveur.modele
-    colori  = [mod.getColor(3), mod.getColor(5)]
-
-    time = np.linspace(1, len(data_deriv[1:, 0]), len(data_deriv[1:, 0]))
-    ax.plot(time, data_deriv [1:, 0], label=r'$\frac{\partial R^1(n)}{\partial n}$ - ' + ch, color=colori[0], alpha=1.0, lw=0.5, marker='x')
-    ax.plot(time, model_deriv[1:, 0], label=r'$\frac{\partial R^1(t)}{\partial t}$ - ' + ch, color=colori[0], alpha=1.0, lw=1.5)
-    ax.plot(time, data_deriv [1:, 1], label=r'$\frac{\partial F(n)}{\partial n}$ - '   + ch, color=colori[1], alpha=1.0, lw=0.5, marker='+')
-    ax.plot(time, model_deriv[1:, 1], label=r'$\frac{\partial F(t)}{\partial t}$ - '   + ch, color=colori[1], alpha=1.0, lw=1.5)
-
-    ax.set_xlabel('Time (days)')
-    ax.yaxis.set_tick_params(length=0)
-    ax.xaxis.set_tick_params(length=0)
-    ax.grid(b=True, which='major', c='w', lw=1, ls='-')
-    
-    legend = ax.legend()
-    legend.get_frame().set_alpha(0.5)
-    for spine in ('top', 'right', 'bottom', 'left'):
-        ax.spines[spine].set_visible(False)
-
-    plt.title(title)
-    plt.savefig(filename, dpi=dpi)
-    plt.close()
-
-
-def fitplace(places, listplaces, nbperiodes, decalage, UKF_filt, verbose, plot, ch, FrDatabase):
-
-    model, ListeTextParamPlace, listepd, data_deriv, moldelR1_deriv, decalage_corrige, _, _ = \
-            fit([places, nbperiodes, decalage, UKF_filt, verbose, plot])
-    
-    print('np.shape(moldelR1_deriv)=', np.shape(moldelR1_deriv))
+def PlotPlace(data_deriv, model_derive, listplaces, decalage_corrige, UKF_filt, FrDatabase, ch, listetextannotation):
 
     # Plot
     for indexplace, place in enumerate(listplaces):
@@ -317,15 +304,46 @@ def fitplace(places, listplaces, nbperiodes, decalage, UKF_filt, verbose, plot, 
         repertoire = getRepertoire(UKF_filt, './figures/SEIR1R2F_UKFilt/'+placefull, './figures/SEIR1R2F/' + placefull)
         prefFig = repertoire + '/' + placefull
 
-        filename = prefFig + '_DiffR1_' + ch + '_Shift' + str(decalage_corrige) + '.png'
+        filename = prefFig + '_Diff_' + ch + '_Shift' + str(decalage_corrige) + '.png'
         title    = place + ' - Shift=' + str(decalage_corrige) + ' day(s)'
-        #dataLength = listepd[indexplace].shape[0]
-        PlotFit(data_deriv[indexplace, :], moldelR1_deriv[indexplace, :], title, ch, filename)
+        PlotFit(data_deriv[indexplace], model_derive[indexplace], title, filename, ch, listetextannotation[indexplace])
 
-    return model, ListeTextParamPlace, listepd, data_deriv, moldelR1_deriv, decalage_corrige
 
+def PlotFit(data_deriv, model_deriv, title, filename, ch, textannotation=''):
+
+    fig = plt.figure(facecolor='w', figsize=figsize)
+    ax  = fig.add_subplot(111, facecolor='#dddddd', axisbelow=True)
+
+    # juste pour récupérer la bonne coukeur
+    solveur = SolveEDO_SEIR1R2F(N=1, dt=1, verbose=0)
+    mod     = solveur.modele
+    colori  = [mod.getColor(3), mod.getColor(5)]
+
+    time = np.linspace(1, len(data_deriv[1:]), len(data_deriv[1:]))
+    ax.plot(time, data_deriv [1:, 0], label=r'$\frac{\partial R^1(n)}{\partial n}$ - ' + ch, color=colori[0], alpha=1.0, lw=0.5, marker='x')
+    ax.plot(time, model_deriv[1:, 0], label=r'$\frac{\partial R^1(t)}{\partial t}$ - ' + ch, color=colori[0], alpha=1.0, lw=1.5)
+    ax.plot(time, data_deriv [1:, 1], label=r'$\frac{\partial F(n)}{\partial n}$ - '   + ch, color=colori[1], alpha=1.0, lw=0.5, marker='+')
+    ax.plot(time, model_deriv[1:, 1], label=r'$\frac{\partial F(t)}{\partial t}$ - '   + ch, color=colori[1], alpha=1.0, lw=1.5)
+
+    # ajout d'un text d'annotation
+    if textannotation != '':
+        bbox=dict(boxstyle='round4, pad=.3', alpha=0.5, color='xkcd:light turquoise') #, facecolor='0.8', edgecolor='xkcd:light turquoise', lw=0.5)
+        ax.annotate(textannotation, xy=(ax.get_xlim()[1], ax.get_ylim()[0]+(ax.get_ylim()[1]-ax.get_ylim()[0])/2.6), fontsize=6, bbox=bbox, ha="left", va="center") 
+
+    ax.set_xlabel('Time (days)')
+    ax.yaxis.set_tick_params(length=0)
+    ax.xaxis.set_tick_params(length=0)
+    ax.grid(b=True, which='major', c='w', lw=1, ls='-')
+    
+    legend = ax.legend()
+    legend.get_frame().set_alpha(0.5)
+    for spine in ('top', 'right', 'bottom', 'left'):
+        ax.spines[spine].set_visible(False)
+
+    plt.tight_layout(rect=(0, 0, 1., 0.95))
+    plt.title(title)
+    plt.savefig(filename, dpi=dpi)
+    plt.close()
 
 if __name__ == '__main__':
     main(sys.argv)
-
-
