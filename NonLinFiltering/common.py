@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+import os
 import pandas            as pd
 import numpy             as np
 import matplotlib.pyplot as plt
@@ -13,6 +14,15 @@ from Covid_SpecialDates import Covid_SpecialDates
 dpi           = 120    # plot resolution of saved figures
 figsize       = (8, 4) # figure's size (width, height)
 strDate       = "%Y-%m-%d"
+
+def getRepertoire(bool, rep1, rep2=''):
+	if bool == True:
+		repertoire = rep1
+	else:
+		repertoire = rep2
+	if not os.path.exists(repertoire):
+		os.makedirs(repertoire)
+	return repertoire
 
 def getMaxEQM(sol_edo_R1, data, T):
 	dataLength = len(data)
@@ -253,7 +263,7 @@ def PlotData(pd, titre, filenameFig, y, color='black', Dates=None):
 	ax = fig.add_subplot(111, facecolor='#dddddd', axisbelow=True)
 
 	# Dessin des courbes théoriques
-	pd.plot(ax=ax, y=y, color=color, title=titre, marker='x', ls='-')
+	pd.plot(ax=ax, y=y, color=color, title=titre, marker='x', ls='-', lw=0.5)
 	
 	# ajout des dates spéciales
 	if Dates!=None:
@@ -286,7 +296,6 @@ def PlotData(pd, titre, filenameFig, y, color='black', Dates=None):
 	# legende
 	legend = ax.legend().get_frame().set_alpha(0.8)
 	plt.legend(fontsize=7)
-	
 	plt.tight_layout()
 	plt.savefig(filenameFig, dpi=dpi)
 	plt.close()

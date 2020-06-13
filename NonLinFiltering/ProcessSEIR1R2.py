@@ -12,7 +12,7 @@ from filterpy.common  import Q_discrete_white_noise
 from datetime         import datetime, timedelta
 from sklearn.metrics  import mean_squared_error
 
-from common           import readDataEurope, readDataFrance, getDates, addDaystoStrDate
+from common           import readDataEurope, readDataFrance, getDates, addDaystoStrDate, getRepertoire
 from common           import getLowerDateFromString, getNbDaysBetweenDateFromString, GetPairListDates
 from SolveEDO_SEIR1R2 import SolveEDO_SEIR1R2
 
@@ -93,7 +93,6 @@ def fit(sysargv):
 	readStopDateStr  = None
 	recouvrement     = -2
 	dt               = 1
-	indexdata        = [3]
 
 	# Data reading to get first and last date available in the data set
 	######################################################
@@ -120,13 +119,13 @@ def fit(sysargv):
 
 	# Collections of data return by this function
 	modelSEIR1R2  = np.zeros(shape=(len(listplaces), dataLength, 5))
-	data_deriv    = np.zeros(shape=(len(listplaces), dataLength, len(indexdata)))
-	modelR1_deriv = np.zeros(shape=(len(listplaces), dataLength, len(indexdata)))
+	data_deriv    = np.zeros(shape=(len(listplaces), dataLength, 1))
+	modelR1_deriv = np.zeros(shape=(len(listplaces), dataLength, 1))
 	Listepd            = []
 	ListetabParamModel = []
 
 	# data observed
-	data = np.zeros(shape=(dataLength, len(indexdata)))
+	data = np.zeros(shape=(dataLength, 1))
 
 	# Paramètres sous forme de chaines de caractères
 	ListeTextParam = [] 
@@ -167,8 +166,8 @@ def fit(sysargv):
 			
 			# UKF filtering and smoothing, batch mode
 			R1filt, _ = ukf.batch_filter(data2filter)
-			pd_exerpt[HeadData[0] + ' filt'] = R1filt
 			HeadData[0] = HeadData[0] + ' filt'
+			pd_exerpt[HeadData[0]] = R1filt
 
 
 		# Get the list of dates to process
@@ -180,18 +179,12 @@ def fit(sysargv):
 			#input('pause')
 		
 		# Solveur edo
-		solveur = SolveEDO_SEIR1R2(N, dt, verbose)
+		solveur   = SolveEDO_SEIR1R2(N, dt, verbose)
+		indexdata = solveur.indexdata
 		E0, I0, R10, R20 = 0, 1, 0, 0
 
-		# Constantes
-		import os
-		if UKF_filt == True:
-			repertoire = './figures/SEIR1R2_UKFilt/' + placefull
-		else:
-			repertoire = './figures/SEIR1R2/' + placefull
-
-		if not os.path.exists(repertoire):
-			os.makedirs(repertoire)
+		# Repertoire des figures
+		repertoire = getRepertoire(UKF_filt, './figures/SEIR1R2_UKFilt/'+placefull, './figures/SEIR1R2/' + placefull)
 		prefFig = repertoire + '/' + solveur.modele.modelShortName + '_' + placefull
 		
 		# Remise à 0 des données
@@ -251,18 +244,15 @@ def fit(sysargv):
 				R10 = int(data[indMinPeriod, 0]) # on corrige R1 à la valeur numérique 
 				_, a0, b0, c0, f0 = solveur.modele.getParam()
 				if i == 1:
-				 	a0 /= 2. # le confinement réduit drastiquement (pour aider l'optimisation) 
-				if i == 2:
-				 	a0 /= 2.5
-				 	b0 /= 3.
-				 	c0 /= 6.
+				 	a0 /= 4. # le confinement réduit drastiquement (pour aider l'optimisation) 
+				# if i == 2:
+				#  	a0 /= 1.
+				#  	b0 /= 2.5
+				#  	c0 /= 3.
 				T  = 120
 				ts = 0
 
 			time = np.linspace(0, T-1, T)
-
-
-			#print('AU DEBUT : E0, I0, R10, R20=', E0, I0, R10, R20)
 
 			solveur.modele.setParam(N=N,  a=a0,  b=b0,   c=c0,    f=f0)
 			solveur.setParamInit   (N=N, E0=E0, I0=I0, R10=R10, R20=R20)
@@ -303,9 +293,7 @@ def fit(sysargv):
 			###############################
 			
 			# Solve ode apres optimization
-			# print('AVANT ts=', solveur.TS)
 			sol_ode = solveur.solveEDO(time)
-			# print('apres ts=', solveur.TS)
 			# calcul time shift with respect to data
 			#ts            = solveur.compute_tsfromEQM(data[slicedata, :], T, indexdata)
 			ts = solveur.TS
@@ -322,9 +310,6 @@ def fit(sysargv):
 			
 			data_deriv_period    = (data[slicedataderiv, :]           - data   [slicedataderiv.start-1:slicedataderiv.stop-1, :])        / dt
 			modelR1_deriv_period = (sol_ode[sliceedoderiv, indexdata] - sol_ode[sliceedoderiv.start-1 :sliceedoderiv.stop-1, indexdata]) / dt
-			# print('np.shape(data_deriv_period)   =', np.shape(data_deriv_period))
-			# print('np.shape(modelR1_deriv_period)=', np.shape(modelR1_deriv_period))
-			#input('pause')
 
 			if plot==True:
 				titre = placefull + '- Period ' + str(i) + '\\' + str(len(ListDatesStr)-1) + ' - Shift=' + str(decalage+recouvrement)
@@ -340,7 +325,7 @@ def fit(sysargv):
 				solveur.plotEDO(filename, titre, sliceedo, slicedata, plot=listePlot, data=data, text=solveur.getTextParam(readStartDateStr))
 
 				# dérivée  numérique de R1
-				filename = prefFig + '_Period' + str(i) + '_' + str(len(ListDatesStr)-1) + '_Fit_3Deriv.png'
+				filename = prefFig + '_Period' + str(i) + '_' + str(len(ListDatesStr)-1) + '_Fit_' + ''.join(map(str, listePlot)) + 'Deriv.png'
 				solveur.plotEDO_deriv(filename, titre, sliceedoderiv, slicedataderiv, data_deriv_period, indexdata, text=solveur.getTextParam(readStartDateStr))
 
 			# sol_ode_withSwitch = solveur.solveEDO_withSwitch(T, timeswitch=ts+dataLengthPeriod)

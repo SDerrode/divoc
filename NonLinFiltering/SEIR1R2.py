@@ -28,9 +28,6 @@ class SEIR1R2:
 		self.dt = dt
 
 		self.colorCycle = plt.rcParams['axes.prop_cycle'].by_key()['color']
-		
-		#a, b, c, f = 0.9025, 0.68, 0.43, 0.4
-		#a, b, c, f = 0.155, 1./5.2, 1./12.39, 0.05
 
 	def __str__(self):
 		S  = 'Model ' + self.modelName + ':' + ' \n  N=' + str(self.N) 
@@ -94,13 +91,13 @@ class SEIR1R2:
 		if string == r'$R^2(t)$': return self.colorCycle[4] 
 		return string
 
-	def fx(self, x, dt):
-		'''State transition function for Bacaer's model SEIR1R2'''
+	# def fx(self, x, dt):
+	# 	'''State transition function for Bacaer's model SEIR1R2'''
 
-		# petite normalisation pour éviter des dérives
-		x /= abs(np.sum(x))/self.N
-		ret = odeint(self.deriv, x, [0, dt], args=self.getParam())
-		return ret.T[:, -1]
+	# 	# petite normalisation pour éviter des dérives
+	# 	x /= abs(np.sum(x))/self.N
+	# 	ret = odeint(self.deriv, x, [0, dt], args=self.getParam())
+	# 	return ret.T[:, -1]
 
-	def hx(self, x):
-		return x[[3]] # on renvoie R1 (4ieme élément dans le vecteur SEIR1R2)
+	# def hx(self, x):
+	# 	return x[[3]] # on renvoie R1 (4ieme élément dans le vecteur SEIR1R2)

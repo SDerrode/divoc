@@ -3,7 +3,6 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
-
 from scipy.integrate import odeint
 
 from SEIR1R2 import SEIR1R2
@@ -19,8 +18,8 @@ class SEIR1R2F(SEIR1R2):
 		super().__init__(N, dt, verbose)
 
 		# Correction of some varaible specific
-		self.dimState       = 5          # Les 5 variables du modèle SEIR1R2F (S, E, ...)
-		self.dimObs         = 2          # On observe  R1 et F 
+		self.dimState       = 6          # Les 6 variables du modèle SEIR1R2F (S, E, ...)
+		self.dimObs         = 2          # On observe R1 et F 
 		self.modelName      = 'SEIRF'    # Long name for the model
 		self.modelShortName = 'SEIR1R2F' # Short name for the model
 
@@ -82,15 +81,15 @@ class SEIR1R2F(SEIR1R2):
 		if string == r'$F(t)$'  : return self.colorCycle[5] 
 		return col
 
-	def fx(self, x, dt):
-		'''State transition function for Bacaer's model SEIR1R2'''
+	# def fx(self, x, dt):
+	# 	'''State transition function for Bacaer's model SEIR1R2'''
 
-		# petite normalisation pour éviter des dérives
-		input('verifier si cette deriv est reelle - SEIR1R2F')
-		x /= abs(np.sum(x))/self.N
-		ret = odeint(self.deriv, x, [0, dt], args=self.getParam())
-		return ret.T[:, -1]
+	# 	# petite normalisation pour éviter des dérives
+	# 	input('verifier si cette deriv est reelle - SEIR1R2F')
+	# 	x /= abs(np.sum(x))/self.N
+	# 	ret = odeint(self.deriv, x, [0, dt], args=self.getParam())
+	# 	return ret.T[:, -1]
 
-	def hx(self, x):
-		return x[[3, 5]] # on renvoie R1 et F (4ieme et 6ième éléments dans le vecteur SEIR1R2F)
+	# def hx(self, x):
+	# 	return x[[3, 5]] # on renvoie R1 et F (4ieme et 6ième éléments dans le vecteur SEIR1R2F)
 

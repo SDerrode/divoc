@@ -8,9 +8,9 @@ import matplotlib.pyplot as plt
 from datetime          import datetime, timedelta
   
 from common            import getDates, addDaystoStrDate, get_WE_indice, drawAnnotation
-from common            import getLowerDateFromString, getNbDaysBetweenDateFromString
+from common            import getLowerDateFromString, getNbDaysBetweenDateFromString, getRepertoire
 from ProcessSEIR1R2    import fit
-from SolveEDO_SEIR1R2 import SolveEDO_SEIR1R2
+from SolveEDO_SEIR1R2  import SolveEDO_SEIR1R2
 
 dpi     = 120    # plot resolution of saved figures
 figsize = (8, 4) # figure's size (width, height)
@@ -21,10 +21,10 @@ def main(argv):
     if len(argv)>1:
         decalage3periodes = int(sys.argv[1])
     else:
-        decalage3periodes = 5
+        decalage3periodes = 10
     
     verbose    = 0
-    UKF_filt   = True #False #True
+    UKF_filt   = False #False #True
 
     # places     = 'France,Spain,Italy,United_Kingdom,South_Korea'
     # places     = 'Germany'#,South_Korea'
@@ -63,9 +63,13 @@ def main(argv):
     model_piecewise, ListeTextParamPlace_piecewise, listepd, data_deriv_piecewise, moldelR1_deriv_piecewise, decalage_corrige = \
         fitplace(places, listplaces, nbperiodes, decalage3periodes, UKF_filt, verbose, 0, 'Piecewise', FrDatabase)
 
+    ListeTestPlace = []
     for indexplace in range(len(listplaces)):
+        texteplace = ''
         for texte in ListeTextParamPlace_piecewise[indexplace]:
-            print(texte)
+            texteplace += texte
+            print(texte.replace('$', '').replace('\\', ''))
+        ListeTestPlace.append(texteplace)
 
     # Plot the two strategies in one figure
     ##################################
@@ -77,20 +81,9 @@ def main(argv):
         else:
             placefull   = place
 
-        # Constantes
-        import os
-        if UKF_filt == True:
-            repertoire = './figures/SEIR1R2_UKFilt/' + placefull
-        else:
-            repertoire = './figures/SEIR1R2/' + placefull
-        if not os.path.exists(repertoire):
-            os.makedirs(repertoire)
+        # Repertoire des figures
+        repertoire = getRepertoire(UKF_filt, './figures/SEIR1R2_UKFilt/'+placefull, './figures/SEIR1R2/' + placefull)
         prefFig = repertoire + '/' + placefull
-
-        # schéma 1, moins joli que le suivant
-        # filename = prefFig + '_DiffR1_BothFitbis_Shift' + str(decalage_corrige) + '.png'
-        # title    = place + ' - Shift=' + str(decalage_corrige) + ' day(s)'
-        # PlotAll(data_deriv_allinone[indexplace, :], moldelR1_deriv_allinone[indexplace, :], moldelR1_deriv_piecewise[indexplace, :], title, filename)
 
         # Preparation plot pandas
         listheader = list(listepd[indexplace])
@@ -105,11 +98,11 @@ def main(argv):
             DatesString = getDates(place, verbose)
 
         # on ajoute les dérivées numériques des cas et des morts
-        listepd[indexplace].loc[:, ('md_piecewise')]= moldelR1_deriv_piecewise[indexplace, 0:longueur, 0]
+        listepd[indexplace].loc[:, ('md_piecewise')] = moldelR1_deriv_piecewise[indexplace, 0:longueur, 0]
         #listepd[indexplace].loc[:, ('md_allinone')] = moldelR1_deriv_allinone [indexplace, 0:longueur, 0]
         #print('tail=', listepd[indexplace].tail())
 
-        filename = prefFig + '_DiffR1_BothFit_Shift' + str(decalage_corrige) + '.png'
+        filename = prefFig + '_Diff_BothFit_Shift' + str(decalage_corrige) + '.png'
         title    = place + ' - Shift=' + str(decalage_corrige) + ' day(s)'
         PlotAllPandas(listepd[indexplace], title, filename, y=['dcases', 'md_piecewise'], Dates=DatesString)
 
@@ -124,14 +117,8 @@ def main(argv):
         else:
             placefull   = place
 
-        # Constantes
-        import os
-        if UKF_filt == True:
-            repertoire = './figures/SEIR1R2_UKFilt/' + placefull
-        else:
-            repertoire = './figures/SEIR1R2/' + placefull
-        if not os.path.exists(repertoire):
-            os.makedirs(repertoire)
+        # Repertoire des figures
+        repertoire = getRepertoire(UKF_filt, './figures/SEIR1R2_UKFilt/'+placefull, './figures/SEIR1R2/' + placefull)
         prefFig = repertoire + '/' + placefull
 
         # Preparation plot pandas
@@ -230,8 +217,8 @@ def PlotAllPandas(pd, titre, filenameFig, y, Dates=None):
 
     # juste pour récupérer la bonne coukeur
     solveur = SolveEDO_SEIR1R2(N=1, dt=1, verbose=0)
-    mod = solveur.modele
-    color=mod.getColor(3)
+    mod     = solveur.modele
+    colori  = mod.getColor(3)
 
     fig = plt.figure(facecolor='w', figsize=figsize)
     ax = fig.add_subplot(111, facecolor='#dddddd', axisbelow=True)
@@ -239,7 +226,7 @@ def PlotAllPandas(pd, titre, filenameFig, y, Dates=None):
     # Dessin des courbes
     linestyles = ['-', '-']#, '-']
     markers    = ['x', '']#, '']
-    colors     = [color, color]#, 'blue']
+    colors     = [colori, colori]#, 'blue']
     linewidths = [0.5, 1.5]#, 1.5]
     alphas     = [1.0, 0.7]#, 0.55]
     labels     = [r'$\frac{\partial R^1(n)}{\partial n}$', r'$\frac{\partial R^1(t)}{\partial t}$ - Piecewise'] #, r'$\frac{\partial R^1(t)}{\partial t}$ - All in one']
@@ -319,12 +306,12 @@ def PlotFit(data_deriv, model_deriv, title, ch, filename):
 
     # juste pour récupérer la bonne coukeur
     solveur = SolveEDO_SEIR1R2(N=1, dt=1, verbose=0)
-    mod   = solveur.modele
-    color = mod.getColor(3)
+    mod     = solveur.modele
+    colori  = mod.getColor(3)
 
     time = np.linspace(1, len(data_deriv[1:]), len(data_deriv[1:]))
-    ax.plot(time, data_deriv[1:],  label=r'$\frac{\partial R^1(n)}{\partial n}$ - ' + ch, color=color, alpha=1.0, lw=0.5, marker='x')
-    ax.plot(time, model_deriv[1:], label=r'$\frac{\partial R^1(t)}{\partial t}$ - ' + ch, color=color, alpha=1.0, lw=1.5)
+    ax.plot(time, data_deriv[1:],  label=r'$\frac{\partial R^1(n)}{\partial n}$ - ' + ch, color=colori, alpha=1.0, lw=0.5, marker='x')
+    ax.plot(time, model_deriv[1:], label=r'$\frac{\partial R^1(t)}{\partial t}$ - ' + ch, color=colori, alpha=1.0, lw=1.5)
 
     ax.set_xlabel('Time (days)')
     ax.yaxis.set_tick_params(length=0)
@@ -343,7 +330,7 @@ def PlotFit(data_deriv, model_deriv, title, ch, filename):
 
 def fitplace(places, listplaces, nbperiodes, decalage, UKF_filt, verbose, plot, ch, FrDatabase):
 
-    modelSEIR1R2, ListeTextParamPlace, listepd, data_deriv, moldelR1_deriv, decalage_corrige, _, _ = \
+    model, ListeTextParamPlace, listepd, data_deriv, moldelR1_deriv, decalage_corrige, _, _ = \
             fit([places, nbperiodes, decalage, UKF_filt, verbose, plot])
     
     # Plot
@@ -355,25 +342,17 @@ def fitplace(places, listplaces, nbperiodes, decalage, UKF_filt, verbose, plot, 
         else:
             placefull   = place
 
-        # Constantes
-        import os
-        if UKF_filt == True:
-            repertoire = './figures/SEIR1R2_UKFilt/' + placefull
-        else:
-            repertoire = './figures/SEIR1R2/' + placefull
-        if not os.path.exists(repertoire):
-            os.makedirs(repertoire)
+        # Repertoire des figures
+        repertoire = getRepertoire(UKF_filt, './figures/SEIR1R2_UKFilt/'+placefull, './figures/SEIR1R2/' + placefull)
         prefFig = repertoire + '/' + placefull
 
-        filename = prefFig + '_DiffR1_' + ch + '_Shift' + str(decalage_corrige) + '.png'
+        filename = prefFig + '_Diff_' + ch + '_Shift' + str(decalage_corrige) + '.png'
         title    = place + ' - Shift=' + str(decalage_corrige) + ' day(s)'
         #dataLength = listepd[indexplace].shape[0]
         PlotFit(data_deriv[indexplace], moldelR1_deriv[indexplace], title, ch, filename)
 
-    return modelSEIR1R2, ListeTextParamPlace, listepd, data_deriv, moldelR1_deriv, decalage_corrige
+    return model, ListeTextParamPlace, listepd, data_deriv, moldelR1_deriv, decalage_corrige
 
 
 if __name__ == '__main__':
     main(sys.argv)
-
-

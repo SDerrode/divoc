@@ -9,7 +9,7 @@ from matplotlib.ticker import MaxNLocator
 from datetime          import datetime, timedelta
   
 from common            import getDates, addDaystoStrDate, get_WE_indice, drawAnnotation
-from common            import getLowerDateFromString, getNbDaysBetweenDateFromString
+from common            import getLowerDateFromString, getNbDaysBetweenDateFromString, getRepertoire
 from ProcessSEIR1R2    import fit
 from SolveEDO_SEIR1R2  import SolveEDO_SEIR1R2
 
@@ -18,8 +18,8 @@ figsize = (8, 4) # figure's size (width, height)
 
 
 def main():
-    verbose       = 0
-    plot          = 0
+    verbose = 0
+    plot    = 0
 
     #places     = 'France,Spain,Italy,United_Kingdom,Germany,Belgium'
     # places     = 'Spain,Italy,Germany'
@@ -42,9 +42,9 @@ def main():
 
     # fit avec 3 périodes + décalage
     ##################################
-    UKF_filt   = True
+    UKF_filt   = False
     nbperiodes = -1
-    decalagemini, decalagemaxi = 8, 18 #4, 18
+    decalagemini, decalagemaxi = 2, 18 #4, 18
 
     TAB_decalage_corrige = []
     TAB_param_model      = []
@@ -61,7 +61,6 @@ def main():
         TAB_ListeEQM.append(ListeEQM)
 
     #TAB_param_model[decalage][place][nbperiodes]
-
     
     for indexplace, place in enumerate(listplaces):
 
@@ -71,14 +70,8 @@ def main():
         else:
             placefull   = place
 
-        # Constantes
-        import os
-        if UKF_filt == True:
-            repertoire = './figures/SEIR1R2_UKFilt/' + placefull
-        else:
-            repertoire = './figures/SEIR1R2/' + placefull
-        if not os.path.exists(repertoire):
-            os.makedirs(repertoire)
+        # Repertoire des figures
+        repertoire = getRepertoire(UKF_filt, './figures/SEIR1R2_UKFilt/'+placefull, './figures/SEIR1R2/' + placefull)
         prefFig = repertoire + '/' + placefull
 
         nbperiodes = len(TAB_param_model[0][indexplace][:])

@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 from datetime          import datetime, timedelta
   
 from common            import getDates, addDaystoStrDate, get_WE_indice, drawAnnotation
-from common            import getLowerDateFromString, getNbDaysBetweenDateFromString
+from common            import getLowerDateFromString, getNbDaysBetweenDateFromString, getRepertoire
 from ProcessSEIR1R2F   import fit
 from SolveEDO_SEIR1R2F import SolveEDO_SEIR1R2F
 
@@ -21,10 +21,10 @@ def main(argv):
     if len(argv)>1:
         decalage3periodes = int(sys.argv[1])
     else:
-        decalage3periodes = 5
+        decalage3periodes = 10
 
-    verbose       = 0
-    # plot          = 0
+    verbose    = 0
+    UKF_filt   = False #False #True
 
     #places     = 'France,Spain,Italy,United_Kingdom,South_Korea'
     # places     = 'Germany'#,South_Korea'
@@ -59,17 +59,16 @@ def main(argv):
     # fit avec 3 périodes + décalage
     ##################################
     nbperiodes = -1
-    surplus    = 0
+    
     model_piecewise, ListeTextParamPlace_piecewise, listepd, data_deriv_piecewise, moldelR1_deriv_piecewise, decalage_corrige = \
-        fitplace(places, listplaces, nbperiodes, decalage3periodes, surplus, verbose, 0, 'Piecewise', FrDatabase)
+        fitplace(places, listplaces, nbperiodes, decalage3periodes, UKF_filt, verbose, 0, 'Piecewise', FrDatabase)
 
     for indexplace in range(len(listplaces)):
         for texte in ListeTextParamPlace_piecewise[indexplace]:
-            print(texte)
+            print(texte.replace('$', '').replace('\\', ''))
 
     # Plot the two strategies in one figure
     ##################################
-    # Plot
     for indexplace, place in enumerate(listplaces):
 
         # Get the full name of the place to process, and the special dates corresponding to the place
@@ -78,13 +77,9 @@ def main(argv):
         else:
             placefull   = place
 
-        # Constantes
-        import os
-        repertoire = './figures/SEIR1R2F/'+ placefull
-        if not os.path.exists(repertoire):
-            os.makedirs(repertoire)
+        # Repertoire des figures
+        repertoire = getRepertoire(UKF_filt, './figures/SEIR1R2F_UKFilt/'+placefull, './figures/SEIR1R2F/' + placefull)
         prefFig = repertoire + '/' + placefull
-
         
         # Preparation plot pandas
         listheader = list(listepd[indexplace])
@@ -99,17 +94,14 @@ def main(argv):
             DatesString = getDates(place, verbose)
 
         # on ajoute les dérivées numériques des cas et des morts
-        listepd[indexplace].loc[:, ('mc_piecewise')]= moldelR1_deriv_piecewise[indexplace, 0:longueur, 0]
-        listepd[indexplace].loc[:, ('md_piecewise')]= moldelR1_deriv_piecewise[indexplace, 0:longueur, 1]
-        #listepd[indexplace].loc[:, ('mc_allinone')] = moldelR1_deriv_allinone [indexplace, 0:longueur, 0]
-        #listepd[indexplace].loc[:, ('md_allinone')] = moldelR1_deriv_allinone [indexplace, 0:longueur, 1]
-        #print('tail=', listepd[indexplace].tail())
-
-        filename = prefFig + '_DiffR1_BothFit_Shift' + str(decalage_corrige) + '.png'
+        listepd[indexplace].loc[:, ('mc_piecewise')] = moldelR1_deriv_piecewise[indexplace, 0:longueur, 0]
+        listepd[indexplace].loc[:, ('md_piecewise')] = moldelR1_deriv_piecewise[indexplace, 0:longueur, 1]
+        
+        filename = prefFig + '_DiffR1F_BothFit_Shift' + str(decalage_corrige) + '.png'
         title    = place + ' - Shift=' + str(decalage_corrige) + ' day(s)'
         PlotAllPandas(listepd[indexplace], title, filename, y=['dcases', 'mc_piecewise', 'ddeaths', 'md_piecewise'], Dates=DatesString)
 
-    # Plot the two SEIR1R2
+    # Plot the two SEIR1R2F
     ##################################
 
     for indexplace, place in enumerate(listplaces):
@@ -120,11 +112,8 @@ def main(argv):
         else:
             placefull   = place
 
-        # Constantes
-        import os
-        repertoire = './figures/SEIR1R2F/'+ placefull
-        if not os.path.exists(repertoire):
-            os.makedirs(repertoire)
+        # Repertoire des figures
+        repertoire = getRepertoire(UKF_filt, './figures/SEIR1R2F_UKFilt/'+placefull, './figures/SEIR1R2F/' + placefull)
         prefFig = repertoire + '/' + placefull
 
         # Preparation plot pandas
@@ -147,12 +136,12 @@ def main(argv):
         # input('pause')
 
         title    = place + ' - Shift=' + str(decalage_corrige) + ' day(s)'
-        filename = prefFig +'_EIR1_piecewise_Shift' + str(decalage_corrige) + '.png'
+        filename = prefFig +'_EIR1F_piecewise_Shift' + str(decalage_corrige) + '.png'
         y=['Ep', 'Ip', 'R1p', 'Fp']
         PlotSEIR1R2Pandas(listepd[indexplace], title, filename, y=y, Dates=DatesString)
 
         title    = place + ' - Shift=' + str(decalage_corrige) + ' day(s)'
-        filename = prefFig +'_R1_piecewise_Shift' + str(decalage_corrige) + '.png'
+        filename = prefFig +'_R1F_piecewise_Shift' + str(decalage_corrige) + '.png'
         y=['R1p', 'Fp']
         PlotSEIR1R2Pandas(listepd[indexplace], title, filename, y=y, Dates=DatesString)
 
@@ -308,10 +297,10 @@ def PlotFit(data_deriv, model_deriv, title, ch, filename):
     plt.close()
 
 
-def fitplace(places, listplaces, nbperiodes, decalage, surplus, verbose, plot, ch, FrDatabase):
+def fitplace(places, listplaces, nbperiodes, decalage, UKF_filt, verbose, plot, ch, FrDatabase):
 
     model, ListeTextParamPlace, listepd, data_deriv, moldelR1_deriv, decalage_corrige, _, _ = \
-            fit([places, nbperiodes, decalage, surplus, verbose, plot])
+            fit([places, nbperiodes, decalage, UKF_filt, verbose, plot])
     
     print('np.shape(moldelR1_deriv)=', np.shape(moldelR1_deriv))
 
@@ -324,11 +313,8 @@ def fitplace(places, listplaces, nbperiodes, decalage, surplus, verbose, plot, c
         else:
             placefull   = place
 
-        # Constantes
-        import os
-        repertoire = './figures/SEIR1R2F/'+ placefull
-        if not os.path.exists(repertoire):
-            os.makedirs(repertoire)
+        # Repertoire des figures
+        repertoire = getRepertoire(UKF_filt, './figures/SEIR1R2F_UKFilt/'+placefull, './figures/SEIR1R2F/' + placefull)
         prefFig = repertoire + '/' + placefull
 
         filename = prefFig + '_DiffR1_' + ch + '_Shift' + str(decalage_corrige) + '.png'

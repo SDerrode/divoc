@@ -9,7 +9,7 @@ from matplotlib.ticker import MaxNLocator
 from datetime          import datetime, timedelta
   
 from common            import getDates, addDaystoStrDate, get_WE_indice, drawAnnotation
-from common            import getLowerDateFromString, getNbDaysBetweenDateFromString
+from common            import getLowerDateFromString, getNbDaysBetweenDateFromString, getRepertoire
 from ProcessSEIR1R2F   import fit
 from SolveEDO_SEIR1R2F import SolveEDO_SEIR1R2F
 
@@ -18,13 +18,13 @@ figsize = (8, 4) # figure's size (width, height)
 
 
 def main():
-    verbose       = 0
-    plot          = 0
+    verbose = 0
+    plot    = 0
 
     #places     = 'France,Spain,Italy,United_Kingdom,Germany,Belgium'
     #places     = 'France,Spain,Italy,Germany'
     #places     = 'France ,69,75,01'
-    places     = 'France'#,South_Korea'
+    places     = 'France' #,South_Korea'
     listplaces = list(places.split(','))
 
     # Detect si pays européen ou département français
@@ -41,26 +41,25 @@ def main():
 
     # fit avec 3 périodes + décalage
     ##################################
-    surplus    = 0
+    UKF_filt   = True
     nbperiodes = -1
+    decalagemini, decalagemaxi = 2, 14 #4, 18
 
     TAB_decalage_corrige = []
     TAB_param_model      = []
     TAB_ListeEQM         = []
     
-    decalagemini, decalagemaxi = 5, 14
     for decalage in range(decalagemini, decalagemaxi):
 
         print('TIME-SHIFT', str(decalage), 'OVER', str(decalagemaxi))
     
-        _, _, _, _, _, decalage_corrige, tabParamModel, ListeEQM = fit([places, nbperiodes, decalage, surplus, verbose, plot])
+        _, _, _, _, _, decalage_corrige, tabParamModel, ListeEQM = fit([places, nbperiodes, decalage, UKF_filt, verbose, plot])
 
         TAB_decalage_corrige.append(float(decalage_corrige))
         TAB_param_model.append(tabParamModel)
         TAB_ListeEQM.append(ListeEQM)
 
     #TAB_param_model[decalage][place][nbperiodes]
-
     
     for indexplace, place in enumerate(listplaces):
 
@@ -70,11 +69,8 @@ def main():
         else:
             placefull   = place
 
-        # Constantes
-        import os
-        repertoire = './figures/SEIR1R2F/'+ placefull
-        if not os.path.exists(repertoire):
-            os.makedirs(repertoire)
+        # Repertoire des figures
+        repertoire = getRepertoire(UKF_filt, './figures/SEIR1R2F_UKFilt/'+placefull, './figures/SEIR1R2F/' + placefull)
         prefFig = repertoire + '/' + placefull
 
         nbperiodes = len(TAB_param_model[0][indexplace][:])
@@ -120,7 +116,7 @@ def main():
                 print('  -->Period : ', labelsperiod[period])
                 print(Y2[:, period])
 
-        # plot de l'EQM
+                # plot de l'EQM
         ##########################################
         fig = plt.figure(facecolor='w', figsize=figsize)
         ax  = fig.add_subplot(111, facecolor='#dddddd', axisbelow=True)
@@ -148,8 +144,8 @@ def main():
         #plt.ylim([0, 1.0])
 
         # ajout d'un text d'annotation
-        plt.title(placefull + ' - SEIR1R2F, EQM on the number of detected cases' )
-        plt.savefig(prefFig + '_EQM_Deriv_SEIR1R2F.png', dpi=dpi)
+        plt.title(placefull + ' - SEIR1R2F, EQM between data and estimated model' )
+        plt.savefig(prefFig + '_EQM_Deriv.png', dpi=dpi)
         plt.close()
 
 

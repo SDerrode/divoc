@@ -32,6 +32,25 @@ class SolveEDO:
 		# Modèle d'eq. diff non linéaires
 		self.dt = dt # 1 day
 
+	def __str__(self):
+		S  = 'Solveur:\n  N=' + str(self.N) + '\n  dt='+str(self.dt) + '\n  y0='+ str(self.y0) + '\n  TS='+ str(self.TS) + '\n'
+		S = self.modele.__str__()
+		return S
+
+	def getTextParam(self, startDate=None):
+		S  = self.modele.getTextParam()
+		S += '\nSolveur init:\n'# + '\n  N=' + str(self.N) + '\n  dt='+str(self.dt) \
+		S += r'  $S_0=' + str(self.y0[0]) + '$\n'
+		S += r'  $E_0=' + str(self.y0[1]) + r', I_0='+str(self.y0[2]) + '$\n'
+		S += r'  $R^1_0=' + str(self.y0[3]) + r', R^2_0=' + str(self.y0[4])+ '$'
+		if self.TS != -1:
+			if startDate==None:
+				S += '\n  Time Shift=$'+str(self.TS)+'$'
+			else:
+				dateI0 = addDaystoStrDate(startDate, -self.TS)
+				S += '\n  Start date:'+dateI0
+		return S
+
 	def getParamInit(self):
 		return self.y0
 
@@ -181,7 +200,9 @@ class SolveEDO:
 		# ajout d'un text d'annotation
 		if text != '':
 			bbox=dict(boxstyle='round4, pad=.3', alpha=0.5, color='xkcd:light turquoise') #, facecolor='0.8', edgecolor='xkcd:light turquoise', lw=0.5)
-			ax.annotate(text, xy=(time[0], ax.get_ylim()[0]+(ax.get_ylim()[1]-ax.get_ylim()[0])/2.6), fontsize=8, bbox=bbox, ha="left", va="center") 
+			ax.annotate(text, xy=(ax.get_xlim()[1], ax.get_ylim()[0]+(ax.get_ylim()[1]-ax.get_ylim()[0])/2.6), fontsize=8, bbox=bbox, ha="left", va="center") 
+		
+		plt.tight_layout(rect=(0, 0, 1., 0.95))
 		plt.title(title)
 		plt.savefig(name, dpi=dpi)
 		plt.close()
@@ -228,7 +249,9 @@ class SolveEDO:
 		# ajout d'un text d'annotation
 		if text != '':
 			bbox=dict(boxstyle='round4, pad=.3', alpha=0.5, color='xkcd:light turquoise') #, facecolor='0.8', edgecolor='xkcd:light turquoise', lw=0.5)
-			ax.annotate(text, xy=(time[0], ax.get_ylim()[0]+(ax.get_ylim()[1]-ax.get_ylim()[0])/2.6), fontsize=8, bbox=bbox, ha="left", va="center") 
+			ax.annotate(text, xy=(ax.get_xlim()[1], ax.get_ylim()[0]+(ax.get_ylim()[1]-ax.get_ylim()[0])/2.6), fontsize=8, bbox=bbox, ha="left", va="center") 
+		
+		plt.tight_layout(rect=(0, 0, 1., 0.95))
 		plt.title(title)
 		plt.savefig(name, dpi=dpi)
 		plt.close()

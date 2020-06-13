@@ -4,14 +4,26 @@
 import sys
 import numpy             as np
 import matplotlib.pyplot as plt
+
+from filterpy.kalman   import UnscentedKalmanFilter as UKF
+from filterpy.kalman   import JulierSigmaPoints, MerweScaledSigmaPoints, rts_smoother
+from filterpy.common   import Q_discrete_white_noise
+
 from datetime          import datetime, timedelta
 from sklearn.metrics   import mean_squared_error
 
-from common            import readDataEurope, readDataFrance, getDates, addDaystoStrDate
+from common            import readDataEurope, readDataFrance, getDates, addDaystoStrDate, getRepertoire
 from common            import getLowerDateFromString, getNbDaysBetweenDateFromString, GetPairListDates
-from SolveEDO_SEIR1R2F  import SolveEDO_SEIR1R2F
+from SolveEDO_SEIR1R2F import SolveEDO_SEIR1R2F
 
 strDate = "%Y-%m-%d"
+
+def fR1F(r1f, dt):
+	return r1f # on renvoie R1 et F
+
+def hR1F(r1f):
+	return r1f # on renvoie R1 et F
+
 
 def fit(sysargv):
 	"""
@@ -32,7 +44,7 @@ def fit(sysargv):
 		argv[1] : Country (or list separeted by ','), or 'France' followed by a list of dpts. Default: France 
 		argv[2] : Periods (1 -> 1 period ('all-in-on'), 'x!=1' -> severall periods).          Default: 1
 		argv[3] : Shift of periods (in days).                                                 Default: 0
-		argv[4] : Compensation strategy (0/1).                                                Default: 0
+		argv[4] : UKF filtering of data (0/1).                                                Default: 1
 		argv[5] : Verbose level (debug: 3, ..., almost mute: 0).                              Default: 1
 		argv[6] : Plot graphique (0/1).                                                       Default: 1
 	"""
@@ -49,7 +61,7 @@ def fit(sysargv):
 	listplaces = ['France']
 	nbperiodes = 1
 	decalage   = 0
-	UKF_filt    = False
+	UKF_filt   = True
 	verbose    = 1
 	plot       = True
 
@@ -67,20 +79,20 @@ def fit(sysargv):
 
 	if len(sysargv)>1: nbperiodes    = int(sysargv[1])
 	if len(sysargv)>2: decalage      = int(sysargv[2])
-	if len(sysargv)>3 and int(sysargv[3])==1: UKF_filt = True
+	if len(sysargv)>3 and int(sysargv[3])==0: UKF_filt = False
 	if len(sysargv)>4: verbose       = int(sysargv[4])
 	if len(sysargv)>5 and int(sysargv[5])==0: plot = False
 	if nbperiodes==1: 
 		decalage   = 0  # nécessairement pas de décalage
 
+
 	# Constantes
 	######################################################@
-	fileLocalCopy    = False  # if we upload the file from the url (to get latest data) or from a local copy file
+	fileLocalCopy    = True  # if we upload the file from the url (to get latest data) or from a local copy file
 	readStartDateStr = "2020-03-01" #"2020-03-01" 
 	readStopDateStr  = None
 	recouvrement     = -2
 	dt               = 1
-	indexdata        = [3, 5]
 
 	# Data reading to get first and last date available in the data set
 	######################################################@
@@ -107,13 +119,13 @@ def fit(sysargv):
 
 	# Collections of data return by this function
 	modelSEIR1R2F = np.zeros(shape=(len(listplaces), dataLength, 6))
-	data_deriv    = np.zeros(shape=(len(listplaces), dataLength, len(indexdata))) # '2' is for R1 and F data
-	modelR1_deriv = np.zeros(shape=(len(listplaces), dataLength, len(indexdata))) # '2' is for R1 and F data
+	data_deriv    = np.zeros(shape=(len(listplaces), dataLength, 2))
+	modelR1_deriv = np.zeros(shape=(len(listplaces), dataLength, 2))
 	Listepd            = []
 	ListetabParamModel = []
 
 	# data observed
-	data = np.zeros(shape=(dataLength, len(indexdata))) # '2' is for R1 and F data
+	data = np.zeros(shape=(dataLength, 2))
 
 	# Paramètres sous forme de chaines de caractères
 	ListeTextParam = [] 
@@ -139,6 +151,27 @@ def fit(sysargv):
 		else:
 			pd_exerpt, HeadData, N, readStartDateStr, readStopDateStr = readDataEurope(place, readStartDateStr, readStopDateStr, fileLocalCopy, verbose=0)
 
+		if UKF_filt == True:
+			data2Filt = pd_exerpt[[HeadData[0], HeadData[1]]].to_numpy(copy=True)
+			sigmas = MerweScaledSigmaPoints(n=2, alpha=.5, beta=2., kappa=1.) #1-3.)
+			ukf    = UKF(dim_x=2, dim_z=2, fx=fR1F, hx=hR1F, dt=dt, points=sigmas)
+			# Filter init
+			ukf.x[:] = data2Filt[0, :]
+			ukf.Q    = np.diag([30., 15.])
+			ukf.R    = np.diag([170., 100.])
+			if verbose>1:
+				print('ukf.x[:]=', ukf.x[:])
+				print('ukf.R   =', ukf.R)
+				print('ukf.Q   =', ukf.Q)
+			
+			# UKF filtering and smoothing, batch mode
+			R1Ffilt, _ = ukf.batch_filter(data2Filt)
+			HeadData[0] += ' filt'
+			HeadData[1] += ' filt'
+			pd_exerpt[HeadData[0]] = R1Ffilt[:, 0]
+			pd_exerpt[HeadData[1]] = R1Ffilt[:, 1]
+			
+
 		# Get the list of dates to process
 		ListDates, ListDatesStr = GetPairListDates(readStartDate, readStopDate, DatesString, decalage, nbperiodes, recouvrement)
 		if verbose>1:
@@ -148,14 +181,12 @@ def fit(sysargv):
 			#input('pause')
 		
 		# Solveur edo
-		solveur = SolveEDO_SEIR1R2F(N, dt, verbose)
+		solveur   = SolveEDO_SEIR1R2F(N, dt, verbose)
+		indexdata = solveur.indexdata
 		E0, I0, R10, R20, F0 = 0, 1, 0, 0, 0
 		
-		# Constantes
-		import os
-		repertoire = './figures/SEIR1R2F/'+ placefull
-		if not os.path.exists(repertoire):
-			os.makedirs(repertoire)
+		# Repertoire des figures
+		repertoire = getRepertoire(UKF_filt, './figures/SEIR1R2F_UKFilt/'+placefull, './figures/SEIR1R2F/' + placefull)
 		prefFig = repertoire + '/' + solveur.modele.modelShortName + '_' + placefull
 		
 		# Remise à 0 des données
@@ -205,20 +236,25 @@ def fit(sysargv):
 			if i==0:
 				ts = 46
 				if nbperiodes!=1: # pour plusieurs périodes
-					l, b0, c0, f0, muI0, xi0 = 0.255, 1./5.2, 1./12, 0.10, 0.001, 0.
+					#l, b0, c0, f0 = 0.255, 1./5.2, 1./12, 0.08
 					#a0 = (l+c0)*(1.+l/b0)
-					a0 = 0.60
+					a0, b0, c0, f0, muI0, xi0 = 0.55, 0.34, 0.12, 0.25, 0.001, 0.
 					T  = 150
 				else: # pour une période
-					a0, b0, c0, f0, muI0, xi0  = 0.10, 0.29, 0.10, 0.0022, 0.0001, 0.
-					T  = 350
-
+					#a0, b0, c0, f0  = 0.35, 0.29, 0.075, 0.0022
+					a0, b0, c0, f0, muI0, xi0  = 0.63, 0.27, 0.05, 0.003, 0.00004, 0.
+					T = 350
+				
 			if i==1 or i==2:
 				R10 = int(data[indMinPeriod, 0]) # on corrige R1 à la valeur numérique 
 				F0  = int(data[indMinPeriod, 1]) # on corrige muI à la valeur numérique 
 				_, a0, b0, c0, f0, muI0, xi0 = solveur.modele.getParam()
 				if i == 1:
-					a0 /= 2. # le confinement réduit drastiquement (pour aider l'optimisation) 
+					a0 /= 4. # le confinement réduit drastiquement (pour aider l'optimisation) 
+				# if i == 2:
+				# 	a0 /= 2.5
+				# 	b0 /= 3.
+				# 	c0 /= 6.
 				T  = 120
 				ts = 0
 
@@ -241,7 +277,7 @@ def fit(sysargv):
 
 			# plot
 			if plot==True:
-				listePlot = [3, 5]
+				listePlot = indexdata
 				filename  = prefFig + '_Period' + str(i) + '_' + str(len(ListDatesStr)-1) + '_Fitinit_' + ''.join(map(str, listePlot)) + '.png'
 				solveur.plotEDO(filename, placefull, sliceedo, slicedata, plot=listePlot, data=data, text=solveur.getTextParam(readStartDateStr))
 
@@ -282,25 +318,22 @@ def fit(sysargv):
 			
 			data_deriv_period    = (data[slicedataderiv, :]           - data   [slicedataderiv.start-1:slicedataderiv.stop-1, :])        / dt
 			modelR1_deriv_period = (sol_ode[sliceedoderiv, indexdata] - sol_ode[sliceedoderiv.start-1 :sliceedoderiv.stop-1, indexdata]) / dt
-			# print('np.shape(data_deriv_period)   =', np.shape(data_deriv_period))
-			# print('np.shape(modelR1_deriv_period)=', np.shape(modelR1_deriv_period))
-			# input('pause')
 
 			if plot==True:
 				titre = placefull + '- Period ' + str(i) + '\\' + str(len(ListDatesStr)-1) + ' - Shift=' + str(decalage)
 				
-				listePlot =[0,1,2,3,4,5]
+				# listePlot = [0,1,2,3,4,5]
+				# filename  = prefFig + '_Period' + str(i) + '_' + str(len(ListDatesStr)-1) + '_Fit_' + ''.join(map(str, listePlot)) + '.png'
+				# solveur.plotEDO(filename, titre, sliceedo, slicedata, plot=listePlot, data=data, text=solveur.getTextParam(readStartDateStr))
+				listePlot = [1,2,3,5]
 				filename  = prefFig + '_Period' + str(i) + '_' + str(len(ListDatesStr)-1) + '_Fit_' + ''.join(map(str, listePlot)) + '.png'
 				solveur.plotEDO(filename, titre, sliceedo, slicedata, plot=listePlot, data=data, text=solveur.getTextParam(readStartDateStr))
-				listePlot =[1,2,3,5]
-				filename  = prefFig + '_Period' + str(i) + '_' + str(len(ListDatesStr)-1) + '_Fit_' + ''.join(map(str, listePlot)) + '.png'
-				solveur.plotEDO(filename, titre, sliceedo, slicedata, plot=listePlot, data=data, text=solveur.getTextParam(readStartDateStr))
-				listePlot =[3,5]
+				listePlot = indexdata
 				filename  = prefFig + '_Period' + str(i) + '_' + str(len(ListDatesStr)-1) + '_Fit_' + ''.join(map(str, listePlot)) + '.png'
 				solveur.plotEDO(filename, titre, sliceedo, slicedata, plot=listePlot, data=data, text=solveur.getTextParam(readStartDateStr))
 
-				# dérivée  numérique de R1
-				filename = prefFig + '_Period' + str(i) + '_' + str(len(ListDatesStr)-1) + '_Fit_3Deriv.png'
+				# dérivée  numérique de R1 et F
+				filename = prefFig + '_Period' + str(i) + '_' + str(len(ListDatesStr)-1) + '_Fit_' + ''.join(map(str, listePlot)) + 'Deriv.png'
 				solveur.plotEDO_deriv(filename, titre, sliceedoderiv, slicedataderiv, data_deriv_period, indexdata, text=solveur.getTextParam(readStartDateStr))
 
 			# sol_ode_withSwitch = solveur.solveEDO_withSwitch(T, timeswitch=ts+dataLengthPeriod)
@@ -314,6 +347,7 @@ def fit(sysargv):
 
 			# preparation for next iteration
 			_, E0, I0, R10, R20, F0 = map(int, sol_ode[ts+dataLengthPeriod+recouvrement, :])
+			#print('A LA FIN : E0, I0, R10, R20, F0=', E0, I0, R10, R20, F0)
 
 			if verbose>1:
 				input('next step')

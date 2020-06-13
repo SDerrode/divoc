@@ -13,7 +13,7 @@ from sklearn.metrics import mean_squared_error
 
 from SolveEDO        import SolveEDO
 from SEIR1R2         import SEIR1R2
-from common          import addDaystoStrDate
+from common          import addDaystoStrDate, getRepertoire
 
 dpi     = 120    # plot resolution of saved figures
 figsize = (8, 4) # figure's size (width, height)
@@ -27,34 +27,17 @@ class SolveEDO_SEIR1R2(SolveEDO):
 		super().__init__(N, dt, verbose)
 
 		# Initial number of infected and recovered individuals, I0 and R0.
-		E0, I0, R10, R20 = 0, 13, 0, 0
+		E0, I0, R10, R20 = 0, 1, 0, 0
 		# Everyone else, S0, is susceptible to infection initially.
 		S0 = self.N - E0 - I0 - R10 - R20
 		# Initial conditions vector
 		self.y0 = S0, E0, I0, R10, R20
 		self.nbparam = len(self.y0)
 
+		self.indexdata=[3]
+
 		# Modèle d'eq. diff non linéaires
 		self.modele = SEIR1R2(self.N, dt=dt)
-		
-	def __str__(self):
-		S  = 'Solveur:\n  N=' + str(self.N) + '\n  dt='+str(self.dt) + '\n  y0='+ str(self.y0) + '\n  TS='+ str(self.TS) + '\n'
-		S = self.modele.__str__()
-		return S
-
-	def getTextParam(self, startDate=None):
-		S  = self.modele.getTextParam()
-		S += '\nSolveur init:\n'# + '\n  N=' + str(self.N) + '\n  dt='+str(self.dt) \
-		S += r'  $S_0=' + str(self.y0[0]) + '$\n'
-		S += r'  $E_0=' + str(self.y0[1]) + r', I_0='+str(self.y0[2]) + '$\n'
-		S += r'  $R^1_0=' + str(self.y0[3]) + r', R^2_0=' + str(self.y0[4])+ '$'
-		if self.TS != -1:
-			if startDate==None:
-				S += '\n  Time Shift=$'+str(self.TS)+'$'
-			else:
-				dateI0 = addDaystoStrDate(startDate, -self.TS)
-				S += '\n  Start date:'+dateI0
-		return S
 
 	def setN(self, N):
 		self.N = N
@@ -72,7 +55,6 @@ class SolveEDO_SEIR1R2(SolveEDO):
 		# MAJ de N dans le modele
 		self.modele.setN(self.N)
 
-
 	def paramOptimization(self, data, time, ts=None):
 
 		# set parameters including bounds; you can also fix parameters (use vary=False)
@@ -81,10 +63,10 @@ class SolveEDO_SEIR1R2(SolveEDO):
 
 		params = Parameters()
 		params.add('N',   value=self.N,  vary=False)
-		params.add('E0',  value=E0,      vary=False) #True, min=0 , max=2000)
-		params.add('I0',  value=I0,      vary=False) #True, min=0 , max=2000)
-		params.add('R10', value=R10,     vary=False) #True, min=0 , max=2000)
-		params.add('R20', value=R20,     vary=False) #True, min=0 , max=2000)
+		params.add('E0',  value=E0,      vary=False)
+		params.add('I0',  value=I0,      vary=False)
+		params.add('R10', value=R10,     vary=False)
+		params.add('R20', value=R20,     vary=False)
 		# params.add('a',   value=a0,      vary=True, min=0.0001, max=0.85) 
 		# params.add('b',   value=b0,      vary=True, min=0.100, max=0.6) 
 		# params.add('c',   value=c0,      vary=True, min=0.010, max=0.2) 
@@ -94,19 +76,18 @@ class SolveEDO_SEIR1R2(SolveEDO):
 		params.add('b',   value=b0,      vary=True, min=0.0, max=0.99) 
 		params.add('c',   value=c0,      vary=True, min=0.0, max=0.99) 
 		params.add('f',   value=f0,      vary=True, min=0.0, max=0.99)
-
-		if ts != None:
-			params.add('ts',  value=ts, vary=False)
-		else:
-			params.add('ts',  value=self.TS, vary=True, min=0, max=len(time)-np.shape(data)[0]-2)
-		
 		# params.add('a',   value=a0,      vary=True, min=0.3*a0, max=1./0.3*a0)
 		# params.add('b',   value=b0,      vary=True, min=0.5*b0, max=1./0.5*b0)
 		# params.add('c',   value=c0,      vary=True, min=0.5*c0, max=1./0.5*c0)
 		# params.add('f',   value=f0,      vary=True, min=0.4*f0, max=1./0.4*f0)
+
+		if ts != None:
+			params.add('ts', value=ts, vary=False)
+		else:
+			params.add('ts', value=self.TS, vary=True, min=0, max=len(time)-np.shape(data)[0]-2)
 		
 		# fit model
-		result = minimize(residual, params, args=(time, data, self), method='powell') #powell, least_squares, bfgs, emcee, leastsq
+		result = minimize(residual, params, args=(time, data, self, self.indexdata), method='powell') #powell, least_squares, bfgs, emcee, leastsq
 		if self.verbose>0:
 			result.params.pretty_print()
 			# display fitted statistics
@@ -118,7 +99,7 @@ class SolveEDO_SEIR1R2(SolveEDO):
 		self.TS = result.params['ts'].value
 
 
-def residual(paras, t, data, solveur):
+def residual(paras, t, data, solveur, indexdata):
 	"""
 	compute the residual between actual data and fitted data
 	"""
@@ -132,7 +113,10 @@ def residual(paras, t, data, solveur):
 	if paras['ts'].vary == True:
 		eqm=[]
 		for t in range(paras['ts'].min, paras['ts'].max):
-			eqm.append(mean_squared_error(model[t:t+np.shape(data)[0], [3]], data))
+			# print(np.shape(model[t:t+np.shape(data)[0], indexdata]))
+			# print(np.shape(data))
+			# input('attente')
+			eqm.append(mean_squared_error(model[t:t+np.shape(data)[0], indexdata], data))
 		delay = np.argmin(eqm)
 		ts    = paras['ts'].min + delay
 		paras['ts'].set(ts)
@@ -146,19 +130,16 @@ def residual(paras, t, data, solveur):
 	# plt.show()
 
 	# Only R1 to calculate the residual, only on the window's size of the data
-	result = model[ts:ts+np.shape(data)[0], [3]] - data
+	result = model[ts:ts+np.shape(data)[0], indexdata] - data
 	return result
 
 
 
 if __name__ == '__main__':
 
-	# Constantes
-	import os
-	repertoire = './figures/simul/simulSEIR1R2'
-	if not os.path.exists(repertoire):
-		os.makedirs(repertoire)
-	prefFig = repertoire + '/'
+	# Repertoire des figures
+	repertoire = getRepertoire(True, './figures/simul/simulSEIR1R2')
+	prefFig    = repertoire + '/'
 
 	# Solveur eq. diff.
 	verbose = 1
