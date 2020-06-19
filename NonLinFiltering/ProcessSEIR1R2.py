@@ -49,6 +49,10 @@ def fit(sysargv):
 		argv[6] : Plot graphique (0/1).                                                       Default: 1
 	"""
 
+	if len(sysargv) > 6:
+		print('  CAUTION : bad number of arguments - see help')
+		exit(1)
+
 	# Constantes
 	######################################################@
 	fileLocalCopy    = True  # if we upload the file from the url (to get latest data) or from a local copy file
@@ -59,11 +63,6 @@ def fit(sysargv):
 
 	# Interpetation of arguments - reparation
 	######################################################@
-
-	print('Command line : ', sysargv, flush=True)
-	if len(sysargv) > 6:
-		print('  CAUTION : bad number of arguments - see help')
-		exit(1)
 
 	# Default value for parameters
 	listplaces = ['France']
@@ -93,6 +92,8 @@ def fit(sysargv):
 	if nbperiodes==1: 
 		decalage = 0  # nécessairement pas de décalage (on compense le recouvrement)
 
+	if verbose>0:
+		print('  Full command line : '+sysargv[0]+' '+str(nbperiodes)+' '+str(decalage)+' '+str(UKF_filt)+' '+str(verbose)+' '+str(plot), flush=True)
 	
 
 	# Data reading to get first and last date available in the data set
@@ -142,7 +143,8 @@ def fit(sysargv):
 			placefull   = place
 			DatesString = getDates(place, verbose)
 
-		print('PROCESSING of', placefull, 'in', listplaces)
+		if verbose>0:
+			print('PROCESSING of', placefull, 'in', listplaces)
 		
 
 		# data reading of the observations

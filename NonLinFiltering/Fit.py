@@ -172,7 +172,6 @@ def main(sysargv):
             listPlots = ['mc_piecewise_residual', 'md_piecewise_residual']
         PlotFitPiecewiseResidual(modeleString, liste_pd_piecewise[indexplace], title, filename, y=listPlots, Dates=DatesString, textannotation=ListeTestPlace[indexplace])
 
-        input('temp')
 
     # Plot the two SEIR1R2
     ##################################

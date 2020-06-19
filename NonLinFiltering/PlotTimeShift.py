@@ -91,17 +91,17 @@ def main(sysargv):
 	##################################
 	nbperiodes = -1
 	
-	TAB_decalage_corrige = []
-	TAB_param_model      = []
-	TAB_ListeEQM         = []
+	TAB_decalage    = []
+	TAB_param_model = []
+	TAB_ListeEQM    = []
 
 	for decalage in range(shift_mini, shift_maxi):
 
 		print('TIME-SHIFT', str(decalage), 'OVER', str(shift_maxi))
 	
-		_, _, _, _, _, decalage_corrige, tabParamModel, ListeEQM = fit([places, nbperiodes, decalage, UKF_filt, 0, 0])
+		_, _, _, _, _, tabParamModel, ListeEQM = fit([places, nbperiodes, decalage, UKF_filt, 0, 0])
 
-		TAB_decalage_corrige.append(float(decalage_corrige))
+		TAB_decalage.append(float(decalage))
 		TAB_param_model.append(tabParamModel)
 		TAB_ListeEQM.append(ListeEQM)
 
@@ -141,10 +141,10 @@ def main(sysargv):
 			texte = list(map( lambda s: s.replace('$', '').replace('\\', '').replace('_', ''), labelsparam[:-1]))
 			titre    = placefull + ' - ' + modeleString + ' parameters evolution for ' + labelsperiod[period]
 			filename = prefFig   + 'ParamEvol_Period' + str(period) + '_' + ''.join(texte) + '.png'
-			plotData(TAB_decalage_corrige, Y1[:, :-1], titre, filename, labelsparam[:-1])
+			plotData(TAB_decalage, Y1[:, :-1], titre, filename, labelsparam[:-1])
 			titre    = placefull + ' - ' + modeleString + ' parameters evolution for ' + labelsperiod[period]
 			filename = prefFig   + 'ParamEvol_Period' + str(period) + '_R0.png'
-			plotData(TAB_decalage_corrige, Y1[:, -1].reshape(shift_maxi-shift_mini, 1), titre, filename, [labelsparam[-1]])
+			plotData(TAB_decalage, Y1[:, -1].reshape(shift_maxi-shift_mini, 1), titre, filename, [labelsparam[-1]])
 
 		# plot pour les paramètres
 		##########################################
@@ -159,7 +159,7 @@ def main(sysargv):
 						Y2[decalage, period] = 0.
 			titre    = placefull + ' - ' + modeleString + ' periods evolution for param ' + labelsparam[param]
 			filename = prefFig   + 'PeriodEvol_Param' + labelsparam[param].replace('$', '') + '.png'
-			plotData(TAB_decalage_corrige, Y2, titre, filename, labelsperiod)
+			plotData(TAB_decalage, Y2, titre, filename, labelsperiod)
 
 		# Write parameters in a file
 		if verbose>0:
@@ -182,7 +182,7 @@ def main(sysargv):
 				Y3[k] = TAB_ListeEQM[k][indexplace]
 			except IndexError:
 				Y3[k] = 0.
-		ax.plot(TAB_decalage_corrige, Y3, alpha=1.0, lw=2, label='EQM')
+		ax.plot(TAB_decalage, Y3, alpha=1.0, lw=2, label='EQM')
 
 		ax.set_xlabel('Time shift (days)')
 		ax.yaxis.set_tick_params(length=0)
@@ -195,7 +195,7 @@ def main(sysargv):
 		for spine in ('top', 'right', 'bottom', 'left'):
 			ax.spines[spine].set_visible(False)
 
-		plt.xlim([TAB_decalage_corrige[0], TAB_decalage_corrige[-1]])
+		plt.xlim([TAB_decalage[0], TAB_decalage[-1]])
 		#plt.ylim([0, 1.0])
 
 		# ajout d'un text d'annotation
