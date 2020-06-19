@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import random
+import warnings
 import numpy             as np
 import matplotlib.pyplot as plt
 
@@ -57,6 +58,8 @@ class SolveEDO_SEIR1R2(SolveEDO):
 
 	def paramOptimization(self, data, time, ts=None):
 
+		warnings.filterwarnings("ignore")
+
 		# set parameters including bounds; you can also fix parameters (use vary=False)
 		S0, E0, I0, R10, R20 = self.y0 
 		_, a0, b0, c0, f0    = self.modele.getParam()
@@ -97,6 +100,8 @@ class SolveEDO_SEIR1R2(SolveEDO):
 		self.setParamInit(result.params['N'].value, result.params['E0'].value, result.params['I0'].value, result.params['R10'].value, result.params['R20'].value)
 		self.modele.setParam(result.params['N'].value, result.params['a'].value, result.params['b'].value, result.params['c'].value, result.params['f'].value)
 		self.TS = result.params['ts'].value
+
+		warnings.filterwarnings("default")
 
 
 def residual(paras, t, data, solveur, indexdata):

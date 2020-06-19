@@ -101,13 +101,13 @@ def GetPairListDates(readStartDate, readStopDate, DatesString, decalage, nbperio
 	if nbperiodes!=1:
 		confin_decalage = None
 		if DatesString.listConfDates != []:
-			confin_decalage = datetime.strptime(addDaystoStrDate(DatesString.listConfDates[0], decalage), strDate)
+			confin_decalage = datetime.strptime(addDaystoStrDate(DatesString.listConfDates[0], decalage-recouvrement), strDate)
 			if confin_decalage>ListDates[-2] and confin_decalage<ListDates[-1]:
 				ListDates.insert(-1, confin_decalage)
 		
 		deconfin_decalage = None
 		if DatesString.listDeconfDates != []:
-			deconfin_decalage = datetime.strptime(addDaystoStrDate(DatesString.listDeconfDates[0], decalage), strDate)
+			deconfin_decalage = datetime.strptime(addDaystoStrDate(DatesString.listDeconfDates[0], decalage-recouvrement), strDate)
 			if deconfin_decalage>ListDates[-2] and deconfin_decalage<ListDates[-1]:
 				ListDates.insert(-1, deconfin_decalage)
 
@@ -185,7 +185,7 @@ def readDataEurope(country='France', dateMinStr=None, dateMaxStr=None, fileLocal
 
 	covid_orig = None
 	if fileLocalCopy==True:
-		name = './data/csvFrance_2020-06-11.csv'
+		name = './data/csvFrance_2020-06-14.csv'
 		try:
 			covid_orig=pd.read_csv(name, sep=',', parse_dates=[0], dayfirst=True)
 		except:
@@ -196,7 +196,6 @@ def readDataEurope(country='France', dateMinStr=None, dateMaxStr=None, fileLocal
 		covid_orig=pd.read_csv(url, sep=',', parse_dates=[0], dayfirst=True)
 
 	#covid_orig.dtypes
-	observ_label = ['cases', 'deaths']
 	covid_orig.set_index('dateRep', inplace=True)
 	covid_orig.sort_index(inplace=True)
 
@@ -223,12 +222,14 @@ def readDataEurope(country='France', dateMinStr=None, dateMaxStr=None, fileLocal
 		dateMaxStr = addDaystoStrDate(covid_country1.index[-1].strftime("%Y-%m-%d"), 1)
 	if verbose>1:
 		print('dateMinStr=', dateMinStr, ', dateMaxStr=', dateMaxStr)
-	excerpt_country1 = covid_country1.loc[dateMinStr:dateMaxStr]
-	
+	excerpt_country1 = covid_country1.loc[dateMinStr:dateMaxStr].copy()
+	# On rajoute la somme des cas et des morts
+	excerpt_country1.loc[:, ('casesplusdeaths')] = excerpt_country1.loc[:, ('cases','deaths')].sum(axis=1)
+
 	if verbose>0:
 		print('TAIL=', excerpt_country1.tail())
-	
-	return excerpt_country1, observ_label, pop_size, dateMinStr, dateMaxStr
+
+	return excerpt_country1, list(excerpt_country1), pop_size, dateMinStr, dateMaxStr
 
 
 def get_WE_indice(pd):

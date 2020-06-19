@@ -16,7 +16,7 @@ from common           import readDataEurope, readDataFrance, getDates, PlotData
 from common           import getRepertoire, addDaystoStrDate
 
 # constante
-fileLocalCopy = False # if we upload the file from the url (to get latest results) or from a local copy file
+fileLocalCopy = True # if we upload the file from the url (to get latest results) or from a local copy file
 
 
 def fR1(r1, dt):
@@ -99,7 +99,7 @@ def main(sysargv):
 
         # Repertoire figures
         repertoire = getRepertoire(True, './figures/data/'+placefull)
-        prefFig = repertoire + '/' + placefull + 'Data_'
+        prefFig = repertoire + '/Data_'
         
         # Lecture des données et copy of the observation
         #############################################################################
@@ -118,23 +118,26 @@ def main(sysargv):
             #input('pause')
 
         # On ajoute le gradient
-        listeHead = list(pd_exerpt)
-        pd_exerpt['instant ' + listeHead[0]]  = pd_exerpt[HeadData[0]].diff()
-        pd_exerpt['instant ' + listeHead[1]] = pd_exerpt[HeadData[1]].diff()
+        pd_exerpt['instant ' + HeadData[0]] = pd_exerpt[HeadData[0]].diff()
+        pd_exerpt['instant ' + HeadData[1]] = pd_exerpt[HeadData[1]].diff()
+        pd_exerpt['instant ' + HeadData[2]] = pd_exerpt[HeadData[2]].diff()
         # print('Head=', pd_exerpt.head())
         # print('tail=', pd_exerpt.tail())
         # print('HeadData=', HeadData)
         # print('liste=', list(pd_exerpt))
 
-        PlotData(pd_exerpt, titre=placefull, filenameFig=prefFig+'_'    +HeadData[0]+'.png', y=HeadData[0],                 color='red',   Dates=DatesString)
-        PlotData(pd_exerpt, titre=placefull, filenameFig=prefFig+'_'    +HeadData[1]+'.png', y=HeadData[1],                 color='black', Dates=DatesString)
-        PlotData(pd_exerpt, titre=placefull, filenameFig=prefFig+'_Diff'+HeadData[0]+'.png', y=['instant ' + listeHead[0]], color='red',   Dates=DatesString)
-        PlotData(pd_exerpt, titre=placefull, filenameFig=prefFig+'_Diff'+HeadData[1]+'.png', y=['instant ' + listeHead[1]], color='black', Dates=DatesString)
+        PlotData(pd_exerpt, titre=placefull, filenameFig=prefFig+       HeadData[0]+'.png',                         y=HeadData[0],                 color='red',   Dates=DatesString)
+        PlotData(pd_exerpt, titre=placefull, filenameFig=prefFig+       HeadData[1]+'.png',                         y=HeadData[1],                 color='black', Dates=DatesString)
+        PlotData(pd_exerpt, titre=placefull, filenameFig=prefFig+       HeadData[2]+'.png',                         y=HeadData[2],                 color='black', Dates=DatesString)
+        PlotData(pd_exerpt, titre=placefull, filenameFig=prefFig+       HeadData[0]+HeadData[1]+'.png',             y=[HeadData[0], HeadData[1]],  color=['red', 'black'], Dates=DatesString)
+        PlotData(pd_exerpt, titre=placefull, filenameFig=prefFig+'Diff'+HeadData[0]+'.png',                         y=['instant ' + HeadData[0]], color='red',   Dates=DatesString)
+        PlotData(pd_exerpt, titre=placefull, filenameFig=prefFig+'Diff'+HeadData[1]+'.png',                         y=['instant ' + HeadData[1]], color='black', Dates=DatesString)
+        PlotData(pd_exerpt, titre=placefull, filenameFig=prefFig+'Diff'+HeadData[0]+HeadData[1]+'.png',             y=['instant ' + HeadData[0], 'instant ' + HeadData[1]], color=['red', 'black'], Dates=DatesString)
+        PlotData(pd_exerpt, titre=placefull, filenameFig=prefFig+'Diff'+HeadData[0]+HeadData[1]+HeadData[2]+'.png', y=['instant ' + HeadData[0], 'instant ' + HeadData[1], 'instant ' + HeadData[2]], color=['red', 'black', 'blue'], Dates=DatesString)
         
-
-        # on filtre R1 par UKF
+        # on filtre R1plusD par UKF
         #############################################################################
-        data   = pd_exerpt[listeHead[0]].tolist()
+        data   = pd_exerpt[HeadData[2]].tolist()
         dt     = 1
         sigmas = MerweScaledSigmaPoints(n=1, alpha=.5, beta=2., kappa=0.) #1-3.)
         ukf    = UKF(dim_x=1, dim_z=1, fx=fR1, hx=hR1, dt=dt, points=sigmas)
@@ -151,11 +154,11 @@ def main(sysargv):
         R1filt, _ = ukf.batch_filter(data)
 
         # plotting
-        pd_exerpt[listeHead[0] + ' filt'] = R1filt
-        PlotData(pd_exerpt, titre=placefull, filenameFig=prefFig+'_filt'+HeadData[0]+'.png', y=[HeadData[0], listeHead[0] + ' filt'], color=['red', 'darkred'], Dates=DatesString)
+        pd_exerpt[HeadData[2] + ' filt'] = R1filt
+        PlotData(pd_exerpt, titre=placefull, filenameFig=prefFig+'filt'+HeadData[2]+'.png', y=[HeadData[2], HeadData[2] + ' filt'], color=['red', 'darkred'], Dates=DatesString)
 
-        pd_exerpt['diff ' + listeHead[0] + ' filt']  = pd_exerpt[listeHead[0] + ' filt'].diff()
-        PlotData(pd_exerpt, titre=placefull, filenameFig=prefFig+'_diff_filt'+HeadData[0]+'.png', y=['instant ' + listeHead[0], 'diff ' + listeHead[0] + ' filt'], color=['red', 'darkred'], Dates=DatesString)
+        pd_exerpt['diff ' + HeadData[2] + ' filt']  = pd_exerpt[HeadData[2] + ' filt'].diff()
+        PlotData(pd_exerpt, titre=placefull, filenameFig=prefFig+'diff_filt'+HeadData[2]+'.png', y=['instant ' + HeadData[2], 'diff ' + HeadData[2] + ' filt'], color=['red', 'darkred'], Dates=DatesString)
 
 
         # on filtre diff R1 par UKF
@@ -179,11 +182,11 @@ def main(sysargv):
         # # UKF filtering and smoothing, batch mode
         # diffR1filt, _ = ukf.batch_filter(data)
         # pd_exerpt['diffR1 filt'] = diffR1filt
-        # PlotData(pd_exerpt, titre=placefull, filenameFig=prefFig+'_diffcases_filt'+HeadData[0]+'.png', y=['instant cases', 'diffR1 filt'], color=['red', 'darkred'], Dates=DatesString)
+        # PlotData(pd_exerpt, titre=placefull, filenameFig=prefFig+'diffcases_filt'+HeadData[0]+'.png', y=['instant cases', 'diffR1 filt'], color=['red', 'darkred'], Dates=DatesString)
 
         # on filtre F par UKF
         #############################################################################
-        data   = pd_exerpt[listeHead[1]].tolist()
+        data   = pd_exerpt[HeadData[1]].tolist()
         dt     = 1
         sigmas = MerweScaledSigmaPoints(n=1, alpha=.5, beta=2., kappa=0.) #1-3.)
         ukf    = UKF(dim_x=1, dim_z=1, fx=fF, hx=hF, dt=dt, points=sigmas)
@@ -200,16 +203,16 @@ def main(sysargv):
         Ffilt, _ = ukf.batch_filter(data)
 
         # plotting
-        pd_exerpt[listeHead[1] + ' filt'] = Ffilt
-        PlotData(pd_exerpt, titre=placefull, filenameFig=prefFig+'_filt'+HeadData[1]+'.png', y=[HeadData[1], listeHead[1] + ' filt'], color=['gray', 'black'], Dates=DatesString)
+        pd_exerpt[HeadData[1] + ' filt'] = Ffilt
+        PlotData(pd_exerpt, titre=placefull, filenameFig=prefFig+'filt'+HeadData[1]+'.png', y=[HeadData[1], HeadData[1] + ' filt'], color=['gray', 'black'], Dates=DatesString)
 
-        pd_exerpt['diff ' + listeHead[1] + ' filt']  = pd_exerpt[listeHead[1] + ' filt'].diff()
-        PlotData(pd_exerpt, titre=placefull, filenameFig=prefFig+'_diff_filt'+HeadData[1]+'.png', y=['instant ' + listeHead[1], 'diff ' + listeHead[1] + ' filt'], color=['gray', 'black'], Dates=DatesString)
+        pd_exerpt['diff ' + HeadData[1] + ' filt']  = pd_exerpt[HeadData[1] + ' filt'].diff()
+        PlotData(pd_exerpt, titre=placefull, filenameFig=prefFig+'diff_filt'+HeadData[1]+'.png', y=['instant ' + HeadData[1], 'diff ' + HeadData[1] + ' filt'], color=['gray', 'black'], Dates=DatesString)
 
 
         # on filtre R1 et F simultanément par UKF
         #############################################################################
-        data   = pd_exerpt[[listeHead[0], listeHead[1]]].to_numpy(copy=True)
+        data   = pd_exerpt[[HeadData[0], HeadData[1]]].to_numpy(copy=True)
         dt     = 1
         sigmas = MerweScaledSigmaPoints(n=2, alpha=.5, beta=2., kappa=1.) #1-3.)
         ukf    = UKF(dim_x=2, dim_z=2, fx=fR1F, hx=hR1F, dt=dt, points=sigmas)
@@ -226,15 +229,15 @@ def main(sysargv):
         R1Ffilt, _ = ukf.batch_filter(data)
 
         # plotting
-        pd_exerpt[listeHead[0]+' filtboth'] = R1Ffilt[:, 0]
-        pd_exerpt[listeHead[1]+' filtboth'] = R1Ffilt[:, 1]
-        PlotData(pd_exerpt, titre=placefull, filenameFig=prefFig+'_filtboth'+HeadData[0]+HeadData[1]+'.png', \
-                y=[HeadData[0], listeHead[0]+' filtboth', HeadData[1], listeHead[1]+' filtboth'], color=['red', 'darkred', 'gray', 'black'], Dates=DatesString)
+        pd_exerpt[HeadData[0]+' filtboth'] = R1Ffilt[:, 0]
+        pd_exerpt[HeadData[1]+' filtboth'] = R1Ffilt[:, 1]
+        PlotData(pd_exerpt, titre=placefull, filenameFig=prefFig+'filtboth'+HeadData[0]+HeadData[1]+'.png', \
+                y=[HeadData[0], HeadData[0]+' filtboth', HeadData[1], HeadData[1]+' filtboth'], color=['red', 'darkred', 'gray', 'black'], Dates=DatesString)
 
-        pd_exerpt['diff '+listeHead[0]+' filtboth']  = pd_exerpt[listeHead[0]+' filtboth'].diff()
-        pd_exerpt['diff '+listeHead[1]+' filtboth']  = pd_exerpt[listeHead[1]+' filtboth'].diff()
-        PlotData(pd_exerpt, titre=placefull, filenameFig=prefFig+'_diff_filt'+HeadData[0]+HeadData[1]+'.png', \
-                y=['instant '+listeHead[0], 'diff '+listeHead[0]+' filtboth', 'instant '+listeHead[1], 'diff '+listeHead[1]+' filtboth', ], color=['red', 'darkred', 'gray', 'black'], Dates=DatesString)
+        pd_exerpt['diff '+HeadData[0]+' filtboth']  = pd_exerpt[HeadData[0]+' filtboth'].diff()
+        pd_exerpt['diff '+HeadData[1]+' filtboth']  = pd_exerpt[HeadData[1]+' filtboth'].diff()
+        PlotData(pd_exerpt, titre=placefull, filenameFig=prefFig+'diff_filt'+HeadData[0]+HeadData[1]+'.png', \
+                y=['instant '+HeadData[0], 'diff '+HeadData[0]+' filtboth', 'instant '+HeadData[1], 'diff '+HeadData[1]+' filtboth', ], color=['red', 'darkred', 'gray', 'black'], Dates=DatesString)
 
 
 if __name__ == '__main__':

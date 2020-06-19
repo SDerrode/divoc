@@ -49,6 +49,14 @@ def fit(sysargv):
 		argv[6] : Plot graphique (0/1).                                                       Default: 1
 	"""
 
+	# Constantes
+	######################################################@
+	fileLocalCopy    = True  # if we upload the file from the url (to get latest data) or from a local copy file
+	readStartDateStr = "2020-03-01" # "2020-03-01" 
+	readStopDateStr  = None
+	recouvrement     = -1
+	dt               = 1
+
 	# Interpetation of arguments - reparation
 	######################################################@
 
@@ -83,20 +91,14 @@ def fit(sysargv):
 	if len(sysargv)>4: verbose       = int(sysargv[4])
 	if len(sysargv)>5 and int(sysargv[5])==0: plot     = False
 	if nbperiodes==1: 
-		decalage = 2  # nécessairement pas de décalage (on compense le recouvrement)
+		decalage = 0  # nécessairement pas de décalage (on compense le recouvrement)
 
-	# Constantes
-	######################################################@
-	fileLocalCopy    = True  # if we upload the file from the url (to get latest data) or from a local copy file
-	readStartDateStr = "2020-03-01" # "2020-03-01" 
-	readStopDateStr  = None
-	recouvrement     = -2
-	dt               = 1
+	
 
 	# Data reading to get first and last date available in the data set
 	######################################################
 	if FrDatabase == True: 
-		pd_exerpt, HeadData, N, readStartDateStr, readStopDateStr = readDataFrance('69', readStartDateStr, readStopDateStr, fileLocalCopy, verbose=0)
+		pd_exerpt, HeadData, N, readStartDateStr, readStopDateStr = readDataFrance('69',     readStartDateStr, readStopDateStr, fileLocalCopy, verbose=0)
 	else:
 		pd_exerpt, HeadData, N, readStartDateStr, readStopDateStr = readDataEurope('France', readStartDateStr, readStopDateStr, fileLocalCopy, verbose=0)
 	dataLength = pd_exerpt.shape[0]
@@ -151,7 +153,7 @@ def fit(sysargv):
 			pd_exerpt, HeadData, N, readStartDateStr, readStopDateStr = readDataEurope(place, readStartDateStr, readStopDateStr, fileLocalCopy, verbose=0)
 
 		if UKF_filt == True:
-			data2filter = pd_exerpt[HeadData[0]].tolist()
+			data2filter = pd_exerpt[HeadData[2]].tolist()
 			sigmas = MerweScaledSigmaPoints(n=1, alpha=.5, beta=2., kappa=0.) #1-3.)
 			ukf    = UKF(dim_x=1, dim_z=1, fx=fR1, hx=hR1, dt=dt, points=sigmas)
 			# Filter init
@@ -165,12 +167,12 @@ def fit(sysargv):
 			
 			# UKF filtering and smoothing, batch mode
 			R1filt, _ = ukf.batch_filter(data2filter)
-			HeadData[0] = HeadData[0] + ' filt'
-			pd_exerpt[HeadData[0]] = R1filt
+			HeadData[2] = HeadData[2] + ' filt'
+			pd_exerpt[HeadData[2]] = R1filt
 
 
 		# Get the list of dates to process
-		ListDates, ListDatesStr = GetPairListDates(readStartDate, readStopDate, DatesString, decalage, nbperiodes, recouvrement)
+		ListDates, ListDatesStr = GetPairListDates(readStartDate, readStopDate, DatesString, decalage+recouvrement, nbperiodes, recouvrement)
 		if verbose>1:
 			print('ListDates   =', ListDates)
 			print('ListDatesStr=', ListDatesStr)
@@ -210,7 +212,10 @@ def fit(sysargv):
 			dataLengthPeriod = 0
 			indMinPeriod     = (fitStartDate-readStartDate).days
 
-			for j, z in enumerate(pd_exerpt.loc[fitStartDateStr:addDaystoStrDate(fitStopDateStr, -1), (HeadData[0])]):
+			# print(pd_exerpt.tail())
+			# input('apuse')
+
+			for j, z in enumerate(pd_exerpt.loc[fitStartDateStr:addDaystoStrDate(fitStopDateStr, -1), (HeadData[2])]):
 				data[indMinPeriod+j, 0] = z
 				dataLengthPeriod +=1
 			slicedata      = slice(indMinPeriod, indMinPeriod+dataLengthPeriod)
@@ -276,14 +281,10 @@ def fit(sysargv):
 
 			solveur.paramOptimization(data[slicedata, :], time, ts)
 			_, a1, b1, c1, f1 = solveur.modele.getParam()
-			if c1 != 0.:
-				R0=a1/c1
-			else:
-				R0 = -1.
+			R0=solveur.modele.getR0()
 			if verbose>0:
 				print('Solver''s state after optimization=', solveur)
-				if c1 != 0.:
-					print('  Reproductivité après: ', R0)
+				print('  Reproductivité après: ', R0)
 
 			# After optimization
 			###############################
@@ -308,7 +309,7 @@ def fit(sysargv):
 			modelR1_deriv_period = (sol_ode[sliceedoderiv, indexdata] - sol_ode[sliceedoderiv.start-1 :sliceedoderiv.stop-1, indexdata]) / dt
 
 			if plot==True:
-				titre = placefull + '- Period ' + str(i) + '\\' + str(len(ListDatesStr)-1) + ' - Shift=' + str(decalage+recouvrement)
+				titre = placefull + '- Period ' + str(i) + '\\' + str(len(ListDatesStr)-1) + ' - Shift=' + str(decalage)
 				
 				# listePlot =[0,1,2,3,4]
 				# filename  = prefFig + '_Period' + str(i) + '_' + str(len(ListDatesStr)-1) + '_Fit_' + ''.join(map(str, listePlot)) + '.png'
@@ -350,8 +351,8 @@ def fit(sysargv):
 		ListeTextParam.append(ListeTextParamPlace)
 		ListetabParamModel.append(ListetabParamModelPlace)
 
-	return modelSEIR1R2, ListeTextParam, Listepd, data_deriv, modelR1_deriv, decalage+recouvrement, ListetabParamModel, ListeEQM
+	return modelSEIR1R2, ListeTextParam, Listepd, data_deriv, modelR1_deriv, ListetabParamModel, ListeEQM
 
 
 if __name__ == '__main__':
-	modelSEIR1R2, ListeTextParam, Listepd, data_deriv, modelR1_deriv, decalage_corrige, ListetabParamModel, ListeEQM = fit(sys.argv[1:])
+	modelSEIR1R2, ListeTextParam, Listepd, data_deriv, modelR1_deriv, ListetabParamModel, ListeEQM = fit(sys.argv[1:])

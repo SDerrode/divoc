@@ -24,9 +24,12 @@ class SEIR1R2:
 		self.a  = 0.155			 # tau de contact effectif
 		self.b  = 1./5.2         # phase de latence de 5.2 jours
 		self.c  = 1./12.39       # durée moyenne dans le compartiment I
-		self.f  = 0.003    # france 0.0032 , RU : 0.007      # fraction d'individus infectieux qui sont comptabilisés parmi les cas confirmés au moment de l'isolement
+		self.f  = 0.003          # france 0.0032 , RU : 0.007      # fraction d'individus infectieux qui sont comptabilisés parmi les cas confirmés au moment de l'isolement
 		self.dt = dt
 
+		if 'SEIR1R2.SEIR1R2' in str(type(self)):
+			self.setR0()       # MAJ de R0
+		
 		self.colorCycle = plt.rcParams['axes.prop_cycle'].by_key()['color']
 
 	def __str__(self):
@@ -40,25 +43,36 @@ class SEIR1R2:
 		S += '\n' + r'  $a='  + str(np.round(self.a, decimals=4)) + r', b=' + str(np.round(self.b, decimals=4)) + '$'
 		S += '\n' + r'  $c='  + str(np.round(self.c, decimals=4)) + r', f=' + str(np.round(self.f, decimals=4)) + '$'
 		if self.c!= 0.:
-		 	S += '\n' + r'  $R_0=' + str(np.round(self.a/self.c, decimals=2)) + '$'
+		 	S += '\n' + r'  $R_0=' + str(np.round(self.R0, decimals=2)) + '$'
 		return S
+
+	def setR0(self):
+		if self.c != 0.:
+			self.R0 = self.a/self.c
+		else:
+			self.R0 = -1.
 
 	def setParam(self, N, a, b, c, f):
 		self.N, self.a, self.b, self.c, self.f = N, a, b, c, f
+		self.setR0()       # MAJ de R0
 
 	def setN(self, N):
 		self.N = N
 	def seta(self, a):
 		self.a = a
+		self.setR0()       # MAJ de R0
 	def setb(self, b):
 		self.b = b
 	def setc(self, c):
 		self.c = c
+		self.setR0()       # MAJ de R0
 	def setf(self, f):
 		self.f = f
 
 	def getParam(self):
 		return (self.N, self.a, self.b, self.c, self.f)
+	def getR0(self):
+		return self.R0
 
 	# The SEIR1R2 model differential equations.
 	def deriv(self, y, t, N, a, b, c, f):
@@ -90,14 +104,3 @@ class SEIR1R2:
 		if string == r'$R^1(t)$': return self.colorCycle[3] 
 		if string == r'$R^2(t)$': return self.colorCycle[4] 
 		return string
-
-	# def fx(self, x, dt):
-	# 	'''State transition function for Bacaer's model SEIR1R2'''
-
-	# 	# petite normalisation pour éviter des dérives
-	# 	x /= abs(np.sum(x))/self.N
-	# 	ret = odeint(self.deriv, x, [0, dt], args=self.getParam())
-	# 	return ret.T[:, -1]
-
-	# def hx(self, x):
-	# 	return x[[3]] # on renvoie R1 (4ieme élément dans le vecteur SEIR1R2)

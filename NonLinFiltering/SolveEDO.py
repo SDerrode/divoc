@@ -227,7 +227,7 @@ class SolveEDO:
 		fig = plt.figure(facecolor='w', figsize=figsize)
 		ax  = fig.add_subplot(111, facecolor='#dddddd', axisbelow=True)
 		
-		labels=[r'$\frac{\partial R^1(t)}{\partial t}$', r'$\frac{\partial F(t)}{\partial t}$']
+		labels=[r'$\frac{\partial R^1(t)}{\partial t}$', r'$\frac{\partial D(t)}{\partial t}$']
 		q=0
 		for k in indexdata:
 			ax.plot(time, deriv_sol3[sliceedoderiv.start:min(sliceedoderiv.stop, np.shape(deriv_sol3)[0]), q], color=self.modele.getColor(int(indexdata[q])), alpha=1.0, lw=2, label=labels[q])
@@ -237,7 +237,7 @@ class SolveEDO:
 		# ax.plot(timeedo, R2bis, color=self.modele.getColor(indice), alpha=1.0, lw=2, label='$R^2(t)=N-\sum{SEIR^1}$')
 
 		# les données observées
-		labels=[r'$\frac{\partial R^1(n)}{\partial n}$', r'$\frac{\partial F(n)}{\partial n}$']
+		labels=[r'$\frac{\partial R^1(n)}{\partial n}$', r'$\frac{\partial D(n)}{\partial n}$']
 		markers=['x', '+']
 		if len(deriv_data) != 0:
 			q=0

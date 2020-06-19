@@ -11,8 +11,8 @@ from datetime          import datetime, timedelta
 from common            import getDates, addDaystoStrDate, get_WE_indice, drawAnnotation
 from common            import getLowerDateFromString, getNbDaysBetweenDateFromString, getRepertoire
 from SolveEDO_SEIR1R2  import SolveEDO_SEIR1R2
-from SolveEDO_SEIR1R2F import SolveEDO_SEIR1R2F
-from ProcessSEIR1R2F   import fit as fitProcessSEIR1R2F
+from SolveEDO_SEIR1R2D import SolveEDO_SEIR1R2D
+from ProcessSEIR1R2D   import fit as fitProcessSEIR1R2D
 from ProcessSEIR1R2    import fit as fitProcessSEIR1R2
 
 
@@ -28,14 +28,14 @@ def main(sysargv):
 		For countries (European database)
 		>> python3 PlotTimeShift.py 
 		>> python3 PlotTimeShift.py France      SEIR1R2  0 2,14 1 1
-		>> python3 PlotTimeShift.py Italy,Spain SEIR1R2F 1 2,14 0 1 # Italy and Spain, with UKF filtering
+		>> python3 PlotTimeShift.py Italy,Spain SEIR1R2D 1 2,14 0 1 # Italy and Spain, with UKF filtering
 
 		For French Region (French database)
 		>> python3 PlotTimeShift.py France,69    SEIR1R2  0 2,14 0 1 # Dpt 69 (Rhône)
-		>> python3 PlotTimeShift.py France,69,01 SEIR1R2F 1 2,14 1 1 # Dpt 69 (Rhône) + Dpt 01 (Ain) with UKF filtering
+		>> python3 PlotTimeShift.py France,69,01 SEIR1R2D 1 2,14 1 1 # Dpt 69 (Rhône) + Dpt 01 (Ain) with UKF filtering
 		
 		argv[1] : Country (or list separeted by ','), or 'France' followed by a list of dpts. Default: France 
-		argv[2] : EDO model (SEIR1R2 or SEIR1R2F)                                             Default: SEIR2R2         
+		argv[2] : EDO model (SEIR1R2 or SEIR1R2D)                                             Default: SEIR2R2         
 		argv[3] : UKF filtering of data (0/1).                                                Default: 0
 		argv[4] : min shift, max shift, ex. 2,10                                              Default: 2,10
 		argv[5] : Verbose level (debug: 3, ..., almost mute: 0).                              Default: 1
@@ -77,13 +77,13 @@ def main(sysargv):
 	if len(sysargv)>5: verbose       = int(sysargv[5])
 	if len(sysargv)>6 and int(sysargv[6])==0: plot     = False
 
-	# le modèle à traiter (SEIR1R2 or SEIR1R2F)
+	# le modèle à traiter (SEIR1R2 or SEIR1R2D)
 	if modeleString == 'SEIR1R2':
 		fit = fitProcessSEIR1R2
-	elif modeleString == 'SEIR1R2F':
-		fit = fitProcessSEIR1R2F
+	elif modeleString == 'SEIR1R2D':
+		fit = fitProcessSEIR1R2D
 	else:
-		print('Wrong EDO model, only SEIR1R2 or SEIR1R2F available!')
+		print('Wrong EDO model, only SEIR1R2 or SEIR1R2D available!')
 		exit(1)
 
 
@@ -117,14 +117,14 @@ def main(sysargv):
 
 		# Repertoire des figures
 		repertoire = getRepertoire(UKF_filt, './figures/' + modeleString + '_UKFilt/'+placefull, './figures/' + modeleString + '/' + placefull)
-		prefFig = repertoire + '/'
+		prefFig    = repertoire + '/'
 
 		nbperiodes = len(TAB_param_model[0][indexplace][:])
 		X = np.linspace(shift_mini, shift_maxi-1, shift_maxi-shift_mini)
 		if modeleString == 'SEIR1R2':
 			labelsparam  = [r'$a$', r'$b$', r'$c$', r'$f$', r'$R_O$']
 		else:
-			labelsparam  = [r'$a$', r'$b$', r'$c$', r'$f$', r'$\mu_I$', r'$\xi$', r'$R_O$']
+			labelsparam  = [r'$a$', r'$b$', r'$c$', r'$f$', r'$\mu$', r'$\xi$', r'$R_O$']
 		labelsperiod = ['Period 1', 'Period 2', 'Period 3']
 
 		# plot pour les 3 périodes
@@ -138,8 +138,9 @@ def main(sysargv):
 				except IndexError:
 					Y1[decalage, :] = 0.
 
+			texte = list(map( lambda s: s.replace('$', '').replace('\\', '').replace('_', ''), labelsparam[:-1]))
 			titre    = placefull + ' - ' + modeleString + ' parameters evolution for ' + labelsperiod[period]
-			filename = prefFig   + 'ParamEvol_Period' + str(period) + '_abcd.png'
+			filename = prefFig   + 'ParamEvol_Period' + str(period) + '_' + ''.join(texte) + '.png'
 			plotData(TAB_decalage_corrige, Y1[:, :-1], titre, filename, labelsparam[:-1])
 			titre    = placefull + ' - ' + modeleString + ' parameters evolution for ' + labelsperiod[period]
 			filename = prefFig   + 'ParamEvol_Period' + str(period) + '_R0.png'
@@ -160,11 +161,15 @@ def main(sysargv):
 			filename = prefFig   + 'PeriodEvol_Param' + labelsparam[param].replace('$', '') + '.png'
 			plotData(TAB_decalage_corrige, Y2, titre, filename, labelsperiod)
 
-			if verbose>0:
-				print('Param : ', labelsparam[param])
-				for period in range(len(labelsperiod)):
-					print('  -->Period : ', labelsperiod[period])
-					print(Y2[:, period])
+		# Write parameters in a file
+		if verbose>0:
+			with open(prefFig+'Params.txt', 'w') as text_file:
+				for param in range(len(labelsparam)):
+					text_file.write('\n\nParam: %s' % labelsparam[param].replace('$', '').replace('\\', ''))
+					for period in range(len(labelsperiod)):
+						#text_file.write('\n  -->%s:\n' % labelsperiod[period])
+						np.savetxt(text_file, Y2[:, period], delimiter=', ', newline=', ', fmt='%.4f', header='\n  -->'+labelsperiod[period]+': ')
+
 
 		# plot de l'EQM
 		##########################################
@@ -195,7 +200,7 @@ def main(sysargv):
 
 		# ajout d'un text d'annotation
 		plt.title(placefull + ' - ' + modeleString + ', EQM on the number of detected cases' )
-		plt.savefig(prefFig + 'EQM_Deriv_SEIR1R2.png', dpi=dpi)
+		plt.savefig(prefFig + 'EQM_Deriv_' + modeleString + '.png', dpi=dpi)
 		plt.close()
 
 
@@ -219,8 +224,8 @@ def plotData(X, Y, titre, filename, labels):
 		ax.spines[spine].set_visible(False)
 
 	plt.xlim([X[0], X[-1]])
-	if np.max(np.max(Y)) < 1.:
-		plt.ylim([0, 1.])
+	# if np.max(np.max(Y)) < 1.:
+	# 	plt.ylim([0, 1.])
 
 	# ajout d'un text d'annotation
 	plt.title(titre)
