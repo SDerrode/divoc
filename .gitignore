@@ -2,6 +2,7 @@
 NonLinFiltering/figures/*.png
 NonLinFiltering/testPython/
 NonLinFiltering/old/
+Notebooks/*.ipynb
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
