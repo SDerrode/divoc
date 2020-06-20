@@ -41,7 +41,7 @@ def fit(sysargv):
 		>> python3 ProcessSEIR1R2.py France,69,01 3 8 1 1 1 # Dpt 69 (Rhône) + Dpt 01 (Ain) with UKF filtering
 		
 		argv[1] : Country (or list separeted by ','), or 'France' followed by a list of dpts. Default: France 
-		argv[2] : Periods ('1' -> 1 period ('all-in-on'), '!=1' -> severall periods).          Default: 1
+		argv[2] : Periods ('1' -> 1 period ('all-in-on'), '!=1' -> severall periods).         Default: 1
 		argv[3] : Shift of periods (in days).                                                 Default: 0
 		argv[4] : UKF filtering of data (0/1).                                                Default: 0
 		argv[5] : Verbose level (debug: 3, ..., almost mute: 0).                              Default: 1

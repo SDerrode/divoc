@@ -73,18 +73,6 @@ See what happens in the _figures_ repository.
 
 This last call runs _ProcessSEIR1R2.py_ severall times, varying the time-shift (the range of values must be set by hand in the _ProcessSEIR1R2.py_ file) and plot parameters (a, b, c, f, R_0) evolution according to time-shift. The program also saves the EQM between the derivative of R1 data and the derivative of model's R1, to get a possible idea on the "optimal" time-shift.
 
-## Notebooks repository
-
-Only very partial notebooks to read data from two urls. Processing of the data is (for now) only available through scripts above.
-
-  - *readPlotDataGouvFr.ipynb*: Data reading from the website [data.gouv.fr](data.gouv.fr) (more specifically [these ones](https://static.data.gouv.fr/resources/donnees-hospitalieres-relatives-a-lepidemie-de-covid-19/20200327-154414/metadonnees-donnees-hospitalieres-covid19.csv)) and production of some figures for verification.
-
-  - *readPlotDataEurope.ipynb*:  Data reading from the website [European Center for Disease Prevention and Control](https://www.ecdc.europa.eu/en/publications-data/download-todays-data-geographic-distribution-covid-19-cases-worldwide) and production of some figures for verification.
-
-Start reading on-line now by clicking the binder (**seems not to work due to problem in Pandas module importation!**):
-
-[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/SDerrode/divoc.git/master)
-
 ## Contact
 
 stephane dot derrode at ec-lyon dot fr
