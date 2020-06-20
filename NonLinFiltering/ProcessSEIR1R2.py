@@ -12,8 +12,7 @@ from filterpy.common  import Q_discrete_white_noise
 from datetime         import datetime, timedelta
 from sklearn.metrics  import mean_squared_error
 
-from common           import readDataEurope, readDataFrance, getDates, addDaystoStrDate, getRepertoire
-from common           import getLowerDateFromString, getNbDaysBetweenDateFromString, GetPairListDates
+from common           import readDataEurope, readDataFrance, readDates, addDaystoStrDate, getRepertoire, GetPairListDates
 from SolveEDO_SEIR1R2 import SolveEDO_SEIR1R2
 
 strDate = "%Y-%m-%d"
@@ -138,10 +137,10 @@ def fit(sysargv):
 		# Get the full name of the place to process, and the special dates corresponding to the place
 		if FrDatabase == True: 
 			placefull   = 'France-' + place
-			DatesString = getDates('France', verbose)
+			DatesString = readDates('France', verbose)
 		else:
 			placefull   = place
-			DatesString = getDates(place, verbose)
+			DatesString = readDates(place, verbose)
 
 		if verbose>0:
 			print('PROCESSING of', placefull, 'in', listplaces)
@@ -188,7 +187,7 @@ def fit(sysargv):
 
 		# Repertoire des figures
 		repertoire = getRepertoire(UKF_filt, './figures/SEIR1R2_UKFilt/'+placefull, './figures/SEIR1R2/' + placefull)
-		prefFig = repertoire + '/' + solveur.modele.modelShortName + '_' + placefull
+		prefFig = repertoire + '/'
 		
 		# Remise à 0 des données
 		data.fill(0.)
@@ -234,21 +233,24 @@ def fit(sysargv):
 			############################################################################
 
 			# paramètres initiaux à optimiser
+			R10 = int(data[indMinPeriod, 0]) # on corrige R1 à la valeur numérique 
 			if i==0:
 				ts = 46
 				if nbperiodes!=1: # pour plusieurs périodes
 					#l, b0, c0, f0 = 0.255, 1./5.2, 1./12, 0.08
 					#a0 = (l+c0)*(1.+l/b0)
-					a0, b0, c0, f0 = 0.55, 0.34, 0.12, 0.25
+					#a0, b0, c0, f0 = 0.55, 0.34, 0.12, 0.25
+					a0, b0, c0, f0 = 0.60, 0.55, 0.30, 0.50
 					T  = 150
 				else: # pour une période
 					#a0, b0, c0, f0  = 0.35, 0.29, 0.075, 0.0022
 					a0, b0, c0, f0  = 0.10, 0.29, 0.10, 0.0022
 					T = 350
+				# R20 = int((1.-f0)*(R10/f0))
 				
 			if i==1 or i==2:
-				R10 = int(data[indMinPeriod, 0]) # on corrige R1 à la valeur numérique 
 				_, a0, b0, c0, f0 = solveur.modele.getParam()
+				
 				if i == 1:
 					a0 /= 4. # le confinement réduit drastiquement (pour aider l'optimisation) 
 				T  = 120
@@ -274,9 +276,10 @@ def fit(sysargv):
 			
 			# plot
 			if plot==True:
+				titre = placefull + '- Period ' + str(i) + '\\' + str(len(ListDatesStr)-1) + ' - [' + fitStartDateStr + '\u2192' + addDaystoStrDate(fitStopDateStr, -1) + '] (Shift=' + str(decalage) + ')'
 				listePlot = [3]
-				filename  = prefFig + '_Period' + str(i) + '_' + str(len(ListDatesStr)-1) + '_Fitinit_' + ''.join(map(str, listePlot)) + '.png'
-				solveur.plotEDO(filename, placefull, sliceedo, slicedata, plot=listePlot, data=data, text=solveur.getTextParam(fitStartDateStr))
+				filename  = prefFig + 'Period' + str(i) + '_' + str(len(ListDatesStr)-1) + '_' + str(decalage) + '_Fit_' + ''.join(map(str, listePlot)) + 'Init.png'
+				solveur.plotEDO(filename, titre, sliceedo, slicedata, plot=listePlot, data=data, text=solveur.getTextParam(fitStartDateStr))
 
 			# Parameters optimization
 			############################################################################
@@ -311,20 +314,20 @@ def fit(sysargv):
 			modelR1_deriv_period = (sol_ode[sliceedoderiv, indexdata] - sol_ode[sliceedoderiv.start-1 :sliceedoderiv.stop-1, indexdata]) / dt
 
 			if plot==True:
-				titre = placefull + '- Period ' + str(i) + '\\' + str(len(ListDatesStr)-1) + ' - Shift=' + str(decalage)
+				titre = placefull + '- Period ' + str(i) + '\\' + str(len(ListDatesStr)-1) + ' - [' + fitStartDateStr + '\u2192' + addDaystoStrDate(fitStopDateStr, -1) +'] (Shift=' + str(decalage) + ')'
 				
 				# listePlot =[0,1,2,3,4]
-				# filename  = prefFig + '_Period' + str(i) + '_' + str(len(ListDatesStr)-1) + '_Fit_' + ''.join(map(str, listePlot)) + '.png'
+				# filename  = prefFig + 'Period' + str(i) + '_'+ str(len(ListDatesStr)-1) + '_' + str(decalage) + '_Fit_' + ''.join(map(str, listePlot)) + '.png'
 				# solveur.plotEDO(filename, titre, sliceedo, slicedata, plot=listePlot, data=data, text=solveur.getTextParam(fitStartDateStr))
 				listePlot =[1,2,3]
-				filename  = prefFig + '_Period' + str(i) + '_' + str(len(ListDatesStr)-1) + '_Fit_' + ''.join(map(str, listePlot)) + '.png'
+				filename  = prefFig + 'Period' + str(i) + '_'+ str(len(ListDatesStr)-1) + '_' + str(decalage) + '_Fit_' + ''.join(map(str, listePlot)) + '.png'
 				solveur.plotEDO(filename, titre, sliceedo, slicedata, plot=listePlot, data=data, text=solveur.getTextParam(fitStartDateStr))
 				listePlot =[3]
-				filename  = prefFig + '_Period' + str(i) + '_' + str(len(ListDatesStr)-1) + '_Fit_' + ''.join(map(str, listePlot)) + '.png'
+				filename  = prefFig + 'Period' + str(i) + '_'+ str(len(ListDatesStr)-1) + '_' + str(decalage) + '_Fit_' + ''.join(map(str, listePlot)) + '.png'
 				solveur.plotEDO(filename, titre, sliceedo, slicedata, plot=listePlot, data=data, text=solveur.getTextParam(fitStartDateStr))
 
 				# dérivée  numérique de R1
-				filename = prefFig + '_Period' + str(i) + '_' + str(len(ListDatesStr)-1) + '_Fit_' + ''.join(map(str, listePlot)) + 'Deriv.png'
+				filename = prefFig + 'Period' + str(i) + '_'+ str(len(ListDatesStr)-1) + '_' + str(decalage) + '_Fit_' + ''.join(map(str, listePlot)) + 'Deriv.png'
 				solveur.plotEDO_deriv(filename, titre, sliceedoderiv, slicedataderiv, data_deriv_period, indexdata, text=solveur.getTextParam(fitStartDateStr))
 
 			# sol_ode_withSwitch = solveur.solveEDO_withSwitch(T, timeswitch=ts+dataLengthPeriod)

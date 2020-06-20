@@ -8,8 +8,7 @@ import matplotlib.pyplot as plt
 from matplotlib.ticker import MaxNLocator
 from datetime          import datetime, timedelta
   
-from common            import getDates, addDaystoStrDate, get_WE_indice, drawAnnotation
-from common            import getLowerDateFromString, getNbDaysBetweenDateFromString, getRepertoire
+from common            import getRepertoire
 from SolveEDO_SEIR1R2  import SolveEDO_SEIR1R2
 from SolveEDO_SEIR1R2D import SolveEDO_SEIR1R2D
 from ProcessSEIR1R2D   import fit as fitProcessSEIR1R2D
@@ -140,10 +139,10 @@ def main(sysargv):
 
 			texte = list(map( lambda s: s.replace('$', '').replace('\\', '').replace('_', ''), labelsparam[:-1]))
 			titre    = placefull + ' - ' + modeleString + ' parameters evolution for ' + labelsperiod[period]
-			filename = prefFig   + 'ParamEvol_Period' + str(period) + '_' + ''.join(texte) + '.png'
+			filename = prefFig   + 'EvolParam_Period' + str(period) + '_' + ''.join(texte) + '.png'
 			plotData(TAB_decalage, Y1[:, :-1], titre, filename, labelsparam[:-1])
 			titre    = placefull + ' - ' + modeleString + ' parameters evolution for ' + labelsperiod[period]
-			filename = prefFig   + 'ParamEvol_Period' + str(period) + '_R0.png'
+			filename = prefFig   + 'EvolParam_Period' + str(period) + '_R0.png'
 			plotData(TAB_decalage, Y1[:, -1].reshape(shift_maxi-shift_mini, 1), titre, filename, [labelsparam[-1]])
 
 		# plot pour les paramètres
@@ -158,7 +157,7 @@ def main(sysargv):
 					except IndexError:
 						Y2[decalage, period] = 0.
 			titre    = placefull + ' - ' + modeleString + ' periods evolution for param ' + labelsparam[param]
-			filename = prefFig   + 'PeriodEvol_Param' + labelsparam[param].replace('$', '') + '.png'
+			filename = prefFig   + 'EvolPeriod_Param' + labelsparam[param].replace('$', '') + '.png'
 			plotData(TAB_decalage, Y2, titre, filename, labelsperiod)
 
 		# Write parameters in a file
@@ -200,7 +199,7 @@ def main(sysargv):
 
 		# ajout d'un text d'annotation
 		plt.title(placefull + ' - ' + modeleString + ', EQM on the number of detected cases' )
-		plt.savefig(prefFig + 'EQM_Deriv_' + modeleString + '.png', dpi=dpi)
+		plt.savefig(prefFig + 'EvolPeriod_EQM_Deriv.png', dpi=dpi)
 		plt.close()
 
 

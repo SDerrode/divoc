@@ -57,38 +57,28 @@ def getNbDaysBetweenDateFromString(strdate1, strdate2):
 	d2 = datetime.strptime(strdate2,"%Y-%m-%d")
 	return (d2-d1).days
 
-def getDates(country, verbose):
-	Dates = None
-	if country == 'France':
-		Dates = Covid_SpecialDates(country=country)
-		Dates.addConfDates      ('2020-03-17')
-		Dates.addDeconfDates    ('2020-05-11')
-		#Dates.setListOtherDates(['2020-03-06'])
-	if country == 'Germany':
-		Dates = Covid_SpecialDates(country=country)
-		Dates.addConfDates      ('2020-03-22')
-		Dates.addDeconfDates    ('2020-04-20')
-	if country == 'Italy':
-		Dates = Covid_SpecialDates(country=country)
-		Dates.addConfDates      ('2020-03-09')
-		Dates.addDeconfDates    ('2020-05-04')
-	if country == 'Spain':
-		Dates = Covid_SpecialDates(country=country)
-		Dates.addConfDates      ('2020-03-15')
-		Dates.addDeconfDates    ('2020-05-10')
-	if country == 'South_Korea':
-		Dates = Covid_SpecialDates(country=country)
-		Dates.addConfDates      ('2020-02-23')
-		Dates.addDeconfDates    ('2020-05-03')
-	if country == 'United_Kingdom':
-		Dates = Covid_SpecialDates(country=country)
-		Dates.addConfDates      ('2020-03-23')
-		Dates.addDeconfDates    ('2020-05-05') # not now
-	if country == 'Belgium':
-		Dates = Covid_SpecialDates(country=country)
-		Dates.addConfDates      ('2020-03-18')
-		#Dates.addDeconfDates    ('2020-05-18')
+def readDates(place, verbose=0):
+	'''
+		Lecture des dates de confinement et deconfinement pour tous les pays enregistrés
+	''' 
+	dates_orig = None
+	name = './data/dates.csv'
+	try:
+		dates_orig=pd.read_csv(name, sep=',')#, parse_dates=[1,2,3])
+	except:
+		print('PB readDates --> exit!')
+		exit(1)
 
+	if verbose>1:
+		print('TAIL=', dates_orig.tail())
+
+	dates_country = dates_orig.loc[dates_orig['country'] == place]
+
+	Dates = Covid_SpecialDates(country=place)
+	Dates.addConfDates  (dates_country.iloc[0]['confdate'])
+	Dates.addDeconfDates(dates_country.iloc[0]['deconfdate'])
+	Dates.addOtherDates (dates_country.iloc[0]['otherdate'])
+	
 	if verbose>1:
 		print(Dates)
 	

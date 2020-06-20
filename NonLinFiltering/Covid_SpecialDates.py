@@ -28,32 +28,41 @@ class Covid_SpecialDates:
 		for date in listConfDates:
 			self.addConfDates(date)
 	def addConfDates(self, aStrDate):
-		try: 
-			parse(aStrDate, fuzzy=False)
-			d1 = dt.strptime(aStrDate, '%Y-%m-%d')
-			self.listConfDates.append(aStrDate)
-		except ValueError:
+		if type(aStrDate) != str:
 			print('-->This string ', aStrDate, ' is not a date')
+		else:
+			try: 
+				parse(aStrDate, fuzzy=False)
+				d1 = dt.strptime(aStrDate, '%Y-%m-%d')
+				self.listConfDates.append(aStrDate)
+			except ValueError:
+				print('-->This string ', aStrDate, ' is not a date')
 
 	def setListDeconfDates(self, listDeconfDates):
 		for date in listDeconfDates:
 			self.addDeconfDates(date)
 	def addDeconfDates(self, aStrDate):
-		try: 
-			parse(aStrDate, fuzzy=False)
-			d1 = dt.strptime(aStrDate, '%Y-%m-%d')
-			self.listDeconfDates.append(aStrDate)
-		except ValueError:
+		if type(aStrDate) != str:
 			print('-->This string ', aStrDate, ' is not a date')
+		else:
+			try: 
+				parse(aStrDate, fuzzy=False)
+				d1 = dt.strptime(aStrDate, '%Y-%m-%d')
+				self.listDeconfDates.append(aStrDate)
+			except ValueError:
+				print('-->This string ', aStrDate, ' is not a date')
 
 	def setListOtherDates(self, listOtherDates):
 		for date in listOtherDates:
 			self.addOtherDates(date)
 	def addOtherDates(self, aStrDate):
-		try: 
-			parse(aStrDate, fuzzy=False)
-			d1 = dt.strptime(aStrDate, '%Y-%m-%d')
-			self.listOtherDates.append(aStrDate)
-		except ValueError:
+		if type(aStrDate) != str:
 			print('-->This string ', aStrDate, ' is not a date')
+		else:	
+			try: 
+				parse(aStrDate, fuzzy=False)
+				d1 = dt.strptime(aStrDate, '%Y-%m-%d')
+				self.listOtherDates.append(aStrDate)
+			except ValueError:
+				print('-->This string ', aStrDate, ' is not a date')
 

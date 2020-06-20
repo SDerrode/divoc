@@ -12,7 +12,7 @@ from filterpy.kalman  import UnscentedKalmanFilter as UKF
 from filterpy.kalman  import JulierSigmaPoints, MerweScaledSigmaPoints, rts_smoother
 from filterpy.common  import Q_discrete_white_noise
 
-from common           import readDataEurope, readDataFrance, getDates, PlotData
+from common           import readDataEurope, readDataFrance, readDates, PlotData
 from common           import getRepertoire, addDaystoStrDate
 
 # constante
@@ -88,12 +88,10 @@ def main(sysargv):
     for place in listplaces:
 
         placefull = place
-        # These are the date of confinement and deconfinement + other. 
-        # See function getDates on how to add or delete dates to put the focus on
-        DatesString = getDates(place, verbose)
+        DatesString = readDates(place, verbose)
         if FrDatabase==True: 
             placefull   = France + place
-            DatesString = getDates(France, verbose)
+            DatesString = readDates(France, verbose)
 
         print('PROCESSING of', placefull, 'in', listplaces)
 

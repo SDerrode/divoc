@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 
 from datetime          import datetime, timedelta
   
-from common            import getDates, addDaystoStrDate, get_WE_indice, drawAnnotation
+from common            import readDates, addDaystoStrDate, get_WE_indice, drawAnnotation
 from common            import getLowerDateFromString, getNbDaysBetweenDateFromString, getRepertoire
 from SolveEDO_SEIR1R2  import SolveEDO_SEIR1R2
 from SolveEDO_SEIR1R2D import SolveEDO_SEIR1R2D
@@ -143,9 +143,9 @@ def main(sysargv):
         longueur = len(liste_pd_piecewise[indexplace].loc[:, ('dcases')])
 
         if FrDatabase==True:
-            DatesString = getDates('France', verbose)
+            DatesString = readDates('France', verbose)
         else:
-            DatesString = getDates(place, verbose)
+            DatesString = readDates(place, verbose)
 
         # on ajoute les dérivées numériques des cas et des morts
         liste_pd_piecewise[indexplace].loc[:, ('mc_piecewise')]          = model_deriv_piecewise[indexplace, 0:longueur, 0]
@@ -194,9 +194,9 @@ def main(sysargv):
         # print('longueur=', longueur)
 
         if FrDatabase==True:
-            DatesString = getDates('France', verbose)
+            DatesString = readDates('France', verbose)
         else:
-            DatesString = getDates(place, verbose)
+            DatesString = readDates(place, verbose)
 
         liste_pd_piecewise[indexplace].loc[:, ('Sp')]  = model_piecewise [indexplace, :, 0]
         liste_pd_piecewise[indexplace].loc[:, ('Ep')]  = model_piecewise [indexplace, :, 1]
