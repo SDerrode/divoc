@@ -75,9 +75,10 @@ def readDates(place, verbose=0):
 	dates_country = dates_orig.loc[dates_orig['country'] == place]
 
 	Dates = Covid_SpecialDates(country=place)
-	Dates.addConfDates  (dates_country.iloc[0]['confdate'])
-	Dates.addDeconfDates(dates_country.iloc[0]['deconfdate'])
-	Dates.addOtherDates (dates_country.iloc[0]['otherdate'])
+	Dates.addFirstCaseDates(dates_country.iloc[0]['firstcasedate'])
+	Dates.addConfDates     (dates_country.iloc[0]['confdate'])
+	Dates.addDeconfDates   (dates_country.iloc[0]['deconfdate'])
+	Dates.addOtherDates    (dates_country.iloc[0]['otherdate'])
 	
 	if verbose>1:
 		print(Dates)
@@ -216,9 +217,16 @@ def readDataEurope(country='France', dateMinStr=None, dateMaxStr=None, fileLocal
 	# On rajoute la somme des cas et des morts
 	excerpt_country1.loc[:, ('casesplusdeaths')] = excerpt_country1.loc[:, ('cases','deaths')].sum(axis=1)
 
+	# On rempli les données manquantes avec la données la plus proche
+	idx = pd.date_range(start=excerpt_country1.index.min(), end=excerpt_country1.index.max())
+	excerpt_country1 = excerpt_country1.reindex(idx, method='nearest')
+	# On complète éventuellement au début avec des 0
+	idx = pd.date_range(start=datetime.strptime(dateMinStr,"%Y-%m-%d"), end=datetime.strptime(dateMaxStr,"%Y-%m-%d")-timedelta(1))
+	excerpt_country1 = excerpt_country1.reindex(idx, fill_value=0.)
+
 	if verbose>0:
 		print('TAIL=', excerpt_country1.tail())
-
+	
 	return excerpt_country1, list(excerpt_country1), pop_size, dateMinStr, dateMaxStr
 
 
@@ -258,6 +266,8 @@ def PlotData(pd, titre, filenameFig, y, color='black', Dates=None):
 	
 	# ajout des dates spéciales
 	if Dates!=None:
+		# for d in Dates.listFirstCaseDates:
+		# 	drawAnnotation(ax, 'First case date\n', d, color='blue')
 		for d in Dates.listConfDates:
 			drawAnnotation(ax, 'Conf. date\n', d, color='red')
 		for d in Dates.listDeconfDates:

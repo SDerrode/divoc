@@ -13,24 +13,36 @@ class Covid_SpecialDates:
 		self.country = country
 
 		# Empty lists of dates
-		self.listConfDates   = []
-		self.listDeconfDates = []
-		self.listOtherDates  = []
+		self.listFirstCaseDates = []
+		self.listConfDates      = []
+		self.listDeconfDates    = []
+		self.listOtherDates     = []
 
 	def __str__(self):
 		S =  'Interesting dates for ' + self.country + ':' 
+		S += '\n  First case date(s)   :' + str(self.listFirstCaseDates)
 		S += '\n  Confinement date(s)  :' + str(self.listConfDates)
 		S += '\n  Deconfinement date(s):' + str(self.listDeconfDates)
 		S += '\n  Other date(s)        :' + str(self.listOtherDates)
 		return S
 
+	def setListFirstCaseDates(self, listFirstCaseDates):
+		for date in listFirstCaseDates:
+			self.addFirstCaseDates(date)
+	def addFirstCaseDates(self, aStrDate):
+		if type(aStrDate) == str:
+			try: 
+				parse(aStrDate, fuzzy=False)
+				d1 = dt.strptime(aStrDate, '%Y-%m-%d')
+				self.listFirstCaseDates.append(aStrDate)
+			except ValueError:
+				print('-->This string ', aStrDate, ' is not a date')
+
 	def setListConfDates(self, listConfDates):
 		for date in listConfDates:
 			self.addConfDates(date)
 	def addConfDates(self, aStrDate):
-		if type(aStrDate) != str:
-			print('-->This string ', aStrDate, ' is not a date')
-		else:
+		if type(aStrDate) == str:
 			try: 
 				parse(aStrDate, fuzzy=False)
 				d1 = dt.strptime(aStrDate, '%Y-%m-%d')
@@ -42,9 +54,7 @@ class Covid_SpecialDates:
 		for date in listDeconfDates:
 			self.addDeconfDates(date)
 	def addDeconfDates(self, aStrDate):
-		if type(aStrDate) != str:
-			print('-->This string ', aStrDate, ' is not a date')
-		else:
+		if type(aStrDate) == str:
 			try: 
 				parse(aStrDate, fuzzy=False)
 				d1 = dt.strptime(aStrDate, '%Y-%m-%d')
@@ -56,9 +66,7 @@ class Covid_SpecialDates:
 		for date in listOtherDates:
 			self.addOtherDates(date)
 	def addOtherDates(self, aStrDate):
-		if type(aStrDate) != str:
-			print('-->This string ', aStrDate, ' is not a date')
-		else:	
+		if type(aStrDate) == str:	
 			try: 
 				parse(aStrDate, fuzzy=False)
 				d1 = dt.strptime(aStrDate, '%Y-%m-%d')

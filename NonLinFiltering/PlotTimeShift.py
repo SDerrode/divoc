@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import sys
+import sys, os
 import numpy             as np
 import matplotlib.pyplot as plt
 
@@ -14,10 +14,8 @@ from SolveEDO_SEIR1R2D import SolveEDO_SEIR1R2D
 from ProcessSEIR1R2D   import fit as fitProcessSEIR1R2D
 from ProcessSEIR1R2    import fit as fitProcessSEIR1R2
 
-
 dpi     = 120    # plot resolution of saved figures
 figsize = (8, 4) # figure's size (width, height)
-
 
 def main(sysargv):
 
@@ -41,10 +39,13 @@ def main(sysargv):
 		argv[6] : Plot graphique (0/1).                                                       Default: 1
 	"""
 
+	#Austria,Belgium,Croatia,Czechia,Finland,France,Germany,Greece,Hungary,Ireland,Italy,Lithuania,Poland,Portugal,Romania,Serbia,Spain,Switzerland,Ukraine
+	#Austria,Belgium,Croatia,Czechia,Finland,France,Germany,Greece,Hungary,Ireland,Italy,Poland,Portugal,Romania,Serbia,Spain,Switzerland,Ukraine
+	# Il y a 18 pays
+	
 	# Interpetation of arguments - reparation
 	######################################################@
 
-	print('Command line : ', sysargv, flush=True)
 	if len(sysargv) > 7:
 		print('  CAUTION : bad number of arguments - see help')
 		exit(1)
@@ -53,7 +54,7 @@ def main(sysargv):
 	places                 = 'France'
 	listplaces             = list(places.split(','))
 	modeleString           = 'SEIR1R2'
-	UKF_filt,   UKF_filt01 = False, 0  #True, 1
+	UKF_filt, UKF_filt01   = False, 0  #True, 1
 	shift_mini, shift_maxi = 2, 10     #4, 18
 	verbose                = 1
 	plot                   = True
@@ -70,11 +71,11 @@ def main(sysargv):
 			FrDatabase = True
 			listplaces = listplaces[1:]
 
-	if len(sysargv)>2: modeleString  = sysargv[2]
+	if len(sysargv)>2: modeleString = sysargv[2]
 	if len(sysargv)>3 and int(sysargv[3])==1: UKF_filt, UKF_filt01 = True, 1
 	if len(sysargv)>4: shift_mini, shift_maxi = map(int, sysargv[4].split(','))
-	if len(sysargv)>5: verbose       = int(sysargv[5])
-	if len(sysargv)>6 and int(sysargv[6])==0: plot     = False
+	if len(sysargv)>5: verbose = int(sysargv[5])
+	if len(sysargv)>6 and int(sysargv[6])==0: plot = False
 
 	# le modèle à traiter (SEIR1R2 or SEIR1R2D)
 	if modeleString == 'SEIR1R2':
@@ -85,6 +86,9 @@ def main(sysargv):
 		print('Wrong EDO model, only SEIR1R2 or SEIR1R2D available!')
 		exit(1)
 
+	if verbose>0:
+		print('  Full command line : '+sysargv[0]+' '+places+' '+modeleString+' '+str(UKF_filt)+' '+str(shift_mini)+','+str(shift_maxi)+' '+str(verbose)+' '+str(plot), flush=True)
+	
 
 	# fit avec 3 périodes + décalage
 	##################################
@@ -105,6 +109,13 @@ def main(sysargv):
 		TAB_ListeEQM.append(ListeEQM)
 
 	#TAB_param_model[decalage][place][nbperiodes]
+
+	# On enregistre le R0 moyen de la 3ieme période pour faire carte graphique
+	rep  = getRepertoire(UKF_filt, './figures/'+modeleString+'_UKFilt/', './figures/'+modeleString+'/')
+	if os.path.exists(rep+'/R0moyen.csv'):
+		os.remove(rep+'/R0moyen.csv')
+	with open(rep+'/R0moyen.csv', 'a') as text_file:
+		text_file.write('Country,R0moyen\n')
 	
 	for indexplace, place in enumerate(listplaces):
 
@@ -115,8 +126,8 @@ def main(sysargv):
 			placefull   = place
 
 		# Repertoire des figures
-		repertoire = getRepertoire(UKF_filt, './figures/' + modeleString + '_UKFilt/'+placefull, './figures/' + modeleString + '/' + placefull)
-		prefFig    = repertoire + '/'
+		repertoire = getRepertoire(UKF_filt, './figures/'+modeleString+'_UKFilt/'+placefull, './figures/'+modeleString+'/'+placefull)
+		prefFig    = repertoire+'/'
 
 		nbperiodes = len(TAB_param_model[0][indexplace][:])
 		X = np.linspace(shift_mini, shift_maxi-1, shift_maxi-shift_mini)
@@ -147,6 +158,9 @@ def main(sysargv):
 
 		# plot pour les paramètres
 		##########################################
+		if os.path.exists(prefFig+'EvolParams.txt'):
+			os.remove(prefFig+'EvolParams.txt')
+
 		Y2 = np.zeros(shape=(shift_maxi-shift_mini, len(labelsperiod)))
 		for param in range(len(labelsparam)):
 
@@ -160,14 +174,16 @@ def main(sysargv):
 			filename = prefFig   + 'EvolPeriod_Param' + labelsparam[param].replace('$', '') + '.png'
 			plotData(TAB_decalage, Y2, titre, filename, labelsperiod)
 
-		# Write parameters in a file
-		if verbose>0:
-			with open(prefFig+'Params.txt', 'w') as text_file:
-				for param in range(len(labelsparam)):
-					text_file.write('\n\nParam: %s' % labelsparam[param].replace('$', '').replace('\\', ''))
-					for period in range(len(labelsperiod)):
-						#text_file.write('\n  -->%s:\n' % labelsperiod[period])
-						np.savetxt(text_file, Y2[:, period], delimiter=', ', newline=', ', fmt='%.4f', header='\n  -->'+labelsperiod[period]+': ')
+			# Write parameters in a file
+			with open(prefFig+'EvolParams.txt', 'a') as text_file:
+				text_file.write('\n\nParam: %s' % labelsparam[param].replace('$', '').replace('\\', ''))
+				for period in range(len(labelsperiod)):
+					#text_file.write('\n  -->%s:\n' % labelsperiod[period])
+					np.savetxt(text_file, Y2[:, period], delimiter=', ', newline=', ', fmt='%.4f', header='\n  -->'+labelsperiod[period]+': ')
+			if param==len(labelsparam)-1: # c'est à dire R0
+				with open(rep+'/R0moyen.csv', 'a') as text_file:
+					text_file.write(placefull+','+str(np.mean(Y2[:, -1]))+'\n')
+					print(placefull, ' - R0 moyen period 3=', np.mean(Y2[:, -1])) # moyenne uniquement pour la 3ieme période
 
 
 		# plot de l'EQM

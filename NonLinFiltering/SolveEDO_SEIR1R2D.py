@@ -95,7 +95,7 @@ class SolveEDO_SEIR1R2D(SolveEDO):
 		
 		# fit model
 		result = minimize(residual, params, args=(time, data, self, self.indexdata), method='powell') #powell, least_squares
-		if self.verbose>0:
+		if self.verbose>1:
 			result.params.pretty_print()
 			# display fitted statistics
 			report_fit(result)
