@@ -38,8 +38,10 @@ def fit(sysargv):
 		>> python3 ProcessSEIR1R2D.py France,Germany 1 0 0 1 1
 
 		For French Region (French database)
-		>> python3 ProcessSEIR1R2D.py France,69    3 8 0 1 1 # Dpt 69 (Rhône)
-		>> python3 ProcessSEIR1R2D.py France,69,01 3 8 0 1 1 # Dpt 69 (Rhône) + Dpt 01 (Ain)
+		>> python3 ProcessSEIR1R2D.py France,69        3 8 0 1 1 # Dpt 69 (Rhône)
+		>> python3 ProcessSEIR1R2D.py France,all       3 8 0 1 1 # Tous les dpts francais
+		>> python3 ProcessSEIR1R2D.py France,metropole 3 8 0 1 1 # Tous les dpts francais de la métropole uniquement
+		>> python3 ProcessSEIR1R2D.py France,69,01     3 8 0 1 1 # Dpt 69 (Rhône) + Dpt 01 (Ain)
 		
 		argv[1] : Country (or list separeted by ','), or 'France' followed by a list of dpts. Default: France 
 		argv[2] : Periods (1 -> 1 period ('all-in-on'), 'x!=1' -> severall periods).          Default: 1
@@ -80,13 +82,33 @@ def fit(sysargv):
 	if len(sysargv)>0: listplaces = list(sysargv[0].split(','))
 	FrDatabase = False
 	if listplaces[0]=='France' and len(listplaces)>1:
-		try:
-			int(listplaces[1]) #If this is a number, then it is a french dpt
-		except Exception as e:
-			FrDatabase=False
-		else:
+		argument = listplaces[1]
+		if argument=='all' or argument=='metropole':
+			listplaces = []
+			for i in range(1,96):
+				number_str = str(i)
+				zero_filled_number = number_str.zfill(2)
+				listplaces.append(zero_filled_number)
+			listplaces.remove("20") # Ce département n'est pas dans les données
+			listplaces.append("2A")
+			listplaces.append("2B")
 			FrDatabase = True
-			listplaces = listplaces[1:]
+			France     = 'France'
+		if argument=='all':
+			listplaces.append("971")
+			listplaces.append("972")
+			listplaces.append("973")
+			listplaces.append("974")
+			listplaces.append("976")
+		if argument!='all' and argument!='metropole':
+			try:
+				int(argument)
+			except Exception as e:
+				FrDatabase=False
+			else:
+				FrDatabase = True
+				listplaces = listplaces[1:]
+				France     = 'France'
 
 	if len(sysargv)>1: nbperiodes    = int(sysargv[1])
 	if len(sysargv)>2: decalage      = int(sysargv[2])
@@ -103,9 +125,9 @@ def fit(sysargv):
 	# Data reading to get first and last date available in the data set
 	######################################################@
 	if FrDatabase == True: 
-		pd_exerpt, HeadData, N, readStartDateStr, readStopDateStr = readDataFrance('69',     readStartDateStr, readStopDateStr, fileLocalCopy, verbose=0)
+		pd_exerpt, HeadData, N, readStartDateStr, readStopDateStr = readDataFrance('69',   readStartDateStr, readStopDateStr, fileLocalCopy, verbose=0)
 	else:
-		pd_exerpt, HeadData, N, readStartDateStr, readStopDateStr = readDataEurope('France', readStartDateStr, readStopDateStr, fileLocalCopy, verbose=0)
+		pd_exerpt, HeadData, N, readStartDateStr, readStopDateStr = readDataEurope(France, readStartDateStr, readStopDateStr, fileLocalCopy, verbose=0)
 	dataLength = pd_exerpt.shape[0]
 
 	readStartDate = datetime.strptime(readStartDateStr, strDate)
@@ -144,7 +166,7 @@ def fit(sysargv):
 		# Get the full name of the place to process, and the special dates corresponding to the place
 		if FrDatabase == True: 
 			placefull   = 'France-' + place
-			DatesString = readDates('France', verbose)
+			DatesString = readDates(France, verbose)
 		else:
 			placefull   = place
 			DatesString = readDates(place, verbose)

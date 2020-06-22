@@ -48,9 +48,11 @@ def main(sysargv):
         >> python3 PlotDataCovid.py France,Spain,Italy,United_Kingdom,Germany,Belgium 0
 
         For French Regions (French database)
-        >> python3 PlotDataCovid.py France,69       # Dpt 69 (Rhône)
-        >> python3 PlotDataCovid.py France,69,75,01 # Dpt 69 (Rhône) + Dpt 75 + Dpt 01
-       
+        >> python3 PlotDataCovid.py France,69        # Dpt 69 (Rhône)
+        >> python3 PlotDataCovid.py France,69,75,01  # Dpt 69 (Rhône) + Dpt 75 + Dpt 01
+        >> python3 PlotDataCovid.py France,metropole # Tous les Dpts metropolitains
+        >> python3 PlotDataCovid.py France,all       # Tous les Dpts
+        
         argv[1] : Country (or list separeted by ','), or 'France' followed by a list of departments. Default: France 
         argv[2] : Verbose level (debug: 3, ..., almost mute: 0).                                     Default: 1
     """
@@ -71,14 +73,36 @@ def main(sysargv):
     if len(sysargv)>1: listplaces = list(sysargv[1].split(','))
     FrDatabase = False
     if listplaces[0]=='France' and len(listplaces)>1:
-        try:
-            int(listplaces[1])
-        except Exception as e:
-            FrDatabase=False
-        else:
+        argument = listplaces[1]
+        if argument=='all' or argument=='metropole':
+            listplaces = []
+            for i in range(1,96):
+                number_str = str(i)
+                zero_filled_number = number_str.zfill(2)
+                listplaces.append(zero_filled_number)
+            listplaces.remove("20") # Ce département n'est pas dans les données
+            listplaces.append("2A")
+            listplaces.append("2B")
             FrDatabase = True
-            listplaces = listplaces[1:]
             France     = 'France'
+        if argument=='all':
+            listplaces.append("971")
+            listplaces.append("972")
+            listplaces.append("973")
+            listplaces.append("974")
+            listplaces.append("976")
+        if argument!='all' and argument!='metropole':
+            try:
+                int(argument)
+            except Exception as e:
+                FrDatabase=False
+            else:
+                FrDatabase = True
+                listplaces = listplaces[1:]
+                France     = 'France'
+
+    # print('listplaces=', listplaces)
+    # input('attente')
 
     if len(sysargv)>2: verbose = int(sysargv[2])
 
@@ -90,17 +114,19 @@ def main(sysargv):
     # Loop for all places
     for place in listplaces:
 
-        placefull = place
-        DatesString = readDates(place, verbose)
-        if FrDatabase==True: 
-            placefull   = France + place
+        # Get the full name of the place to process, and the special dates corresponding to the place
+        if FrDatabase == True: 
+            placefull   = 'France-' + place
             DatesString = readDates(France, verbose)
+        else:
+            placefull   = place
+            DatesString = readDates(place, verbose)
 
         print('PROCESSING of', placefull, 'in', listplaces)
 
         # Repertoire figures
         repertoire = getRepertoire(True, './figures/data/'+placefull)
-        prefFig = repertoire + '/Data_'
+        prefFig = repertoire + '/'
         
         # Lecture des données et copy of the observation
         #############################################################################

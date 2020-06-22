@@ -20,8 +20,8 @@ def main(sysargv):
 	"""
 
 	# constante
-	filename   = 'R0moyen_10_16.csv'
-	filename   = 'R0moyen_7_12.csv'
+	filename   = 'R0Moyen_10_16.csv'
+	filename   = 'R0Moyen_7_12.csv'
 
 	if len(sysargv) > 3:
 		print('  CAUTION : bad number of arguments - see help')
@@ -39,22 +39,22 @@ def main(sysargv):
 	# Lecture des données
 	df = pd.read_csv(repertoire+filename)
 
-	minRO = df['R0moyen'].min()
-	maxRO = df['R0moyen'].max()
+	minRO = df['R0Moyen'].min()
+	maxRO = df['R0Moyen'].max()
 
 	
 	# Dessin de la carte
 	fig = go.Figure(data=go.Choropleth(
-	    locations=df['Country'], # Spatial coordinates
-	    z = df['R0moyen'].astype(float), # Data to be color-coded
-	    locationmode = "country names", # set of locations match entries in `locations`
-	    colorscale = [[0, 'green'], [(1.-minRO)/(maxRO-minRO), 'white'], [1, 'red']],
-	    colorbar_title = "R0 value",
+		locations=df['Country'], # Spatial coordinates
+		z = df['R0Moyen'].astype(float), # Data to be color-coded
+		locationmode = "country names", # set of locations match entries in `locations`
+		colorscale = [[0, 'green'], [(1.-minRO)/(maxRO-minRO), 'white'], [1, 'red']],
+		colorbar_title = "R0 value",
 	))
 
 	fig.update_layout(
-	    title_text = 'Europe ' + '$R_0$' + '(date to define) - molde: '+modeleString,
-	    geo_scope  = 'europe',
+		title_text = 'Europe ' + '$R_0$' + '(date to define) - molde: '+modeleString,
+		geo_scope  = 'France',
 	)
 
 	fig.show()

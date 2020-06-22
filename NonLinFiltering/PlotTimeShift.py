@@ -28,8 +28,10 @@ def main(sysargv):
 		>> python3 PlotTimeShift.py Italy,Spain SEIR1R2D 1 2,14 0 1 # Italy and Spain, with UKF filtering
 
 		For French Region (French database)
-		>> python3 PlotTimeShift.py France,69    SEIR1R2  0 2,14 0 1 # Dpt 69 (Rhône)
-		>> python3 PlotTimeShift.py France,69,01 SEIR1R2D 1 2,14 1 1 # Dpt 69 (Rhône) + Dpt 01 (Ain) with UKF filtering
+		>> python3 PlotTimeShift.py France,69        SEIR1R2  0 2,14 0 1 # Dpt 69 (Rhône)
+		>> python3 PlotTimeShift.py France,all       SEIR1R2  0 2,14 0 1 # Tous les dpt francais
+		>> python3 PlotTimeShift.py France,metropole SEIR1R2  0 2,14 0 1 # Tous les dpt francais de la métropole
+		>> python3 PlotTimeShift.py France,69,01     SEIR1R2D 1 2,14 1 1 # Dpt 69 (Rhône) + Dpt 01 (Ain) with UKF filtering
 		
 		argv[1] : Country (or list separeted by ','), or 'France' followed by a list of dpts. Default: France 
 		argv[2] : EDO model (SEIR1R2 or SEIR1R2D)                                             Default: SEIR2R2         
@@ -63,13 +65,33 @@ def main(sysargv):
 	if len(sysargv)>1: places, listplaces = sysargv[1], list(sysargv[1].split(','))
 	FrDatabase = False
 	if listplaces[0]=='France' and len(listplaces)>1:
-		try:
-			int(listplaces[1]) #If this is a number, then it is a french dpt
-		except Exception as e:
-			FrDatabase=False
-		else:
+		argument = listplaces[1]
+		if argument=='all' or argument=='metropole':
+			listplaces = []
+			for i in range(1,96):
+				number_str = str(i)
+				zero_filled_number = number_str.zfill(2)
+				listplaces.append(zero_filled_number)
+			listplaces.remove("20") # Ce département n'est pas dans les données
+			listplaces.append("2A")
+			listplaces.append("2B")
 			FrDatabase = True
-			listplaces = listplaces[1:]
+			France     = 'France'
+		if argument=='all':
+			listplaces.append("971")
+			listplaces.append("972")
+			listplaces.append("973")
+			listplaces.append("974")
+			listplaces.append("976")
+		if argument!='all' and argument!='metropole':
+			try:
+				int(argument)
+			except Exception as e:
+				FrDatabase=False
+			else:
+				FrDatabase = True
+				listplaces = listplaces[1:]
+				France     = 'France'
 
 	if len(sysargv)>2: modeleString = sysargv[2]
 	if len(sysargv)>3 and int(sysargv[3])==1: UKF_filt, UKF_filt01 = True, 1
@@ -102,7 +124,7 @@ def main(sysargv):
 
 		print('TIME-SHIFT', str(decalage), 'OVER', str(shift_maxi))
 	
-		_, _, _, _, _, tabParamModel, ListeEQM = fit([places, nbperiodes, decalage, UKF_filt, 0, 0])
+		_, _, _, _, _, tabParamModel, ListeEQM, dateI0 = fit([places, nbperiodes, decalage, UKF_filt, 0, 0])
 
 		TAB_decalage.append(float(decalage))
 		TAB_param_model.append(tabParamModel)
@@ -112,10 +134,11 @@ def main(sysargv):
 
 	# On enregistre le R0 moyen de la 3ieme période pour faire carte graphique
 	rep  = getRepertoire(UKF_filt, './figures/'+modeleString+'_UKFilt/', './figures/'+modeleString+'/')
-	if os.path.exists(rep+'/R0moyen.csv'):
-		os.remove(rep+'/R0moyen.csv')
-	with open(rep+'/R0moyen.csv', 'a') as text_file:
-		text_file.write('Country,R0moyen\n')
+	fileR0moyen = rep+'/R0Moyen_' + str(shift_mini)+ '_' + str(shift_maxi) +'.csv'
+	if os.path.exists(fileR0moyen):
+		os.remove(fileR0moyen)
+	with open(fileR0moyen, 'a') as text_file:
+		text_file.write('Country,R0Moyen,DateFirstCase\n')
 	
 	for indexplace, place in enumerate(listplaces):
 
@@ -181,8 +204,8 @@ def main(sysargv):
 					#text_file.write('\n  -->%s:\n' % labelsperiod[period])
 					np.savetxt(text_file, Y2[:, period], delimiter=', ', newline=', ', fmt='%.4f', header='\n  -->'+labelsperiod[period]+': ')
 			if param==len(labelsparam)-1: # c'est à dire R0
-				with open(rep+'/R0moyen.csv', 'a') as text_file:
-					text_file.write(placefull+','+str(np.mean(Y2[:, -1]))+'\n')
+				with open(fileR0moyen, 'a') as text_file:
+					text_file.write(place+','+str(np.mean(Y2[:, -1]))+','+dateI0+'\n')
 					print(placefull, ' - R0 moyen period 3=', np.mean(Y2[:, -1])) # moyenne uniquement pour la 3ieme période
 
 

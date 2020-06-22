@@ -28,8 +28,10 @@ def main(sysargv):
 		>> python3 Fit.py Italy,Spain SEIR1R2D 13 1 1 1 # Italy and Spain, with UKF filtering
 
 		For French Region (French database)
-		>> python3 Fit.py France,69    SEIR1R2  13 0 1 1 # Dpt 69 (Rhône)
-		>> python3 Fit.py France,69,01 SEIR1R2D 13 1 1 1 # Dpt 69 (Rhône) + Dpt 01 (Ain) with UKF filtering
+		>> python3 Fit.py France,69        SEIR1R2  13 0 1 1 # Dpt 69 (Rhône)
+		>> python3 Fit.py France,all       SEIR1R2  13 0 1 1 # Tous les dpts français
+		>> python3 Fit.py France,metropole SEIR1R2  13 0 1 1 # Tous les dpts français de la métropole
+		>> python3 Fit.py France,69,01     SEIR1R2D 13 1 1 1 # Dpt 69 (Rhône) + Dpt 01 (Ain) with UKF filtering
 		
 		argv[1] : Country (or list separeted by ','), or 'France' followed by a list of dpts. Default: France 
 		argv[2] : EDO model (SEIR1R2 or SEIR1R2D)                                             Default: SEIR2R2         
@@ -63,13 +65,33 @@ def main(sysargv):
 	if len(sysargv)>1: places, listplaces = sysargv[1], list(sysargv[1].split(','))
 	FrDatabase = False
 	if listplaces[0]=='France' and len(listplaces)>1:
-		try:
-			int(listplaces[1]) #If this is a number, then it is a french dpt
-		except Exception as e:
-			FrDatabase=False
-		else:
+		argument = listplaces[1]
+		if argument=='all' or argument=='metropole':
+			listplaces = []
+			for i in range(1,96):
+				number_str = str(i)
+				zero_filled_number = number_str.zfill(2)
+				listplaces.append(zero_filled_number)
+			listplaces.remove("20") # Ce département n'est pas dans les données
+			listplaces.append("2A")
+			listplaces.append("2B")
 			FrDatabase = True
-			listplaces = listplaces[1:]
+			France     = 'France'
+		if argument=='all':
+			listplaces.append("971")
+			listplaces.append("972")
+			listplaces.append("973")
+			listplaces.append("974")
+			listplaces.append("976")
+		if argument!='all' and argument!='metropole':
+			try:
+				int(argument)
+			except Exception as e:
+				FrDatabase=False
+			else:
+				FrDatabase = True
+				listplaces = listplaces[1:]
+				France     = 'France'
 
 	if len(sysargv)>2: modeleString  = sysargv[2]
 	if len(sysargv)>3: decalage3P    = int(sysargv[3])
@@ -95,7 +117,7 @@ def main(sysargv):
 	# nbperiodes = 1 # ne peut pas etre changé
 	# decalage1P = 0 # ne peut pas etre changé
 	
-	# model_allinone, ListeTextParamPlace_allinone, liste_pd_allinone, data_deriv_allinone, model_deriv_allinone, _, _ = \
+	# model_allinone, ListeTextParamPlace_allinone, liste_pd_allinone, data_deriv_allinone, model_deriv_allinone, _, _, dateI0 = \
 	#         fit([places, nbperiodes, decalage1P, UKF_filt01, 0, 0])
 
 	# ListeTestPlace = []
@@ -112,7 +134,7 @@ def main(sysargv):
 	##################################
 	nbperiodes = -1
 
-	model_piecewise, ListeTextParamPlace_piecewise, liste_pd_piecewise, data_deriv_piecewise, model_deriv_piecewise, _, _ = \
+	model_piecewise, ListeTextParamPlace_piecewise, liste_pd_piecewise, data_deriv_piecewise, model_deriv_piecewise, _, _, dateI0 = \
 			fit([places, nbperiodes, decalage3P, UKF_filt01, 0, 0])
 	
 	ListeTestPlace = []
@@ -144,7 +166,7 @@ def main(sysargv):
 		listheader = list(liste_pd_piecewise[indexplace])
 
 		if FrDatabase==True:
-			DatesString = readDates('France', verbose)
+			DatesString = readDates(France, verbose)
 		else:
 			DatesString = readDates(place, verbose)
 
@@ -203,7 +225,7 @@ def main(sysargv):
 		longueur = len(liste_pd_piecewise[indexplace].loc[:, (listheader[0])])
 		
 		if FrDatabase==True:
-			DatesString = readDates('France', verbose)
+			DatesString = readDates(France, verbose)
 		else:
 			DatesString = readDates(place, verbose)
 

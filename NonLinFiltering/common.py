@@ -121,7 +121,7 @@ def readDataFrance(place='69', dateMinStr=None, dateMaxStr=None, fileLocalCopy=F
 	''' 
 	covid_orig = None
 	if fileLocalCopy==True:
-		name = './data/csvFrance_2020-05-27.csv'
+		name = './data/csvFrance_2020-06-21.csv'
 		try:
 			covid_orig=pd.read_csv(name, sep=';', parse_dates=[2], dayfirst=True)
 		except:
@@ -132,7 +132,6 @@ def readDataFrance(place='69', dateMinStr=None, dateMaxStr=None, fileLocalCopy=F
 		url_stable="https://www.data.gouv.fr/fr/datasets/r/63352e38-d353-4b54-bfd1-f1b3ee1cabd7"
 		covid_orig=pd.read_csv(url_stable, sep=';', parse_dates=[2], dayfirst=True)
 	
-	observ_label = ['rad', 'dc']
 	covid_orig.set_index('jour', inplace=True)
 	covid_orig.sort_index(inplace=True)
 
@@ -146,7 +145,7 @@ def readDataFrance(place='69', dateMinStr=None, dateMaxStr=None, fileLocalCopy=F
 	covid_country1 = covid_country[['rad', 'dc']] #.cumsum()
 	if verbose>1:
 		print('TAIL=', covid_country1.tail())
-	
+
 	# extraction entre dateMin et dateMaxStr
 	if dateMinStr==None:
 		dateMinStr = covid_country1.index[0].strftime("%Y-%m-%d")
@@ -154,7 +153,9 @@ def readDataFrance(place='69', dateMinStr=None, dateMaxStr=None, fileLocalCopy=F
 		dateMaxStr = addDaystoStrDate(covid_country1.index[-1].strftime("%Y-%m-%d"), 1)
 	if verbose>1:
 		print('dateMinStr=', dateMinStr, ', dateMaxStr=', dateMaxStr)
-	excerpt_country1 = covid_country1.loc[dateMinStr:dateMaxStr]
+	excerpt_country1 = covid_country1.loc[dateMinStr:dateMaxStr].copy()
+	# On rajoute la somme des cas et des morts
+	excerpt_country1.loc[:, ('radplusdc')] = excerpt_country1.loc[:, ('rad','dc')].sum(axis=1)
 	
 	if verbose>0:
 		print('HEAD=', excerpt_country1.head())
@@ -165,7 +166,7 @@ def readDataFrance(place='69', dateMinStr=None, dateMaxStr=None, fileLocalCopy=F
 	db_pop_size = pd.read_csv('./data/popsizedpt_2020.csv', sep=';')
 	pop_size    = int(db_pop_size.loc[place]["popsize"])
 	
-	return excerpt_country1, observ_label, pop_size, dateMinStr, dateMaxStr
+	return excerpt_country1, list(excerpt_country1), pop_size, dateMinStr, dateMaxStr
 
 
 def readDataEurope(country='France', dateMinStr=None, dateMaxStr=None, fileLocalCopy=False, verbose=0):
@@ -176,7 +177,7 @@ def readDataEurope(country='France', dateMinStr=None, dateMaxStr=None, fileLocal
 
 	covid_orig = None
 	if fileLocalCopy==True:
-		name = './data/csvFrance_2020-06-14.csv'
+		name = './data/csvEurope_2020-06-11.csv'
 		try:
 			covid_orig=pd.read_csv(name, sep=',', parse_dates=[0], dayfirst=True)
 		except:

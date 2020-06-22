@@ -38,8 +38,10 @@ def fit(sysargv):
 		>> python3 ProcessSEIR1R2.py France,Germany 1 0 0 1 1
 
 		For French Region (French database)
-		>> python3 ProcessSEIR1R2.py France,69    3 8 0 1 1 # Dpt 69 (Rhône)
-		>> python3 ProcessSEIR1R2.py France,69,01 3 8 1 1 1 # Dpt 69 (Rhône) + Dpt 01 (Ain) with UKF filtering
+		>> python3 ProcessSEIR1R2.py France,69        3 8 0 1 1 # Dpt 69 (Rhône)
+		>> python3 ProcessSEIR1R2.py France,all       3 8 0 1 1 # Tous les dpts francais
+		>> python3 ProcessSEIR1R2.py France,metropole 3 8 0 1 1 # Tous les dpts francais de la métropole uniquement
+		>> python3 ProcessSEIR1R2.py France,69,01     3 8 1 1 1 # Dpt 69 (Rhône) + Dpt 01 (Ain) with UKF filtering
 		
 		argv[1] : Country (or list separeted by ','), or 'France' followed by a list of dpts. Default: France 
 		argv[2] : Periods ('1' -> 1 period ('all-in-on'), '!=1' -> severall periods).         Default: 1
@@ -80,13 +82,33 @@ def fit(sysargv):
 	if len(sysargv)>0: listplaces = list(sysargv[0].split(','))
 	FrDatabase = False
 	if listplaces[0]=='France' and len(listplaces)>1:
-		try:
-			int(listplaces[1]) #If this is a number, then it is a french dpt
-		except Exception as e:
-			FrDatabase=False
-		else:
+		argument = listplaces[1]
+		if argument=='all' or argument=='metropole':
+			listplaces = []
+			for i in range(1,96):
+				number_str = str(i)
+				zero_filled_number = number_str.zfill(2)
+				listplaces.append(zero_filled_number)
+			listplaces.remove("20") # Ce département n'est pas dans les données
+			listplaces.append("2A")
+			listplaces.append("2B")
 			FrDatabase = True
-			listplaces = listplaces[1:]
+			France     = 'France'
+		if argument=='all':
+			listplaces.append("971")
+			listplaces.append("972")
+			listplaces.append("973")
+			listplaces.append("974")
+			listplaces.append("976")
+		if argument!='all' and argument!='metropole':
+			try:
+				int(argument)
+			except Exception as e:
+				FrDatabase=False
+			else:
+				FrDatabase = True
+				listplaces = listplaces[1:]
+				France     = 'France'
 
 	if len(sysargv)>1: nbperiodes    = int(sysargv[1])
 	if len(sysargv)>2: decalage      = int(sysargv[2])
@@ -103,9 +125,9 @@ def fit(sysargv):
 	# Data reading to get first and last date available in the data set
 	######################################################
 	if FrDatabase == True: 
-		pd_exerpt, HeadData, N, readStartDateStr, readStopDateStr = readDataFrance('69',     readStartDateStr, readStopDateStr, fileLocalCopy, verbose=0)
+		pd_exerpt, HeadData, N, readStartDateStr, readStopDateStr = readDataFrance('69',   readStartDateStr, readStopDateStr, fileLocalCopy, verbose=0)
 	else:
-		pd_exerpt, HeadData, N, readStartDateStr, readStopDateStr = readDataEurope('France', readStartDateStr, readStopDateStr, fileLocalCopy, verbose=0)
+		pd_exerpt, HeadData, N, readStartDateStr, readStopDateStr = readDataEurope(France, readStartDateStr, readStopDateStr, fileLocalCopy, verbose=0)
 	dataLength = pd_exerpt.shape[0]
 
 	readStartDate = datetime.strptime(readStartDateStr, strDate)
@@ -145,13 +167,12 @@ def fit(sysargv):
 		# Get the full name of the place to process, and the special dates corresponding to the place
 		if FrDatabase == True: 
 			placefull   = 'France-' + place
-			DatesString = readDates('France', verbose)
+			DatesString = readDates(France, verbose)
 		else:
 			placefull   = place
 			DatesString = readDates(place, verbose)
 
-		if verbose>0:
-			print('PROCESSING of', placefull, 'in', listplaces)
+		print('PROCESSING of', placefull, 'in', listplaces)
 		
 
 		# data reading of the observations
@@ -277,8 +298,8 @@ def fit(sysargv):
 			# Solve ode avant optimization
 			sol_ode = solveur.solveEDO(time)
 			# calcul time shift initial (ts) with respect to data
-			# ts         = solveur.compute_tsfromEQM(data[slicedata, :], T, indexdata)
-			solveur.TS = ts
+			ts         = solveur.compute_tsfromEQM(data[slicedata, :], T, indexdata)
+			#solveur.TS = ts
 			sliceedo = slice(ts, min(ts+dataLengthPeriod, T))
 			if verbose>0:
 				print(solveur)
@@ -294,7 +315,8 @@ def fit(sysargv):
 			# Parameters optimization
 			############################################################################
 
-			solveur.paramOptimization(data[slicedata, :], time, ts)
+			solveur.paramOptimization(data[slicedata, :], time) # version lorsque ts est calculé automatiquement
+			#solveur.paramOptimization(data[slicedata, :], time, ts) # version lorsque l'on veut fixer ts
 			_, a1, b1, c1, f1 = solveur.modele.getParam()
 			R0=solveur.modele.getR0()
 			if verbose>0:
@@ -307,14 +329,17 @@ def fit(sysargv):
 			# Solve ode apres optimization
 			sol_ode = solveur.solveEDO(time)
 			# calcul time shift with respect to data
-			#ts            = solveur.compute_tsfromEQM(data[slicedata, :], T, indexdata)
-			ts = solveur.TS
+			ts            = solveur.compute_tsfromEQM(data[slicedata, :], T, indexdata)
+			#ts = solveur.TS
 			#print('ts=', ts)
 			sliceedo      = slice(ts, min(ts+dataLengthPeriod, T))
 			sliceedoderiv = slice(sliceedo.start+1, sliceedo.stop)
 			if verbose>0:
 				print(solveur)
 				print('  ts='+str(ts))
+			if i==0: # on se souvient de la date du premier infesté
+				dateI0 = addDaystoStrDate(fitStartDateStr, -ts)
+				#print('dateI0=', dateI0)
 
 			# sauvegarde des param (tableau et texte)
 			ListetabParamModelPlace.append([a1, b1, c1, f1, R0])
@@ -371,8 +396,8 @@ def fit(sysargv):
 		ListeTextParam.append(ListeTextParamPlace)
 		ListetabParamModel.append(ListetabParamModelPlace)
 
-	return modelSEIR1R2, ListeTextParam, Listepd, data_deriv, modelR1_deriv, ListetabParamModel, ListeEQM
+	return modelSEIR1R2, ListeTextParam, Listepd, data_deriv, modelR1_deriv, ListetabParamModel, ListeEQM, dateI0
 
 
 if __name__ == '__main__':
-	modelSEIR1R2, ListeTextParam, Listepd, data_deriv, modelR1_deriv, ListetabParamModel, ListeEQM = fit(sys.argv[1:])
+	modelSEIR1R2, ListeTextParam, Listepd, data_deriv, modelR1_deriv, ListetabParamModel, ListeEQM, dateI0 = fit(sys.argv[1:])
