@@ -13,10 +13,10 @@ from filterpy.kalman  import JulierSigmaPoints, MerweScaledSigmaPoints, rts_smoo
 from filterpy.common  import Q_discrete_white_noise
 
 from common           import readDataEurope, readDataFrance, readDates, PlotData
-from common           import getRepertoire, addDaystoStrDate
+from common           import getRepertoire, addDaystoStrDate, getListPlaces
 
 # constante
-fileLocalCopy = True # if we upload the file from the url (to get latest results) or from a local copy file
+fileLocalCopy = False # if we upload the file from the url (to get latest results) or from a local copy file
 
 
 def fR1(r1, dt):
@@ -71,39 +71,7 @@ def main(sysargv):
     
     # Parameters from argv
     if len(sysargv)>1: listplaces = list(sysargv[1].split(','))
-    FrDatabase = False
-    if listplaces[0]=='France' and len(listplaces)>1:
-        argument = listplaces[1]
-        if argument=='all' or argument=='metropole':
-            listplaces = []
-            for i in range(1,96):
-                number_str = str(i)
-                zero_filled_number = number_str.zfill(2)
-                listplaces.append(zero_filled_number)
-            listplaces.remove("20") # Ce département n'est pas dans les données
-            listplaces.append("2A")
-            listplaces.append("2B")
-            FrDatabase = True
-            France     = 'France'
-        if argument=='all':
-            listplaces.append("971")
-            listplaces.append("972")
-            listplaces.append("973")
-            listplaces.append("974")
-            listplaces.append("976")
-        if argument!='all' and argument!='metropole':
-            try:
-                int(argument)
-            except Exception as e:
-                FrDatabase=False
-            else:
-                FrDatabase = True
-                listplaces = listplaces[1:]
-                France     = 'France'
-
-    # print('listplaces=', listplaces)
-    # input('attente')
-
+    FrDatabase, listplaces = getListPlaces(listplaces)
     if len(sysargv)>2: verbose = int(sysargv[2])
 
     # Constantes
@@ -115,6 +83,7 @@ def main(sysargv):
     for place in listplaces:
 
         # Get the full name of the place to process, and the special dates corresponding to the place
+        France='France'
         if FrDatabase == True: 
             placefull   = 'France-' + place
             DatesString = readDates(France, verbose)

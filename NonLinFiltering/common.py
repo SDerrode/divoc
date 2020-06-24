@@ -4,6 +4,7 @@
 import os
 import pandas            as pd
 import numpy             as np
+import matplotlib        as mpl
 import matplotlib.pyplot as plt
 
 from sklearn.metrics import mean_squared_error
@@ -114,6 +115,84 @@ def GetPairListDates(readStartDate, readStopDate, DatesString, decalage, nbperio
 	
 	return ListePairDates, ListePairDatesStr
 
+
+def getListPlaces(listplaces):
+
+	FrDatabase = False
+	if listplaces[0]=='France' and len(listplaces)>1:
+		argument = listplaces[1]
+		if argument=='all' or argument=='metropole':
+			listplaces = []
+			for i in range(1,96):
+				number_str = str(i)
+				zero_filled_number = number_str.zfill(2)
+				listplaces.append(zero_filled_number)
+			listplaces.remove("20") # Ce département n'est pas dans les données
+			listplaces.append("2A")
+			listplaces.append("2B")
+			FrDatabase = True
+		if argument=='all':
+			listplaces.append("971")
+			listplaces.append("972")
+			listplaces.append("973")
+			listplaces.append("974")
+			listplaces.append("976")
+		if argument!='all' and argument!='metropole':
+			try:
+				int(argument)
+			except Exception as e:
+				FrDatabase=False
+			else:
+				FrDatabase = True
+				listplaces = listplaces[1:]
+
+	return FrDatabase, listplaces
+
+
+def getColorMap(indexmaxcolor, minRO, maxRO, blackstart, alpha=1.):
+	
+	mycolormap=np.zeros(shape=(indexmaxcolor, 4))
+
+	# Bornes des couleurs
+	if minRO<1.:
+		A = int( (min(1., maxRO) - max(0., minRO))/(maxRO-minRO)*indexmaxcolor)
+		if A < indexmaxcolor:
+			B = int( (min(blackstart, maxRO) - max(1., minRO))/(maxRO-minRO)*indexmaxcolor)+A
+	elif minRO<blackstart:
+		B = int( (min(blackstart, maxRO) - minRO)/(maxRO-minRO)*indexmaxcolor)
+
+
+	colblue = np.zeros(shape=(indexmaxcolor+1, 4))
+	for i in range(indexmaxcolor+1):
+		colblue[i] = colorFader('blue', 'white', i/indexmaxcolor, alpha)
+	colred = np.zeros(shape=(indexmaxcolor+1, 4))
+	for i in range(indexmaxcolor+1):
+		colred[i] = colorFader('white', 'red', i/indexmaxcolor, alpha)
+
+	bleu  = np.array([0.,0.,1.,alpha])
+	black = np.array([0.,0.,0.,alpha])
+
+	if minRO<1.:
+		mycolormap[0:A,   :] = colblue[-A:, :]
+		if A < indexmaxcolor:
+			mycolormap[A:B+1, :] = colred[0:B-A+1, :]
+			#mycolormap[B:,  :] = black
+	elif minRO<blackstart:
+		mycolormap[0:B+1, :] = colred[0:B+1, :]
+		#mycolormap[B:,  :] = black
+	else:
+		mycolormap[:,  :] = black
+
+	return mycolormap, mpl.colors.ListedColormap(mycolormap)
+
+def colorFader(c1, c2, mix=0, alpha=1.): #fade (linear interpolate) from color c1 (at mix=0) to c2 (mix=1)
+	c1=np.array(mpl.colors.to_rgb(c1))
+	c2=np.array(mpl.colors.to_rgb(c2))
+	col=np.asarray(mpl.colors.to_rgba((1-mix)*c1 + mix*c2))
+	col[-1] = alpha
+	return col
+		
+
 def readDataFrance(place='69', dateMinStr=None, dateMaxStr=None, fileLocalCopy=False, verbose=0):
 	'''
 		Lecture des données du gouvernement français (data.gouv.fr)
@@ -177,7 +256,7 @@ def readDataEurope(country='France', dateMinStr=None, dateMaxStr=None, fileLocal
 
 	covid_orig = None
 	if fileLocalCopy==True:
-		name = './data/csvEurope_2020-06-11.csv'
+		name = './data/csvEurope_2020-06-23.csv'
 		try:
 			covid_orig=pd.read_csv(name, sep=',', parse_dates=[0], dayfirst=True)
 		except:
@@ -201,7 +280,7 @@ def readDataEurope(country='France', dateMinStr=None, dateMaxStr=None, fileLocal
 
 	covid_country = covid_orig.loc[covid_orig['countriesAndTerritories'] == country]
 	# récupération de la taille de la population
-	pop_size = int(covid_country[['popData2018']].iloc[1])
+	pop_size = int(covid_country[['popData2019']].iloc[1])
 	# print('pop_size=', pop_size)
 	# input('pause pop')
 	covid_country1 = covid_country[['cases', 'deaths']].cumsum()

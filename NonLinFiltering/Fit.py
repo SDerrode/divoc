@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 
 from datetime          import datetime, timedelta
 
-from common            import readDates, addDaystoStrDate, get_WE_indice, drawAnnotation
+from common            import readDates, addDaystoStrDate, get_WE_indice, drawAnnotation, getListPlaces
 from common            import getLowerDateFromString, getNbDaysBetweenDateFromString, getRepertoire
 from SolveEDO_SEIR1R2  import SolveEDO_SEIR1R2
 from SolveEDO_SEIR1R2D import SolveEDO_SEIR1R2D
@@ -60,39 +60,11 @@ def main(sysargv):
 	UKF_filt, UKF_filt01 = False, 0
 	verbose      = 1
 	plot         = True
+	France       = 'France'
 
 	# Parameters from argv
 	if len(sysargv)>1: places, listplaces = sysargv[1], list(sysargv[1].split(','))
-	FrDatabase = False
-	if listplaces[0]=='France' and len(listplaces)>1:
-		argument = listplaces[1]
-		if argument=='all' or argument=='metropole':
-			listplaces = []
-			for i in range(1,96):
-				number_str = str(i)
-				zero_filled_number = number_str.zfill(2)
-				listplaces.append(zero_filled_number)
-			listplaces.remove("20") # Ce département n'est pas dans les données
-			listplaces.append("2A")
-			listplaces.append("2B")
-			FrDatabase = True
-			France     = 'France'
-		if argument=='all':
-			listplaces.append("971")
-			listplaces.append("972")
-			listplaces.append("973")
-			listplaces.append("974")
-			listplaces.append("976")
-		if argument!='all' and argument!='metropole':
-			try:
-				int(argument)
-			except Exception as e:
-				FrDatabase=False
-			else:
-				FrDatabase = True
-				listplaces = listplaces[1:]
-				France     = 'France'
-
+	FrDatabase, listplaces = getListPlaces(listplaces)
 	if len(sysargv)>2: modeleString  = sysargv[2]
 	if len(sysargv)>3: decalage3P    = int(sysargv[3])
 	if len(sysargv)>4 and int(sysargv[4])==1: UKF_filt, UKF_filt01 = True, 1
@@ -117,7 +89,7 @@ def main(sysargv):
 	# nbperiodes = 1 # ne peut pas etre changé
 	# decalage1P = 0 # ne peut pas etre changé
 	
-	# model_allinone, ListeTextParamPlace_allinone, liste_pd_allinone, data_deriv_allinone, model_deriv_allinone, _, _, dateI0 = \
+	# model_allinone, ListeTextParamPlace_allinone, liste_pd_allinone, data_deriv_allinone, model_deriv_allinone, _, _, ListeDateI0 = \
 	#         fit([places, nbperiodes, decalage1P, UKF_filt01, 0, 0])
 
 	# ListeTestPlace = []
@@ -134,9 +106,9 @@ def main(sysargv):
 	##################################
 	nbperiodes = -1
 
-	model_piecewise, ListeTextParamPlace_piecewise, liste_pd_piecewise, data_deriv_piecewise, model_deriv_piecewise, _, _, dateI0 = \
+	model_piecewise, ListeTextParamPlace_piecewise, liste_pd_piecewise, data_deriv_piecewise, model_deriv_piecewise, _, _, ListeDateI0 = \
 			fit([places, nbperiodes, decalage3P, UKF_filt01, 0, 0])
-	
+
 	ListeTestPlace = []
 	for indexplace in range(len(listplaces)):
 		texteplace = ''

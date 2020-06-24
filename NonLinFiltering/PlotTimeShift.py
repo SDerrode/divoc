@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 from matplotlib.ticker import MaxNLocator
 from datetime          import datetime, timedelta
   
-from common            import getRepertoire
+from common            import getRepertoire, getListPlaces
 from SolveEDO_SEIR1R2  import SolveEDO_SEIR1R2
 from SolveEDO_SEIR1R2D import SolveEDO_SEIR1R2D
 from ProcessSEIR1R2D   import fit as fitProcessSEIR1R2D
@@ -16,6 +16,8 @@ from ProcessSEIR1R2    import fit as fitProcessSEIR1R2
 
 dpi     = 120    # plot resolution of saved figures
 figsize = (8, 4) # figure's size (width, height)
+
+# blackstart    = 2.0
 
 def main(sysargv):
 
@@ -44,8 +46,11 @@ def main(sysargv):
 	#Austria,Belgium,Croatia,Czechia,Finland,France,Germany,Greece,Hungary,Ireland,Italy,Lithuania,Poland,Portugal,Romania,Serbia,Spain,Switzerland,Ukraine
 	#Austria,Belgium,Croatia,Czechia,Finland,France,Germany,Greece,Hungary,Ireland,Italy,Poland,Portugal,Romania,Serbia,Spain,Switzerland,Ukraine
 	# Il y a 18 pays
+	#Région Auvergne Rhone-Alpes
+	# Ain (01), Allier (03), Ardèche (07), Cantal (15), Drôme (26), Isère (38), Loire (42), Haute-Loire (43), Puy-de-Dôme (63), Rhône (69), Savoie (73), Haute-Savoie (74)
+	# 01,03,07,15,26,38,42,43,63,69,73,74
 	
-	# Interpetation of arguments - reparation
+	# Interpretation of arguments - reparation
 	######################################################@
 
 	if len(sysargv) > 7:
@@ -63,41 +68,14 @@ def main(sysargv):
 	
 	# Parameters from argv
 	if len(sysargv)>1: places, listplaces = sysargv[1], list(sysargv[1].split(','))
-	FrDatabase = False
-	if listplaces[0]=='France' and len(listplaces)>1:
-		argument = listplaces[1]
-		if argument=='all' or argument=='metropole':
-			listplaces = []
-			for i in range(1,96):
-				number_str = str(i)
-				zero_filled_number = number_str.zfill(2)
-				listplaces.append(zero_filled_number)
-			listplaces.remove("20") # Ce département n'est pas dans les données
-			listplaces.append("2A")
-			listplaces.append("2B")
-			FrDatabase = True
-			France     = 'France'
-		if argument=='all':
-			listplaces.append("971")
-			listplaces.append("972")
-			listplaces.append("973")
-			listplaces.append("974")
-			listplaces.append("976")
-		if argument!='all' and argument!='metropole':
-			try:
-				int(argument)
-			except Exception as e:
-				FrDatabase=False
-			else:
-				FrDatabase = True
-				listplaces = listplaces[1:]
-				France     = 'France'
-
+	FrDatabase, listplaces = getListPlaces(listplaces)
 	if len(sysargv)>2: modeleString = sysargv[2]
 	if len(sysargv)>3 and int(sysargv[3])==1: UKF_filt, UKF_filt01 = True, 1
 	if len(sysargv)>4: shift_mini, shift_maxi = map(int, sysargv[4].split(','))
 	if len(sysargv)>5: verbose = int(sysargv[5])
 	if len(sysargv)>6 and int(sysargv[6])==0: plot = False
+	if shift_maxi-shift_mini==1:
+		plot = False # Pas de plot possible s'il n'y a qu'une seule données
 
 	# le modèle à traiter (SEIR1R2 or SEIR1R2D)
 	if modeleString == 'SEIR1R2':
@@ -124,7 +102,7 @@ def main(sysargv):
 
 		print('TIME-SHIFT', str(decalage), 'OVER', str(shift_maxi))
 	
-		_, _, _, _, _, tabParamModel, ListeEQM, dateI0 = fit([places, nbperiodes, decalage, UKF_filt, 0, 0])
+		_, _, _, _, _, tabParamModel, ListeEQM, ListeDateI0 = fit([places, nbperiodes, decalage, UKF_filt, 0, 0])
 
 		TAB_decalage.append(float(decalage))
 		TAB_param_model.append(tabParamModel)
@@ -138,7 +116,7 @@ def main(sysargv):
 	if os.path.exists(fileR0moyen):
 		os.remove(fileR0moyen)
 	with open(fileR0moyen, 'a') as text_file:
-		text_file.write('Country,R0Moyen,DateFirstCase\n')
+		text_file.write('Place,R0MoyenP0,R0MoyenP1,R0MoyenP2,DateFirstCase\n')
 	
 	for indexplace, place in enumerate(listplaces):
 
@@ -171,13 +149,15 @@ def main(sysargv):
 				except IndexError:
 					Y1[decalage, :] = 0.
 
-			texte = list(map( lambda s: s.replace('$', '').replace('\\', '').replace('_', ''), labelsparam[:-1]))
-			titre    = placefull + ' - ' + modeleString + ' parameters evolution for ' + labelsperiod[period]
-			filename = prefFig   + 'EvolParam_Period' + str(period) + '_' + ''.join(texte) + '.png'
-			plotData(TAB_decalage, Y1[:, :-1], titre, filename, labelsparam[:-1])
-			titre    = placefull + ' - ' + modeleString + ' parameters evolution for ' + labelsperiod[period]
-			filename = prefFig   + 'EvolParam_Period' + str(period) + '_R0.png'
-			plotData(TAB_decalage, Y1[:, -1].reshape(shift_maxi-shift_mini, 1), titre, filename, [labelsparam[-1]])
+			if plot==True:
+				texte = list(map( lambda s: s.replace('$', '').replace('\\', '').replace('_', ''), labelsparam[:-1]))
+				titre    = placefull + ' - ' + modeleString + ' parameters evolution for ' + labelsperiod[period]
+				filename = prefFig   + 'EvolParam_Period' + str(period) + '_' + ''.join(texte) + '.png'
+				plotData(TAB_decalage, Y1[:, :-1], titre, filename, labelsparam[:-1])
+				titre    = placefull + ' - ' + modeleString + ' parameters evolution for ' + labelsperiod[period]
+				filename = prefFig   + 'EvolParam_Period' + str(period) + '_R0.png'
+				plotData(TAB_decalage, Y1[:, -1].reshape(shift_maxi-shift_mini, 1), titre, filename, [labelsparam[-1]])
+
 
 		# plot pour les paramètres
 		##########################################
@@ -193,9 +173,10 @@ def main(sysargv):
 						Y2[decalage, period] = TAB_param_model[decalage][indexplace][period][param]
 					except IndexError:
 						Y2[decalage, period] = 0.
-			titre    = placefull + ' - ' + modeleString + ' periods evolution for param ' + labelsparam[param]
-			filename = prefFig   + 'EvolPeriod_Param' + labelsparam[param].replace('$', '') + '.png'
-			plotData(TAB_decalage, Y2, titre, filename, labelsperiod)
+			if plot==True:
+				titre    = placefull + ' - ' + modeleString + ' periods evolution for param ' + labelsparam[param]
+				filename = prefFig   + 'EvolPeriod_Param' + labelsparam[param].replace('$', '') + '.png'
+				plotData(TAB_decalage, Y2, titre, filename, labelsperiod)
 
 			# Write parameters in a file
 			with open(prefFig+'EvolParams.txt', 'a') as text_file:
@@ -205,41 +186,47 @@ def main(sysargv):
 					np.savetxt(text_file, Y2[:, period], delimiter=', ', newline=', ', fmt='%.4f', header='\n  -->'+labelsperiod[period]+': ')
 			if param==len(labelsparam)-1: # c'est à dire R0
 				with open(fileR0moyen, 'a') as text_file:
-					text_file.write(place+','+str(np.mean(Y2[:, -1]))+','+dateI0+'\n')
-					print(placefull, ' - R0 moyen period 3=', np.mean(Y2[:, -1])) # moyenne uniquement pour la 3ieme période
-
+					chaine = place+','
+					for period in range(len(labelsperiod)):
+						R0mean = np.mean(Y2[:, period])
+						chaine += str(R0mean)+','
+					chaine += ListeDateI0[indexplace]+'\n'
+					text_file.write(chaine)
+					print(placefull, ' chaine =', chaine) # moyenne uniquement pour la 3ieme période
 
 		# plot de l'EQM
 		##########################################
-		fig = plt.figure(facecolor='w', figsize=figsize)
-		ax  = fig.add_subplot(111, facecolor='#dddddd', axisbelow=True)
-		
-		Y3 = np.zeros(shape=(len(X)))
-		for k in range(len(Y3)):
-			try:
-				Y3[k] = TAB_ListeEQM[k][indexplace]
-			except IndexError:
-				Y3[k] = 0.
-		ax.plot(TAB_decalage, Y3, alpha=1.0, lw=2, label='EQM')
+		if plot==True:
 
-		ax.set_xlabel('Time shift (days)')
-		ax.yaxis.set_tick_params(length=0)
-		ax.xaxis.set_tick_params(length=0)
-		ax.grid(b=True, which='major', c='w', lw=1, ls='-')
-		ax.xaxis.set_major_locator(MaxNLocator(integer=True))
-		
-		legend = ax.legend()
-		legend.get_frame().set_alpha(0.5)
-		for spine in ('top', 'right', 'bottom', 'left'):
-			ax.spines[spine].set_visible(False)
+			fig = plt.figure(facecolor='w', figsize=figsize)
+			ax  = fig.add_subplot(111, facecolor='#dddddd', axisbelow=True)
+			
+			Y3 = np.zeros(shape=(len(X)))
+			for k in range(len(Y3)):
+				try:
+					Y3[k] = TAB_ListeEQM[k][indexplace]
+				except IndexError:
+					Y3[k] = 0.
+			ax.plot(TAB_decalage, Y3, alpha=1.0, lw=2, label='EQM')
 
-		plt.xlim([TAB_decalage[0], TAB_decalage[-1]])
-		#plt.ylim([0, 1.0])
+			ax.set_xlabel('Time shift (days)')
+			ax.yaxis.set_tick_params(length=0)
+			ax.xaxis.set_tick_params(length=0)
+			ax.grid(b=True, which='major', c='w', lw=1, ls='-')
+			ax.xaxis.set_major_locator(MaxNLocator(integer=True))
+			
+			legend = ax.legend()
+			legend.get_frame().set_alpha(0.5)
+			for spine in ('top', 'right', 'bottom', 'left'):
+				ax.spines[spine].set_visible(False)
 
-		# ajout d'un text d'annotation
-		plt.title(placefull + ' - ' + modeleString + ', EQM on the number of detected cases' )
-		plt.savefig(prefFig + 'EvolPeriod_EQM_Deriv.png', dpi=dpi)
-		plt.close()
+			plt.xlim([TAB_decalage[0], TAB_decalage[-1]])
+			#plt.ylim([0, 1.0])
+
+			# ajout d'un text d'annotation
+			plt.title(placefull + ' - ' + modeleString + ', EQM on the number of detected cases' )
+			plt.savefig(prefFig + 'EvolPeriod_EQM_Deriv.png', dpi=dpi)
+			plt.close()
 
 
 def plotData(X, Y, titre, filename, labels):

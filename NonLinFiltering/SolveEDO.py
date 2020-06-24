@@ -37,8 +37,8 @@ class SolveEDO:
 		S = self.modele.__str__()
 		return S
 
-	def getTextParam(self, startDate=None):
-		S  = self.modele.getTextParam()
+	def getTextParam(self, startDate=None, ROsignificatif=True):
+		S  = self.modele.getTextParam(ROsignificatif)
 		S += '\nSolveur init:\n'# + '\n  N=' + str(self.N) + '\n  dt='+str(self.dt) \
 		S += r'  $S_0=' + str(self.y0[0]) + '$\n'
 		S += r'  $E_0=' + str(self.y0[1]) + r', I_0='+str(self.y0[2]) + '$\n'
@@ -51,8 +51,8 @@ class SolveEDO:
 				S += '\n  Start date:'+dateI0
 		return S
 
-	def getTextParamWeak(self, startDate=None):
-		S  = self.modele.getTextParam()
+	def getTextParamWeak(self, startDate=None, ROsignificatif=True):
+		S  = self.modele.getTextParam(ROsignificatif)
 		if self.TS != -1:
 			if startDate==None:
 				S += '\n  Time Shift=$'+str(self.TS)+'$'

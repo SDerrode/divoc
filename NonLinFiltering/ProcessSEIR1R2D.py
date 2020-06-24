@@ -12,8 +12,8 @@ from filterpy.common   import Q_discrete_white_noise
 from datetime          import datetime, timedelta
 from sklearn.metrics   import mean_squared_error
 
-from common           import readDataEurope, readDataFrance, readDates, addDaystoStrDate, getRepertoire
-from common           import getNbDaysBetweenDateFromString, GetPairListDates
+from common            import readDataEurope, readDataFrance, readDates, addDaystoStrDate, getRepertoire
+from common            import getNbDaysBetweenDateFromString, GetPairListDates, getListPlaces
 from SolveEDO_SEIR1R2D import SolveEDO_SEIR1R2D
 
 strDate = "%Y-%m-%d"
@@ -66,6 +66,7 @@ def fit(sysargv):
 	readStopDateStr  = None
 	recouvrement     = -1
 	dt               = 1
+	France           = 'France'
 
 	# Interpetation of arguments - reparation
 	######################################################@
@@ -80,36 +81,7 @@ def fit(sysargv):
 
 	# Parameters from argv
 	if len(sysargv)>0: listplaces = list(sysargv[0].split(','))
-	FrDatabase = False
-	if listplaces[0]=='France' and len(listplaces)>1:
-		argument = listplaces[1]
-		if argument=='all' or argument=='metropole':
-			listplaces = []
-			for i in range(1,96):
-				number_str = str(i)
-				zero_filled_number = number_str.zfill(2)
-				listplaces.append(zero_filled_number)
-			listplaces.remove("20") # Ce département n'est pas dans les données
-			listplaces.append("2A")
-			listplaces.append("2B")
-			FrDatabase = True
-			France     = 'France'
-		if argument=='all':
-			listplaces.append("971")
-			listplaces.append("972")
-			listplaces.append("973")
-			listplaces.append("974")
-			listplaces.append("976")
-		if argument!='all' and argument!='metropole':
-			try:
-				int(argument)
-			except Exception as e:
-				FrDatabase=False
-			else:
-				FrDatabase = True
-				listplaces = listplaces[1:]
-				France     = 'France'
-
+	FrDatabase, listplaces = getListPlaces(listplaces)
 	if len(sysargv)>1: nbperiodes    = int(sysargv[1])
 	if len(sysargv)>2: decalage      = int(sysargv[2])
 	if len(sysargv)>3 and int(sysargv[3])==1: UKF_filt = True
@@ -118,10 +90,10 @@ def fit(sysargv):
 	if nbperiodes==1: 
 		decalage = 0  # nécessairement pas de décalage (on compense le recouvrement)
 	
-	print('  Full command line : '+sysargv[0]+' '+str(nbperiodes)+' '+str(decalage)+' '+str(UKF_filt)+' '+str(verbose)+' '+str(plot), flush=True)
+	if verbose>0:
+		print('  Full command line : '+sysargv[0]+' '+str(nbperiodes)+' '+str(decalage)+' '+str(UKF_filt)+' '+str(verbose)+' '+str(plot), flush=True)
 
 	
-
 	# Data reading to get first and last date available in the data set
 	######################################################@
 	if FrDatabase == True: 
@@ -158,7 +130,8 @@ def fit(sysargv):
 	data = np.zeros(shape=(dataLength, 2))
 
 	# Paramètres sous forme de chaines de caractères
-	ListeTextParam = [] 
+	ListeTextParam = []
+	ListeDateI0    = []
 
 	# Loop on the places to process
 	for indexplace, place in enumerate(listplaces):
@@ -171,8 +144,7 @@ def fit(sysargv):
 			placefull   = place
 			DatesString = readDates(place, verbose)
 
-		if verbose>0:
-			print('PROCESSING of', placefull, 'in', listplaces)
+		print('PROCESSING of', placefull, 'in', listplaces)
 		
 
 		# data reading of the observations
@@ -207,9 +179,8 @@ def fit(sysargv):
 		# Get the list of dates to process
 		ListDates, ListDatesStr = GetPairListDates(readStartDate, readStopDate, DatesString, decalage+recouvrement, nbperiodes, recouvrement)
 		if verbose>1:
-			print('ListDates   =', ListDates)
+			#print('ListDates   =', ListDates)
 			print('ListDatesStr=', ListDatesStr)
-			print('HeadData=', HeadData)
 			#input('pause')
 		
 		# Solveur edo
@@ -231,7 +202,7 @@ def fit(sysargv):
 		
 		ListeTextParamPlace     = []
 		ListetabParamModelPlace = []
-		ListeEQM = []
+		ListeEQM                = []
 
 		for i in range(len(ListDatesStr)):
 
@@ -270,11 +241,11 @@ def fit(sysargv):
 				ts=getNbDaysBetweenDateFromString(DatesString.listFirstCaseDates[0], readStartDateStr)
 				if ts<0:
 					continue # On passe au pays suivant
-				ts=getNbDaysBetweenDateFromString(DatesString.listFirstCaseDates[0], readStartDateStr)
 				if nbperiodes!=1: # pour plusieurs périodes
 					#l, b0, c0, f0 = 0.255, 1./5.2, 1./12, 0.08
 					#a0 = (l+c0)*(1.+l/b0)
-					a0, b0, c0, f0, mu0, xi0 = 0.55, 0.34, 0.12, 0.25, 0.0005, 0.0001
+					#a0, b0, c0, f0, mu0, xi0 = 0.55, 0.34, 0.12, 0.25, 0.0005, 0.0001
+					a0, b0, c0, f0, mu0, xi0 = 0.60, 0.55, 0.30, 0.50, 0.0005, 0.0001
 					T  = 150
 				else: # pour une période
 					#a0, b0, c0, f0, mu0, xi0  = 0.10, 0.29, 0.10, 0.0022, 0.00004, 0.
@@ -301,8 +272,8 @@ def fit(sysargv):
 			# Solve ode avant optimization
 			sol_ode = solveur.solveEDO(time)
 			# calcul time shift initial (ts) with respect to data
-			#ts         = solveur.compute_tsfromEQM(data[slicedata, :], T, indexdata)
-			solveur.TS = ts
+			ts         = solveur.compute_tsfromEQM(data[slicedata, :], T, indexdata)
+			#solveur.TS = ts
 			sliceedo = slice(ts, min(ts+dataLengthPeriod, T))
 			if verbose>0:
 				print(solveur)
@@ -318,7 +289,8 @@ def fit(sysargv):
 			# Parameters optimization
 			############################################################################
 
-			solveur.paramOptimization(data[slicedata, :], time, ts)
+			solveur.paramOptimization(data[slicedata, :], time) # version lorsque ts est calculé automatiquement
+			#solveur.paramOptimization(data[slicedata, :], time, ts) # version lorsque l'on veut fixer ts
 			_, a1, b1, c1, f1, mu1, xi1 = solveur.modele.getParam()
 			R0 = solveur.modele.getR0()
 			if verbose>0:
@@ -331,18 +303,29 @@ def fit(sysargv):
 			# Solve ode avant optimization
 			sol_ode = solveur.solveEDO(time)
 			# calcul time shift with respect to data
-			#ts            = solveur.compute_tsfromEQM(data[slicedata, :], T, indexdata)
-			ts = solveur.TS
+			ts            = solveur.compute_tsfromEQM(data[slicedata, :], T, indexdata)
+			#ts = solveur.TS
 			#print('ts=', ts)
 			sliceedo      = slice(ts, min(ts+dataLengthPeriod, T))
 			sliceedoderiv = slice(sliceedo.start+1, sliceedo.stop)
 			if verbose>0:
 				print(solveur)
 				print('  ts='+str(ts))
+			if i==0: # on se souvient de la date du premier infesté
+				dateI0 = addDaystoStrDate(fitStartDateStr, -ts)
+				if verbose>2:
+					print('dateI0=', dateI0)
+					input('attente')
 
 			# sauvegarde des param (tableau et texte)
-			ListetabParamModelPlace.append([a1, b1, c1, f1, mu1, xi1, R0])
-			ListeTextParamPlace    .append(solveur.getTextParamWeak(fitStartDateStr))
+			ROsignificatif=True
+			threshold = (data[slicedata.stop-1, 0]-data[slicedata.start, 0])/getNbDaysBetweenDateFromString(fitStartDateStr, fitStopDateStr)
+			if  threshold <1.0: # moins de 1 cas détecté par jour sur la période 3
+				ROsignificatif = False
+				ListetabParamModelPlace.append([a1, b1, c1, f1, mu1, xi1, -1.])
+			else:
+				ListetabParamModelPlace.append([a1, b1, c1, f1, mu1, xi1, R0])
+			ListeTextParamPlace.append(solveur.getTextParamWeak(fitStartDateStr, ROsignificatif))
 			
 			data_deriv_period    = (data[slicedataderiv, :]           - data   [slicedataderiv.start-1:slicedataderiv.stop-1, :])        / dt
 			modelR1_deriv_period = (sol_ode[sliceedoderiv, indexdata] - sol_ode[sliceedoderiv.start-1 :sliceedoderiv.stop-1, indexdata]) / dt
@@ -354,23 +337,23 @@ def fit(sysargv):
 				
 				# listePlot = [0,1,2,3,4,5]
 				# filename  = prefFig + str(decalage) + '_Period' + str(i) + '_' + ''.join(map(str, listePlot)) + '.png'
-				# solveur.plotEDO(filename, titre, sliceedo, slicedata, plot=listePlot, data=data, text=solveur.getTextParam(fitStartDateStr))
+				# solveur.plotEDO(filename, titre, sliceedo, slicedata, plot=listePlot, data=data, text=solveur.getTextParam(fitStartDateStr, ROsignificatif))
 				listePlot = [1,2,3,5]
 				filename  = prefFig + str(decalage) + '_Period' + str(i) + '_' + ''.join(map(str, listePlot)) + 'Final.png'
-				solveur.plotEDO(filename, titre, sliceedo, slicedata, plot=listePlot, data=data, text=solveur.getTextParam(fitStartDateStr))
+				solveur.plotEDO(filename, titre, sliceedo, slicedata, plot=listePlot, data=data, text=solveur.getTextParam(fitStartDateStr, ROsignificatif))
 				listePlot = indexdata
 				filename  = prefFig + str(decalage) + '_Period' + str(i) + '_' + ''.join(map(str, listePlot)) + 'Final.png'
-				solveur.plotEDO(filename, titre, sliceedo, slicedata, plot=listePlot, data=data, text=solveur.getTextParam(fitStartDateStr))
+				solveur.plotEDO(filename, titre, sliceedo, slicedata, plot=listePlot, data=data, text=solveur.getTextParam(fitStartDateStr, ROsignificatif))
 
 				# dérivée  numérique de R1 et F
 				filename = prefFig + str(decalage) + '_Period' + str(i) + '_' + ''.join(map(str, listePlot)) + 'Deriv.png'
-				solveur.plotEDO_deriv(filename, titre, sliceedoderiv, slicedataderiv, data_deriv_period, indexdata, text=solveur.getTextParam(fitStartDateStr))
+				solveur.plotEDO_deriv(filename, titre, sliceedoderiv, slicedataderiv, data_deriv_period, indexdata, text=solveur.getTextParam(fitStartDateStr, ROsignificatif))
 
 			# sol_ode_withSwitch = solveur.solveEDO_withSwitch(T, timeswitch=ts+dataLengthPeriod)
 
 			# ajout des données dérivées
-			data_all   [indexplace, slicedataderiv, :]   = data_all_period
-			modelR1_all[indexplace, slicedataderiv, :]   = modelR1_all_period
+			data_all     [indexplace, slicedataderiv, :] = data_all_period
+			modelR1_all  [indexplace, slicedataderiv, :] = modelR1_all_period
 			data_deriv   [indexplace, slicedataderiv, :] = data_deriv_period
 			modelR1_deriv[indexplace, slicedataderiv, :] = modelR1_deriv_period
 
@@ -385,6 +368,7 @@ def fit(sysargv):
 				input('next step')
 		
 		Listepd.append(pd_exerpt)
+		ListeDateI0.append(dateI0)
 
 		# calcul de l'EQM sur les données (et non sur les dérivées des données)
 		#EQM = mean_squared_error(data_deriv[indexplace, :], modelR1_deriv[indexplace, :])
@@ -395,8 +379,8 @@ def fit(sysargv):
 		ListeTextParam.append(ListeTextParamPlace)
 		ListetabParamModel.append(ListetabParamModelPlace)
 
-	return modelSEIR1R2D, ListeTextParam, Listepd, data_deriv, modelR1_deriv, ListetabParamModel, ListeEQM
+	return modelSEIR1R2D, ListeTextParam, Listepd, data_deriv, modelR1_deriv, ListetabParamModel, ListeEQM, ListeDateI0
 
 
 if __name__ == '__main__':
-	modelSEIR1R2D, ListeTextParam, Listepd, data_deriv, modelR1_deriv, ListetabParamModel, ListeEQM = fit(sys.argv[1:])
+	modelSEIR1R2D, ListeTextParam, Listepd, data_deriv, modelR1_deriv, ListetabParamModel, ListeEQM, ListeDateI0 = fit(sys.argv[1:])

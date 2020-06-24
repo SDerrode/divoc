@@ -38,12 +38,14 @@ class SEIR1R2:
 		S += '\n  b=' + str(np.round(self.b, decimals=3)) + '\n  c=' + str(np.round(self.c, decimals=3)) + '\n  f=' + str(np.round(self.f, decimals=3))
 		return S
 
-	def getTextParam(self):
+	def getTextParam(self, ROsignificatif=True):
 		S  = 'Model '  + self.modelShortName + ':'
 		S += '\n' + r'  $a='  + str(np.round(self.a, decimals=4)) + r', b=' + str(np.round(self.b, decimals=4)) + '$'
 		S += '\n' + r'  $c='  + str(np.round(self.c, decimals=4)) + r', f=' + str(np.round(self.f, decimals=4)) + '$'
-		if self.c!= 0.:
-		 	S += '\n' + r'  $R_0=' + str(np.round(self.R0, decimals=2)) + '$'
+		if self.c!= 0. and ROsignificatif==True:
+			S += '\n' + r'  $R_0=' + str(np.round(self.R0, decimals=2)) + '$'
+		if ROsignificatif==False:
+			S += '\n' + r'  $R_0$ non significatif'
 		return S
 
 	def setR0(self):
@@ -76,13 +78,13 @@ class SEIR1R2:
 
 	# The SEIR1R2 model differential equations.
 	def deriv(self, y, t, N, a, b, c, f):
-	    S, E, I, R1, R2 = y
-	    dSdt  = -a * S * I / N
-	    dEdt  = a * S * I / N - b * E
-	    dIdt  = b * E - c * I
-	    dR1dt = f * c * I
-	    dR2dt = (1.-f) * c * I
-	    return dSdt, dEdt, dIdt, dR1dt, dR2dt
+		S, E, I, R1, R2 = y
+		dSdt  = -a * S * I / N
+		dEdt  = a * S * I / N - b * E
+		dIdt  = b * E - c * I
+		dR1dt = f * c * I
+		dR2dt = (1.-f) * c * I
+		return dSdt, dEdt, dIdt, dR1dt, dR2dt
 
 	def getString(self, indice):
 		if indice == 0: return r'$S(t)$'

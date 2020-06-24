@@ -40,13 +40,13 @@ class SolveEDO_SEIR1R2D(SolveEDO):
 		# Modèle d'eq. diff non linéaires
 		self.modele = SEIR1R2D(self.N, dt=self.dt)
 
-	def getTextParam(self, startDate=None):
-		S = super().getTextParam(startDate)
+	def getTextParam(self, startDate=None, ROsignificatif=True):
+		S = super().getTextParam(startDate, ROsignificatif)
 		S += '\n' + r'  $D_0=' + str(self.y0[5]) + '$'
 		return S
 
-	def getTextParamWeak(self, startDate=None):
-		S = super().getTextParamWeak(startDate)
+	def getTextParamWeak(self, startDate=None, ROsignificatif=True):
+		S = super().getTextParamWeak(startDate,ROsignificatif)
 		return S
 
 	def setN(self, N):
