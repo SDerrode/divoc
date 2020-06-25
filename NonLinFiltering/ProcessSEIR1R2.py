@@ -65,7 +65,7 @@ def fit(sysargv):
 	# Constantes
 	######################################################@
 	fileLocalCopy    = True  # if we upload the file from the url (to get latest data) or from a local copy file
-	readStartDateStr = "2020-03-08" # "2020-03-01" Le 8 mars, pour inclure un grand nombre de pays européens dont la date de premier était postérieur au 1er mars
+	readStartDateStr = "2020-03-01" # "2020-03-01" Le 8 mars, pour inclure un grand nombre de pays européens dont la date de premier était postérieur au 1er mars
 	readStopDateStr  = None
 	recouvrement     = -1
 	dt               = 1
@@ -343,11 +343,7 @@ def fit(sysargv):
 
 			# Sauvegarde des param (tableau et texte)
 			ROsignificatif=True
-			print((data[slicedata.stop-1, 0]-data[slicedata.start, 0]))
-			print(getNbDaysBetweenDateFromString(fitStartDateStr, fitStopDateStr))
 			threshold = (data[slicedata.stop-1, 0]-data[slicedata.start, 0])/getNbDaysBetweenDateFromString(fitStartDateStr, fitStopDateStr)
-			print(threshold)
-			input('pause')
 			if  threshold<1.0: # moins de 1 cas détecté par jour sur la période 3
 				ROsignificatif = False
 				ListetabParamModelPlace.append([a1, b1, c1, f1, -1.])

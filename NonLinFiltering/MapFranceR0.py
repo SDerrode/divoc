@@ -22,8 +22,11 @@ import pandas                as pd
 import geopandas             as gpd
 from datetime                import timedelta, date
 
-from common                  import getRepertoire, getColorMap, save_mapFrance
+from datetime                import datetime, timedelta
+from common                  import getRepertoire, getColorMap
+from France                  import save_mapFranceR0, save_mapFranceI0
 
+strDate = "%Y-%m-%d"
 
 def main(sysargv):
 
@@ -85,7 +88,7 @@ def main(sysargv):
 	
 	
 	##################################################################@	
-	# Preparation de la carte de france des dpts
+	# Preparation de la carte de france (par dpts or par régions)
 
 	# Load French departements data into a GeoPandas GeoSeries
 	# lecture à distance
@@ -115,20 +118,6 @@ def main(sysargv):
 	repertoire = getRepertoire(UKF_filt, './figures/'+modeleString+'_UKFilt/', './figures/'+modeleString+'/')
 	df1        = pd.read_csv(repertoire+filename, dtype={'Place': 'str'}) #, parse_dates=[[2]]
 
-	# Le min et le max des 3 colonnes
-	a = df1[list(df1)[1:-1]].values
-	minRO=np.amin(np.amin(a))
-	if minRO==-1.:
-		#find th second minimum value (to avoid -1 value whose meaning is to say that the place has a non-meaning RO)
-		minRO = np.amin(np.array(a)[a != np.amin(a)])
-	maxRO = df1[list(df1)[1:-1]].max().max()
-	if verbose>0:
-		print('minRO=', minRO)
-		print('maxRO=', maxRO)
-
-	# replace les -1 par des nan pour être traités comme des données manquantes
-	df1.replace(-1, np.nan, inplace=True)
-
 	# on rajoute la géométrie
 	df1.loc[:, ('geometry')] = df1.loc[:, ('Place')].map(met)
 	if verbose>1:
@@ -138,19 +127,59 @@ def main(sysargv):
 	# on rajoute les centroids
 	# df1['coords'] = df1['geometry'].apply(lambda x: x.centroid.coords[:])
 	# df1['coords'] = [coords[0] for coords in df1['coords']]
-	
-	# carte de couleurs (commune aux 3 périodes)
-	mycolormap, newcmp = getColorMap(indexmaxcolor, minRO, maxRO, blackstartP, alpha)
 
-	# On dessone les cartes pour les 3 R0
+
+	# PARTIE SUR R0
+	##################################################################
+	
+	# Le min et le max des 3 colonnes
+	a = df1[list(df1)[1:-2]].values
+	minRO=np.amin(np.amin(a))
+	if minRO==-1.:
+		#find th second minimum value (to avoid -1 value whose meaning is to say that the place has a non-meaning RO)
+		minRO = np.amin(np.array(a)[a != np.amin(a)])
+	maxRO = df1[list(df1)[1:-2]].max().max()
+	if verbose>0:
+		print('minRO=', minRO)
+		print('maxRO=', maxRO)
+
+	# replace les -1 par des nan pour être traités comme des données manquantes
+	df1.replace(-1, np.nan, inplace=True)
+
+	# carte de couleurs (commune aux 3 périodes)
+	mycolormapR0, newcmpR0 = getColorMap(indexmaxcolor, minRO, maxRO, blackstartP, alpha)
+
+	# On dessine les cartes pour les 3 R0
 	for p in range(3):
 		labelRO = 'R0MoyenP'+str(p)
 		print('PROCESSING of', labelRO)
 		
 		# display the map with the RO data
 		img_name = repertoire + filenamewithoutext + '_P' + str(p) + '.png'
-		title    = 'R0 par Dpt (vert' + '\u2192' + 'R0 non significatif) \n' + strTile + ' - model: '+modeleString
-		save_mapFrance(df1, met, newcmp, title, img_name, labelRO, minRO, maxRO, tile_zoom, alpha, figsize)
+		title    = 'R0 par' + mapType + '(vert' + '\u2192' + 'R0 non significatif) \n' + strTile + ' - model: ' + modeleString
+		save_mapFranceR0(df1, met, newcmpR0, title, img_name, labelRO, minRO, maxRO, tile_zoom, alpha, figsize)
+
+	# PARTIE SUR I0
+	##################################################################
+	
+	dateFirstCase = df1['DateFirstCase'].values
+	sorted(dateFirstCase, key=lambda x: datetime.strptime(x, strDate))
+	minDateIO = datetime.strptime(dateFirstCase.min(), strDate)
+	maxDateIO = datetime.strptime(dateFirstCase.max(), strDate)
+	if verbose>0:
+		print('minDateIO=', minDateIO)
+		print('maxDateIO=', maxDateIO)
+
+	# On dessine la carte des dates du 1er infecté
+	img_name = repertoire + filenamewithoutext + '_I0.png'
+	title    = '1er infecté par ' + mapType + ', [' + dateFirstCase.min() +', ' + dateFirstCase.max() + '] - ' + modeleString
+
+	deltaFirstCase = []
+	for index in range(len(dateFirstCase)):
+		deltaFirstCase.append(float((datetime.strptime(dateFirstCase[index], strDate)-minDateIO).days))
+	df1['deltaI0'] = np.resize(deltaFirstCase,len(df1))
+	
+	save_mapFranceI0(df1, met, newcmpR0, title, img_name, 'deltaI0', 0., float((maxDateIO-minDateIO).days), tile_zoom, alpha, figsize)
 
 
 	# # Parse recorded days and save one image for each day

@@ -6,9 +6,7 @@ import pandas            as pd
 import numpy             as np
 import matplotlib        as mpl
 import matplotlib.pyplot as plt
-import contextily        as ctx
-import geopandas         as gpd
-from mpl_toolkits.axes_grid1 import make_axes_locatable
+
 
 from sklearn.metrics import mean_squared_error
 
@@ -362,51 +360,3 @@ def PlotData(pd, titre, filenameFig, y, color='black', Dates=None):
 	plt.savefig(filenameFig, dpi=dpi)
 	plt.close()
 
-def save_mapFrance(df, met, newcmp, title, img_name, labelRO, vmin, vmax, tile_zoom, alpha, figsize):
-	
-	# Load the map tile with contextily
-	w, s, e, n = met.total_bounds
-	bck, ext = ctx.bounds2img(w, s, e, n, zoom=tile_zoom, ll=True)
-
-	gdf = gpd.GeoDataFrame(df, crs={'init': 'epsg:4326'})
-	gdf_3857 = gdf.to_crs(epsg=3857)  # web mercator
-	f, ax = plt.subplots(figsize=figsize)
-
-	ax.imshow(bck, extent=ext, interpolation='sinc', aspect='equal', alpha=0.4)  # load background map
-	divider = make_axes_locatable(ax)
-	cax = divider.append_axes('right', size='5%', pad=0.15)  # GeoPandas trick to adjust the legend bar
-	gdf_3857.plot(
-		column=labelRO,  # R0 for the county
-		ax        = ax,
-		cax       = cax,
-		alpha     = alpha,
-		edgecolor = 'k',
-		legend    = True,
-		cmap      = newcmp,
-		vmin      = vmin,
-		vmax      = vmax,
-		legend_kwds={'label': "Mean R0"},
-		#missing_kwds={'color': 'lightgrey'},
-		missing_kwds={
-				"color": "lightgreen",
-				"edgecolor": "green",
-				"alpha": 0.2,
-				#"hatch": "///",
-				"label": "Missing values",
-			},
-	);
-
-	# for _, row in df.iterrows():
-	# 	hue = 200
-	# 	print(row['Place'])
-	# 	ax.text(s='BONJOUR', x = row['coords'][0], y = row['coords'][1],
-	# 	       horizontalalignment='center', fontdict = {'weight': 'bold', 'size': 25})
-	# 	ax.text(s='Data: ' + f'{hue:,}', x=row['coords'][0], y = row['coords'][1] - 0.01 ,
-	# 	      # horizontalalignment='center', fontdict = {'size': 8})
-
-	ax.set_axis_off()
-	ax.get_xaxis().set_visible(False)
-	ax.get_yaxis().set_visible(False)
-	ax.set_title(title, fontsize=20)
-	plt.savefig(img_name, bbox_inches='tight') # to remove border
-	plt.close(f)
