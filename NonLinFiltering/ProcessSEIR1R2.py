@@ -39,6 +39,8 @@ def fit(sysargv):
 
 		For French Region (French database)
 		>> python3 ProcessSEIR1R2.py France,69        3 8 0 1 1 # Dpt 69 (Rhône)
+		>> python3 ProcessSEIR1R2.py France,PACA      3 8 0 1 1 # All the dpt in PACA
+		>> python3 ProcessSEIR1R2.py France,PACA+     3 8 0 1 1 # Sum of all the dpt in PACA
 		>> python3 ProcessSEIR1R2.py France,all       3 8 0 1 1 # Tous les dpts francais
 		>> python3 ProcessSEIR1R2.py France,metropole 3 8 0 1 1 # Tous les dpts francais de la métropole uniquement
 		>> python3 ProcessSEIR1R2.py France,69,01     3 8 1 1 1 # Dpt 69 (Rhône) + Dpt 01 (Ain) with UKF filtering

@@ -93,7 +93,6 @@ def fit(sysargv):
 	if verbose>0:
 		print('  Full command line : '+sysargv[0]+' '+str(nbperiodes)+' '+str(decalage)+' '+str(UKF_filt)+' '+str(verbose)+' '+str(plot), flush=True)
 
-	
 	# Data reading to get first and last date available in the data set
 	######################################################@
 	if FrDatabase == True: 

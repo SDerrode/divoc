@@ -23,7 +23,9 @@ from datetime                import timedelta, date
 from common                  import getRepertoire, getColorMap
 
 # constantes
-url_dep       = 'http://osm13.openstreetmap.fr/~cquest/openfla/export/departements-20140306-5m-shp.zip'
+#url_region    = 'http://osm13.openstreetmap.fr/~cquest/openfla/export/regions-20190101-shp.zip'
+local_path    = 'tmp/'
+name_region   = 'regions-20190101'
 figsize       = (15, 15)
 tile_zoom     = 6
 indexmaxcolor = 2000
@@ -47,7 +49,7 @@ def main(sysargv):
 	"""
 
 	# constante
-	filter_dep      = ['971', '972', '973', '974', '976']
+	filter_reg      = ['01', '02', '03', '04', '06'] # Guadeloupe, Martinique, Guyane, La Réunion, Mayotte
 	datesestimation = '[2020-05-18\u21922020-06-20]'
 
 	##################################################################@
@@ -71,22 +73,32 @@ def main(sysargv):
 	##################################################################@	
 	# Preparation de la carte de france des dpts
 
-	# Load French departements data into a GeoPandas GeoSeries
-	local_path = 'tmp/'
-	r = requests.get(url_dep)
-	z = zipfile.ZipFile(io.BytesIO(r.content))
-	z.extractall(path=local_path)
+	# Load French regions data into a GeoPandas GeoSeries
+	# lecture à distance
+	# r = requests.get(url_region)
+	# z = zipfile.ZipFile(io.BytesIO(r.content))
+	# z.extractall(path=local_path)
+	# Lecture en local
+	import pathlib
+	p = pathlib.Path(local_path)
+	filen = [j.name for j in p.glob(name_region+'.*')]
 	filenames = [
 		y
-		for y in sorted(z.namelist())
+		for y in sorted(filen)
 		for ending in ['dbf', 'prj', 'shp', 'shx']
 		if y.endswith(ending)
 	]
+	print('filenames=', sorted(filenames))
+	input('pause')
+	
 	dbf, prj, shp, shx = [fname for fname in filenames]
 	fr = gpd.read_file(local_path + shp)  #  + encoding='utf-8' if needed
 	fr.crs = 'epsg:4326'  # {'init': 'epsg:4326'}
-	met = fr.query('code_insee not in @filter_dep')
+	met = fr.query('code_insee not in @filter_reg')
 	met.set_index('code_insee', inplace=True)
+	print(list(met))
+	print(met.head())
+	input('apuse')
 	met = met['geometry']
 
 	# Load labelRO data into a pandas DataFrame

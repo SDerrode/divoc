@@ -31,6 +31,8 @@ def main(sysargv):
 
 		For French Region (French database)
 		>> python3 PlotTimeShift.py France,69        SEIR1R2  0 2,14 0 1 # Dpt 69 (Rhône)
+		>> python3 PlotTimeShift.py France,PACA      SEIR1R2  0 2,14 0 1 # All dpts in PACA région (the same for all French regions)
+		>> python3 PlotTimeShift.py France,PACA+     SEIR1R2  0 2,14 0 1 # Sum of all dpts in PACA région (the same for all French regions)
 		>> python3 PlotTimeShift.py France,all       SEIR1R2  0 2,14 0 1 # Tous les dpt francais
 		>> python3 PlotTimeShift.py France,metropole SEIR1R2  0 2,14 0 1 # Tous les dpt francais de la métropole
 		>> python3 PlotTimeShift.py France,69,01     SEIR1R2D 1 2,14 1 1 # Dpt 69 (Rhône) + Dpt 01 (Ain) with UKF filtering
@@ -192,7 +194,7 @@ def main(sysargv):
 						chaine += str(R0mean)+','
 					chaine += ListeDateI0[indexplace]+'\n'
 					text_file.write(chaine)
-					print(placefull, ' chaine =', chaine) # moyenne uniquement pour la 3ieme période
+					print('chaine=', chaine) # moyenne uniquement pour la 3ieme période
 
 		# plot de l'EQM
 		##########################################

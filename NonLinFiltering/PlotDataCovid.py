@@ -13,7 +13,8 @@ from filterpy.kalman  import JulierSigmaPoints, MerweScaledSigmaPoints, rts_smoo
 from filterpy.common  import Q_discrete_white_noise
 
 from common           import readDataEurope, readDataFrance, readDates, PlotData
-from common           import getRepertoire, addDaystoStrDate, getListPlaces
+from common           import getRepertoire, addDaystoStrDate
+from France           import getPlace
 
 # constante
 fileLocalCopy = False # if we upload the file from the url (to get latest results) or from a local copy file
@@ -48,13 +49,15 @@ def main(sysargv):
         >> python3 PlotDataCovid.py France,Spain,Italy,United_Kingdom,Germany,Belgium 0
 
         For French Regions (French database)
-        >> python3 PlotDataCovid.py France,69        # Dpt 69 (Rhône)
-        >> python3 PlotDataCovid.py France,69,75,01  # Dpt 69 (Rhône) + Dpt 75 + Dpt 01
-        >> python3 PlotDataCovid.py France,metropole # Tous les Dpts metropolitains
-        >> python3 PlotDataCovid.py France,all       # Tous les Dpts
-        
-        argv[1] : Country (or list separeted by ','), or 'France' followed by a list of departments. Default: France 
-        argv[2] : Verbose level (debug: 3, ..., almost mute: 0).                                     Default: 1
+        >> python3 PlotDataCovid.py FRANCE,D69         # Code Insee Dpt 69 (Rhône)
+        >> python3 PlotDataCovid.py FRANCE,R84         # Tous les dpts de la Région dont le code Insee est 84 (Auvergne-Rhone-Alpes)
+        >> python3 PlotDataCovid.py FRANCE,R32+        # Somme de tous les dpts de la Région 32 (Hauts de France)
+        >> python3 PlotDataCovid.py FRANCE,MetropoleD  # Tous les départements de la France métropolitaies
+        >> python3 PlotDataCovid.py FRANCE,MetropoleR+ # Somme des dpts de toutes les régions françaises
+        Toute combinaison est possible : exemple FRANCE,R32+,D05,R84
+
+        argv[1] : List of countries (ex. France,Germany,Italy), or see above. Default: France 
+        argv[2] : Verbose level (debug: 3, ..., almost mute: 0).              Default: 1
     """
 
     #Austria,Belgium,Croatia,Czechia,Finland,France,Germany,Greece,Hungary,Ireland,Italy,Lithuania,Poland,Portugal,Romania,Serbia,Spain,Switzerland,Ukraine
@@ -70,9 +73,31 @@ def main(sysargv):
     verbose    = 1
     
     # Parameters from argv
-    if len(sysargv)>1: listplaces = list(sysargv[1].split(','))
-    FrDatabase, listplaces = getListPlaces(listplaces)
+    if len(sysargv)>1: liste   = list(sysargv[1].split(','))
     if len(sysargv)>2: verbose = int(sysargv[2])
+
+    listplaces = []
+    listnames = []
+    if liste[0]=='FRANCE':
+        FrDatabase = True
+        liste = liste[1:]
+        for el in liste:
+            l,n=getPlace(el)
+            if el=='MetropoleR+':
+                for l1,n1 in zip(l,n):
+                    listplaces.extend(l1)
+                    listnames.extend([n1])
+            else:
+                listplaces.extend(l)
+                listnames.extend(n)
+    else:
+        listplaces = liste[:]
+        FrDatabase = False
+
+    # print('liste=', liste)
+    # print('listplaces=', listplaces)
+    # print('listnames=', listnames)
+    # #input(';sjbvcbj')
 
     # Constantes
     dt = 1
@@ -80,19 +105,21 @@ def main(sysargv):
     readStopDateStr  = None
     
     # Loop for all places
-    for place in listplaces:
+    for index,place in enumerate(listplaces):
+        # print('index,place=', index,place)
+        # print('listnames=', listnames)
 
         # Get the full name of the place to process, and the special dates corresponding to the place
         France='France'
         if FrDatabase == True: 
-            placefull   = 'France-' + place
+            placefull   = 'France-' + listnames[index][0]
             DatesString = readDates(France, verbose)
         else:
             placefull   = place
             DatesString = readDates(place, verbose)
 
-        print('PROCESSING of', placefull, 'in', listplaces)
-
+        print('PROCESSING of', placefull, 'in', listnames)
+        
         # Repertoire figures
         repertoire = getRepertoire(True, './figures/data/'+placefull)
         prefFig = repertoire + '/'
@@ -103,7 +130,6 @@ def main(sysargv):
             pd_exerpt, HeadData, N, readStartDateStr, readStopDateStr = readDataFrance(place, readStartDateStr, readStopDateStr, fileLocalCopy, verbose=0)
         else:
             pd_exerpt, HeadData, N, readStartDateStr, readStopDateStr = readDataEurope(place, readStartDateStr, readStopDateStr, fileLocalCopy, verbose=0)
-
 
         readStartDate = datetime.strptime(readStartDateStr, "%Y-%m-%d")
         readStopDate  = datetime.strptime(readStopDateStr,  "%Y-%m-%d")

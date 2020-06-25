@@ -24,14 +24,16 @@ def main(sysargv):
 
 		For countries (European database)
 		>> python3 Fit.py 
-		>> python3 Fit.py France SEIR1R2 13 0 1 1
-		>> python3 Fit.py Italy,Spain SEIR1R2D 13 1 1 1 # Italy and Spain, with UKF filtering
+		>> python3 Fit.py France SEIR1R2 11 0 1 1
+		>> python3 Fit.py Italy,Spain SEIR1R2D 11 1 1 1 # Italy and Spain, with UKF filtering
 
 		For French Region (French database)
-		>> python3 Fit.py France,69        SEIR1R2  13 0 1 1 # Dpt 69 (Rhône)
-		>> python3 Fit.py France,all       SEIR1R2  13 0 1 1 # Tous les dpts français
-		>> python3 Fit.py France,metropole SEIR1R2  13 0 1 1 # Tous les dpts français de la métropole
-		>> python3 Fit.py France,69,01     SEIR1R2D 13 1 1 1 # Dpt 69 (Rhône) + Dpt 01 (Ain) with UKF filtering
+		>> python3 Fit.py France,69        SEIR1R2  11 0 1 1 # Dpt 69 (Rhône)
+		>> python3 Fit.py France,PL        SEIR1R2  11 0 1 1 # tous les dpt du pay de la loire
+		>> python3 Fit.py France,PL+       SEIR1R2  11 0 1 1 # somme de tous les dpt du pay de la loire
+		>> python3 Fit.py France,all       SEIR1R2  11 0 1 1 # Tous les dpts français
+		>> python3 Fit.py France,metropole SEIR1R2  11 0 1 1 # Tous les dpts français de la métropole
+		>> python3 Fit.py France,69,01     SEIR1R2D 11 1 1 1 # Dpt 69 (Rhône) + Dpt 01 (Ain) with UKF filtering
 		
 		argv[1] : Country (or list separeted by ','), or 'France' followed by a list of dpts. Default: France 
 		argv[2] : EDO model (SEIR1R2 or SEIR1R2D)                                             Default: SEIR2R2         

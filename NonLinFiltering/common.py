@@ -116,39 +116,6 @@ def GetPairListDates(readStartDate, readStopDate, DatesString, decalage, nbperio
 	return ListePairDates, ListePairDatesStr
 
 
-def getListPlaces(listplaces):
-
-	FrDatabase = False
-	if listplaces[0]=='France' and len(listplaces)>1:
-		argument = listplaces[1]
-		if argument=='all' or argument=='metropole':
-			listplaces = []
-			for i in range(1,96):
-				number_str = str(i)
-				zero_filled_number = number_str.zfill(2)
-				listplaces.append(zero_filled_number)
-			listplaces.remove("20") # Ce département n'est pas dans les données
-			listplaces.append("2A")
-			listplaces.append("2B")
-			FrDatabase = True
-		if argument=='all':
-			listplaces.append("971")
-			listplaces.append("972")
-			listplaces.append("973")
-			listplaces.append("974")
-			listplaces.append("976")
-		if argument!='all' and argument!='metropole':
-			try:
-				int(argument)
-			except Exception as e:
-				FrDatabase=False
-			else:
-				FrDatabase = True
-				listplaces = listplaces[1:]
-
-	return FrDatabase, listplaces
-
-
 def getColorMap(indexmaxcolor, minRO, maxRO, blackstart, alpha=1.):
 	
 	mycolormap=np.zeros(shape=(indexmaxcolor, 4))
@@ -161,12 +128,11 @@ def getColorMap(indexmaxcolor, minRO, maxRO, blackstart, alpha=1.):
 	elif minRO<blackstart:
 		B = int( (min(blackstart, maxRO) - minRO)/(maxRO-minRO)*indexmaxcolor)
 
-
-	colblue = np.zeros(shape=(indexmaxcolor+1, 4))
-	for i in range(indexmaxcolor+1):
+	colblue = np.zeros(shape=(indexmaxcolor, 4))
+	for i in range(indexmaxcolor):
 		colblue[i] = colorFader('blue', 'white', i/indexmaxcolor, alpha)
-	colred = np.zeros(shape=(indexmaxcolor+1, 4))
-	for i in range(indexmaxcolor+1):
+	colred = np.zeros(shape=(indexmaxcolor, 4))
+	for i in range(indexmaxcolor):
 		colred[i] = colorFader('white', 'red', i/indexmaxcolor, alpha)
 
 	bleu  = np.array([0.,0.,1.,alpha])
@@ -193,23 +159,33 @@ def colorFader(c1, c2, mix=0, alpha=1.): #fade (linear interpolate) from color c
 	return col
 		
 
-def readDataFrance(place='69', dateMinStr=None, dateMaxStr=None, fileLocalCopy=False, verbose=0):
+def readDataFrance(placeliste=['D69'], dateMinStr=None, dateMaxStr=None, fileLocalCopy=False, verbose=0):
 	'''
 		Lecture des données du gouvernement français (data.gouv.fr)
 		Les données débutent à la date de confinement (pourquoi?)
 	''' 
+
+	# print('placeliste=', placeliste)
+	
+	if len(placeliste)>1:
+		place = [ el[0][1:] for el in placeliste]
+	else:
+		place = [placeliste[0][1:]]
+	# print('place=', place)
+	# input('attente')
+
 	covid_orig = None
 	if fileLocalCopy==True:
 		name = './data/csvFrance_2020-06-21.csv'
 		try:
-			covid_orig=pd.read_csv(name, sep=';', parse_dates=[2], dayfirst=True)
+			covid_orig = pd.read_csv(name, sep=';', parse_dates=[2], dayfirst=True)
 		except:
 			fileLocalCopy = False
 	
 	if fileLocalCopy==False:
-		url="https://static.data.gouv.fr/resources/donnees-hospitalieres-relatives-a-lepidemie-de-covid-19/20200504-190020/donnees-hospitalieres-covid19-2020-05-04-19h00.csv"
-		url_stable="https://www.data.gouv.fr/fr/datasets/r/63352e38-d353-4b54-bfd1-f1b3ee1cabd7"
-		covid_orig=pd.read_csv(url_stable, sep=';', parse_dates=[2], dayfirst=True)
+		url        = "https://static.data.gouv.fr/resources/donnees-hospitalieres-relatives-a-lepidemie-de-covid-19/20200504-190020/donnees-hospitalieres-covid19-2020-05-04-19h00.csv"
+		url_stable = "https://www.data.gouv.fr/fr/datasets/r/63352e38-d353-4b54-bfd1-f1b3ee1cabd7"
+		covid_orig = pd.read_csv(url_stable, sep=';', parse_dates=[2], dayfirst=True)
 	
 	covid_orig.set_index('jour', inplace=True)
 	covid_orig.sort_index(inplace=True)
@@ -219,33 +195,33 @@ def readDataFrance(place='69', dateMinStr=None, dateMaxStr=None, fileLocalCopy=F
 
 	covid_orig.drop(columns=['hosp', 'rea'], inplace=True)
 	covid_country0 = covid_orig.query(expr='sexe==0').drop(columns=['sexe'])
-	covid_country  = covid_country0.loc[covid_country0['dep'] == place]
+	covid_country1 = covid_country0.query(expr='dep in @place')
+	covid_country2 = covid_country1.groupby(covid_country1.index).sum()
 	
-	covid_country1 = covid_country[['rad', 'dc']] #.cumsum()
 	if verbose>1:
-		print('TAIL=', covid_country1.tail())
-
+		print('TAIL2=', covid_country2.head())
+	
 	# extraction entre dateMin et dateMaxStr
 	if dateMinStr==None:
-		dateMinStr = covid_country1.index[0].strftime("%Y-%m-%d")
+		dateMinStr = covid_country2.index[0].strftime("%Y-%m-%d")
 	if dateMaxStr==None:
-		dateMaxStr = addDaystoStrDate(covid_country1.index[-1].strftime("%Y-%m-%d"), 1)
+		dateMaxStr = addDaystoStrDate(covid_country2.index[-1].strftime("%Y-%m-%d"), 1)
 	if verbose>1:
 		print('dateMinStr=', dateMinStr, ', dateMaxStr=', dateMaxStr)
-	excerpt_country1 = covid_country1.loc[dateMinStr:dateMaxStr].copy()
+	excerpt_country2 = covid_country2.loc[dateMinStr:dateMaxStr].copy()
 	# On rajoute la somme des cas et des morts
-	excerpt_country1.loc[:, ('radplusdc')] = excerpt_country1.loc[:, ('rad','dc')].sum(axis=1)
+	excerpt_country2.loc[:, ('radplusdc')] = excerpt_country2.loc[:, ('rad','dc')].sum(axis=1)
 	
 	if verbose>0:
-		print('HEAD=', excerpt_country1.head())
-		print('TAIL=', excerpt_country1.tail())
+		print('HEAD=', excerpt_country2.head())
+		print('TAIL=', excerpt_country2.tail())
 	
 	# On recherche la taille de la population en France estimée en 2020
 	# site we dont est extrait le fichier local: https://www.insee.fr/fr/statistiques/1893198
 	db_pop_size = pd.read_csv('./data/popsizedpt_2020.csv', sep=';')
-	pop_size    = int(db_pop_size.loc[place]["popsize"])
+	pop_size    = int(db_pop_size.loc[place[0]]["popsize"])
 	
-	return excerpt_country1, list(excerpt_country1), pop_size, dateMinStr, dateMaxStr
+	return excerpt_country2, list(excerpt_country2), pop_size, dateMinStr, dateMaxStr
 
 
 def readDataEurope(country='France', dateMinStr=None, dateMaxStr=None, fileLocalCopy=False, verbose=0):
