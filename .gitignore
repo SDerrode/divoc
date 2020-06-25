@@ -2,7 +2,6 @@
 NonLinFiltering/figures/*.png
 NonLinFiltering/testPython/
 NonLinFiltering/old/
-NonLinFiltering/tmp/
 Notebooks/*.ipynb
 
 # Byte-compiled / optimized / DLL files
