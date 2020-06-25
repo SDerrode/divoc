@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 import sys
@@ -13,7 +13,8 @@ from datetime          import datetime, timedelta
 from sklearn.metrics   import mean_squared_error
 
 from common            import readDataEurope, readDataFrance, readDates, addDaystoStrDate, getRepertoire
-from common            import getNbDaysBetweenDateFromString, GetPairListDates, getListPlaces
+from common            import getNbDaysBetweenDateFromString, GetPairListDates
+from France            import getPlace
 from SolveEDO_SEIR1R2D import SolveEDO_SEIR1R2D
 
 strDate = "%Y-%m-%d"
@@ -32,23 +33,25 @@ def fit(sysargv):
 		:Example:
 
 		For countries (European database)
-		>> python3 ProcessSEIR1R2D.py 
-		>> python3 ProcessSEIR1R2D.py France 1 0 0 1 1
-		>> python3 ProcessSEIR1R2D.py France 3 8 0 1 1
-		>> python3 ProcessSEIR1R2D.py France,Germany 1 0 0 1 1
+		>> python ProcessSEIR1R2D.py 
+		>> python ProcessSEIR1R2D.py France 1 0 0 1 1
+		>> python ProcessSEIR1R2D.py France 3 8 0 1 1
+		>> python ProcessSEIR1R2D.py France,Germany 1 0 0 1 1
 
 		For French Region (French database)
-		>> python3 ProcessSEIR1R2D.py France,69        3 8 0 1 1 # Dpt 69 (Rhône)
-		>> python3 ProcessSEIR1R2D.py France,all       3 8 0 1 1 # Tous les dpts francais
-		>> python3 ProcessSEIR1R2D.py France,metropole 3 8 0 1 1 # Tous les dpts francais de la métropole uniquement
-		>> python3 ProcessSEIR1R2D.py France,69,01     3 8 0 1 1 # Dpt 69 (Rhône) + Dpt 01 (Ain)
+		>> python ProcessSEIR1R2D.py FRANCE,D69         -1 11 0 1 1 # Code Insee Dpt 69 (Rhône)
+		>> python ProcessSEIR1R2D.py FRANCE,R84         -1 11 0 1 1 # Tous les dpts de la Région dont le code Insee est 
+		>> python ProcessSEIR1R2D.py FRANCE,R32+        -1 11 0 1 1 # Somme de tous les dpts de la Région 32 (Hauts de F
+		>> python ProcessSEIR1R2D.py FRANCE,MetropoleD  -1 11 0 1 1 # Tous les départements de la France métropolitaies
+		>> python ProcessSEIR1R2D.py FRANCE,MetropoleR+ -1 11 0 1 1 # Somme des dpts de toutes les régions françaises
+		Toute combinaison est possible : exemple FRANCE,R32+,D05,R84
 		
-		argv[1] : Country (or list separeted by ','), or 'France' followed by a list of dpts. Default: France 
-		argv[2] : Periods (1 -> 1 period ('all-in-on'), 'x!=1' -> severall periods).          Default: 1
-		argv[3] : Shift of periods (in days).                                                 Default: 0
-		argv[4] : UKF filtering of data (0/1).                                                Default: 0
-		argv[5] : Verbose level (debug: 3, ..., almost mute: 0).                              Default: 1
-		argv[6] : Plot graphique (0/1).                                                       Default: 1
+		argv[1] : List of countries (ex. France,Germany,Italy), or see above.          Default: France 
+		argv[2] : Periods (1 -> 1 period ('all-in-on'), 'x!=1' -> severall periods).   Default: -1
+		argv[3] : Shift of periods (in days).                                          Default: 11
+		argv[4] : UKF filtering of data (0/1).                                         Default: 0
+		argv[5] : Verbose level (debug: 3, ..., almost mute: 0).                       Default: 1
+		argv[6] : Plot graphique (0/1).                                                Default: 1
 	"""
 
 	#Austria,Belgium,Croatia,Czechia,Finland,France,Germany,Greece,Hungary,Ireland,Italy,Lithuania,Poland,Portugal,Romania,Serbia,Spain,Switzerland,Ukraine
@@ -73,30 +76,47 @@ def fit(sysargv):
 
 	# Default value for parameters
 	listplaces = ['France']
-	nbperiodes = 1
-	decalage   = 2
+	nbperiodes = -1
+	decalage   = 11
 	UKF_filt   = False
 	verbose    = 1
 	plot       = True
 
 	# Parameters from argv
-	if len(sysargv)>0: listplaces = list(sysargv[0].split(','))
-	FrDatabase, listplaces = getListPlaces(listplaces)
-	if len(sysargv)>1: nbperiodes    = int(sysargv[1])
-	if len(sysargv)>2: decalage      = int(sysargv[2])
+	if len(sysargv)>0: liste      = list(sysargv[0].split(','))
+	if len(sysargv)>1: nbperiodes = int(sysargv[1])
+	if len(sysargv)>2: decalage   = int(sysargv[2])
 	if len(sysargv)>3 and int(sysargv[3])==1: UKF_filt = True
-	if len(sysargv)>4: verbose       = int(sysargv[4])
+	if len(sysargv)>4: verbose    = int(sysargv[4])
 	if len(sysargv)>5 and int(sysargv[5])==0: plot     = False
 	if nbperiodes==1: 
 		decalage = 0  # nécessairement pas de décalage (on compense le recouvrement)
 	
+	listplaces = []
+	listnames  = []
+	if liste[0]=='FRANCE':
+		FrDatabase = True
+		liste = liste[1:]
+		for el in liste:
+			l,n=getPlace(el)
+			if el=='MetropoleR+':
+				for l1,n1 in zip(l,n):
+					listplaces.extend(l1)
+					listnames.extend([n1])
+			else:
+				listplaces.extend(l)
+				listnames.extend(n)
+	else:
+		listplaces = liste[:]
+		FrDatabase = False
+
 	if verbose>0:
 		print('  Full command line : '+sysargv[0]+' '+str(nbperiodes)+' '+str(decalage)+' '+str(UKF_filt)+' '+str(verbose)+' '+str(plot), flush=True)
 
 	# Data reading to get first and last date available in the data set
 	######################################################@
 	if FrDatabase == True: 
-		pd_exerpt, HeadData, N, readStartDateStr, readStopDateStr = readDataFrance('69',   readStartDateStr, readStopDateStr, fileLocalCopy, verbose=0)
+		pd_exerpt, HeadData, N, readStartDateStr, readStopDateStr = readDataFrance(['D69'],   readStartDateStr, readStopDateStr, fileLocalCopy, verbose=0)
 	else:
 		pd_exerpt, HeadData, N, readStartDateStr, readStopDateStr = readDataEurope(France, readStartDateStr, readStopDateStr, fileLocalCopy, verbose=0)
 	dataLength = pd_exerpt.shape[0]
@@ -137,14 +157,14 @@ def fit(sysargv):
 
 		# Get the full name of the place to process, and the special dates corresponding to the place
 		if FrDatabase == True: 
-			placefull   = 'France-' + place
+			placefull   = 'France-' + listnames[indexplace][0]
 			DatesString = readDates(France, verbose)
 		else:
 			placefull   = place
 			DatesString = readDates(place, verbose)
 
-		print('PROCESSING of', placefull, 'in', listplaces)
-		
+		print('PROCESSING of', placefull, 'in', listnames)
+
 
 		# data reading of the observations
 		#############################################################################

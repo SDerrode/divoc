@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 import sys
@@ -23,8 +23,8 @@ def main(sysargv):
 		:Example:
 
 		For countries (European database)
-		>> python3 MapEuropeR0.py R0Moyen_11_12.csv            # default value : SEIR1R2, 0
-		>> python3 MapEuropeR0.py R0Moyen_11_12.csv SEIR1R2D 1
+		>> python MapEuropeR0.py R0Moyen_11_12.csv            # default value : SEIR1R2, 0
+		>> python MapEuropeR0.py R0Moyen_11_12.csv SEIR1R2D 1
 
 		argv[1] : Name of the file to process
 		argv[2] : EDO model (SEIR1R2 or SEIR1R2D)                    Default: SEIR2R2

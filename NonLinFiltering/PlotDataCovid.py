@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 import sys
@@ -42,18 +42,18 @@ def main(sysargv):
         :Example:
 
         For country (European database)
-        >> python3 PlotDataCovid.py 
-        >> python3 PlotDataCovid.py United_Kingdom
-        >> python3 PlotDataCovid.py Italy 1 
-        >> python3 PlotDataCovid.py France,Germany 1 # Shortcut for processing the two countries successively
-        >> python3 PlotDataCovid.py France,Spain,Italy,United_Kingdom,Germany,Belgium 0
+        >> python PlotDataCovid.py 
+        >> python PlotDataCovid.py United_Kingdom
+        >> python PlotDataCovid.py Italy 1 
+        >> python PlotDataCovid.py France,Germany 1 # Shortcut for processing the two countries successively
+        >> python PlotDataCovid.py France,Spain,Italy,United_Kingdom,Germany,Belgium 0
 
         For French Regions (French database)
-        >> python3 PlotDataCovid.py FRANCE,D69         # Code Insee Dpt 69 (Rhône)
-        >> python3 PlotDataCovid.py FRANCE,R84         # Tous les dpts de la Région dont le code Insee est 84 (Auvergne-Rhone-Alpes)
-        >> python3 PlotDataCovid.py FRANCE,R32+        # Somme de tous les dpts de la Région 32 (Hauts de France)
-        >> python3 PlotDataCovid.py FRANCE,MetropoleD  # Tous les départements de la France métropolitaies
-        >> python3 PlotDataCovid.py FRANCE,MetropoleR+ # Somme des dpts de toutes les régions françaises
+        >> python PlotDataCovid.py FRANCE,D69         # Code Insee Dpt 69 (Rhône)
+        >> python PlotDataCovid.py FRANCE,R84         # Tous les dpts de la Région dont le code Insee est 84 (Auvergne-Rhone-Alpes)
+        >> python PlotDataCovid.py FRANCE,R32+        # Somme de tous les dpts de la Région 32 (Hauts de France)
+        >> python PlotDataCovid.py FRANCE,MetropoleD  # Tous les départements de la France métropolitaies
+        >> python PlotDataCovid.py FRANCE,MetropoleR+ # Somme des dpts de toutes les régions françaises
         Toute combinaison est possible : exemple FRANCE,R32+,D05,R84
 
         argv[1] : List of countries (ex. France,Germany,Italy), or see above. Default: France 
@@ -68,6 +68,16 @@ def main(sysargv):
         print('  CAUTION : bad number of arguments - see help')
         exit(1)
 
+    # Constantes
+    ######################################################@
+    dt = 1
+    readStartDateStr = "2020-03-01" 
+    readStopDateStr  = None
+    France           = 'France'
+
+    # Interpetation of arguments - reparation
+    ######################################################@
+
     # Default value for parameters
     listplaces = ['France']
     verbose    = 1
@@ -77,7 +87,7 @@ def main(sysargv):
     if len(sysargv)>2: verbose = int(sysargv[2])
 
     listplaces = []
-    listnames = []
+    listnames  = []
     if liste[0]=='FRANCE':
         FrDatabase = True
         liste = liste[1:]
@@ -93,26 +103,15 @@ def main(sysargv):
     else:
         listplaces = liste[:]
         FrDatabase = False
-
-    # print('liste=', liste)
-    # print('listplaces=', listplaces)
-    # print('listnames=', listnames)
-    # #input(';sjbvcbj')
-
-    # Constantes
-    dt = 1
-    readStartDateStr = "2020-03-01" 
-    readStopDateStr  = None
+ 
     
     # Loop for all places
-    for index,place in enumerate(listplaces):
-        # print('index,place=', index,place)
-        # print('listnames=', listnames)
+    ############################################################@
+    for indexplace,place in enumerate(listplaces):
 
         # Get the full name of the place to process, and the special dates corresponding to the place
-        France='France'
         if FrDatabase == True: 
-            placefull   = 'France-' + listnames[index][0]
+            placefull   = 'France-' + listnames[indexplace][0]
             DatesString = readDates(France, verbose)
         else:
             placefull   = place

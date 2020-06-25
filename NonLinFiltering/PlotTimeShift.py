@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 import sys, os
@@ -8,7 +8,8 @@ import matplotlib.pyplot as plt
 from matplotlib.ticker import MaxNLocator
 from datetime          import datetime, timedelta
   
-from common            import getRepertoire, getListPlaces
+from common            import getRepertoire
+from France            import getPlace
 from SolveEDO_SEIR1R2  import SolveEDO_SEIR1R2
 from SolveEDO_SEIR1R2D import SolveEDO_SEIR1R2D
 from ProcessSEIR1R2D   import fit as fitProcessSEIR1R2D
@@ -25,24 +26,24 @@ def main(sysargv):
 		:Example:
 
 		For countries (European database)
-		>> python3 PlotTimeShift.py 
-		>> python3 PlotTimeShift.py France      SEIR1R2  0 2,14 1 1
-		>> python3 PlotTimeShift.py Italy,Spain SEIR1R2D 1 2,14 0 1 # Italy and Spain, with UKF filtering
+		>> python PlotTimeShift.py 
+		>> python PlotTimeShift.py France      SEIR1R2  0 11,12 1 1
+		>> python PlotTimeShift.py Italy,Spain SEIR1R2D 1 11,12 0 1 # Italy and Spain, with UKF filtering
 
 		For French Region (French database)
-		>> python3 PlotTimeShift.py France,69        SEIR1R2  0 2,14 0 1 # Dpt 69 (Rhône)
-		>> python3 PlotTimeShift.py France,PACA      SEIR1R2  0 2,14 0 1 # All dpts in PACA région (the same for all French regions)
-		>> python3 PlotTimeShift.py France,PACA+     SEIR1R2  0 2,14 0 1 # Sum of all dpts in PACA région (the same for all French regions)
-		>> python3 PlotTimeShift.py France,all       SEIR1R2  0 2,14 0 1 # Tous les dpt francais
-		>> python3 PlotTimeShift.py France,metropole SEIR1R2  0 2,14 0 1 # Tous les dpt francais de la métropole
-		>> python3 PlotTimeShift.py France,69,01     SEIR1R2D 1 2,14 1 1 # Dpt 69 (Rhône) + Dpt 01 (Ain) with UKF filtering
+		>> python PlotTimeShift.py FRANCE,D69         SEIR1R2  0 11,12 0 1 # Code Insee Dpt 69 (Rhône)
+		>> python PlotTimeShift.py FRANCE,R84         SEIR1R2  0 11,12 0 1 # Tous les dpts de la Région dont le code Insee est  regions)
+		>> python PlotTimeShift.py FRANCE,R32+        SEIR1R2  0 11,12 0 1 # Somme de tous les dpts de la Région 32 (Hauts de F French regions)
+		>> python PlotTimeShift.py FRANCE,MetropoleD  SEIR1R2  0 11,12 0 1 # Tous les départements de la France métropolitaies
+		>> python PlotTimeShift.py FRANCE,MetropoleR+ SEIR1R2  0 11,12 0 1 # Somme des dpts de toutes les régions françaises
+		Toute combinaison est possible : exemple FRANCE,R32+,D05,R84
 		
-		argv[1] : Country (or list separeted by ','), or 'France' followed by a list of dpts. Default: France 
-		argv[2] : EDO model (SEIR1R2 or SEIR1R2D)                                             Default: SEIR2R2         
-		argv[3] : UKF filtering of data (0/1).                                                Default: 0
-		argv[4] : min shift, max shift, ex. 2,10                                              Default: 2,10
-		argv[5] : Verbose level (debug: 3, ..., almost mute: 0).                              Default: 1
-		argv[6] : Plot graphique (0/1).                                                       Default: 1
+		argv[1] : List of countries (ex. France,Germany,Italy), or see above.  Default: France 
+		argv[2] : EDO model (SEIR1R2 or SEIR1R2D).                             Default: SEIR2R2         
+		argv[3] : UKF filtering of data (0/1).                                 Default: 0
+		argv[4] : min shift, max shift, ex. 2,10.                              Default: 11,12
+		argv[5] : Verbose level (debug: 3, ..., almost mute: 0).               Default: 1
+		argv[6] : Plot graphique (0/1).                                        Default: 1
 	"""
 
 	#Austria,Belgium,Croatia,Czechia,Finland,France,Germany,Greece,Hungary,Ireland,Italy,Lithuania,Poland,Portugal,Romania,Serbia,Spain,Switzerland,Ukraine
@@ -64,13 +65,12 @@ def main(sysargv):
 	listplaces             = list(places.split(','))
 	modeleString           = 'SEIR1R2'
 	UKF_filt, UKF_filt01   = False, 0  #True, 1
-	shift_mini, shift_maxi = 2, 10     #4, 18
+	shift_mini, shift_maxi = 11,12     #4,18
 	verbose                = 1
 	plot                   = True
 	
 	# Parameters from argv
-	if len(sysargv)>1: places, listplaces = sysargv[1], list(sysargv[1].split(','))
-	FrDatabase, listplaces = getListPlaces(listplaces)
+	if len(sysargv)>1: places, liste = sysargv[1], list(sysargv[1].split(','))
 	if len(sysargv)>2: modeleString = sysargv[2]
 	if len(sysargv)>3 and int(sysargv[3])==1: UKF_filt, UKF_filt01 = True, 1
 	if len(sysargv)>4: shift_mini, shift_maxi = map(int, sysargv[4].split(','))
@@ -78,6 +78,26 @@ def main(sysargv):
 	if len(sysargv)>6 and int(sysargv[6])==0: plot = False
 	if shift_maxi-shift_mini==1:
 		plot = False # Pas de plot possible s'il n'y a qu'une seule données
+
+	listplaces = []
+	listnames  = []
+	if liste[0]=='FRANCE':
+		FrDatabase = True
+		liste = liste[1:]
+		for el in liste:
+			l,n=getPlace(el)
+			if el=='MetropoleR+':
+				for l1,n1 in zip(l,n):
+					listplaces.extend(l1)
+					listnames.extend([n1])
+			else:
+				listplaces.extend(l)
+				listnames.extend(n)
+		places = [el[0] for el in listnames]
+		places = 'FRANCE,'+','.join(places)
+	else:
+		listplaces = liste[:]
+		FrDatabase = False
 
 	# le modèle à traiter (SEIR1R2 or SEIR1R2D)
 	if modeleString == 'SEIR1R2':
@@ -124,7 +144,7 @@ def main(sysargv):
 
 		# Get the full name of the place to process, and the special dates corresponding to the place
 		if FrDatabase == True: 
-			placefull   = 'France-' + place
+			placefull   = 'France-' + listnames[indexplace][0]
 		else:
 			placefull   = place
 
@@ -188,7 +208,8 @@ def main(sysargv):
 					np.savetxt(text_file, Y2[:, period], delimiter=', ', newline=', ', fmt='%.4f', header='\n  -->'+labelsperiod[period]+': ')
 			if param==len(labelsparam)-1: # c'est à dire R0
 				with open(fileR0moyen, 'a') as text_file:
-					chaine = place+','
+					Lieu = ''.join(filter(str.isdigit, listnames[indexplace][0]))
+					chaine = Lieu+','
 					for period in range(len(labelsperiod)):
 						R0mean = np.mean(Y2[:, period])
 						chaine += str(R0mean)+','

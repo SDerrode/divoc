@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 import sys
@@ -7,8 +7,9 @@ import matplotlib.pyplot as plt
 
 from datetime          import datetime, timedelta
 
-from common            import readDates, addDaystoStrDate, get_WE_indice, drawAnnotation, getListPlaces
+from common            import readDates, addDaystoStrDate, get_WE_indice, drawAnnotation
 from common            import getLowerDateFromString, getNbDaysBetweenDateFromString, getRepertoire
+from France            import getPlace
 from SolveEDO_SEIR1R2  import SolveEDO_SEIR1R2
 from SolveEDO_SEIR1R2D import SolveEDO_SEIR1R2D
 from ProcessSEIR1R2D   import fit as fitProcessSEIR1R2D
@@ -23,24 +24,24 @@ def main(sysargv):
 		:Example:
 
 		For countries (European database)
-		>> python3 Fit.py 
-		>> python3 Fit.py France SEIR1R2 11 0 1 1
-		>> python3 Fit.py Italy,Spain SEIR1R2D 11 1 1 1 # Italy and Spain, with UKF filtering
+		>> python Fit.py 
+		>> python Fit.py France SEIR1R2 11 0 1 1
+		>> python Fit.py Italy,Spain SEIR1R2D 11 1 1 1 # Italy and Spain, with UKF filtering
 
 		For French Region (French database)
-		>> python3 Fit.py France,69        SEIR1R2  11 0 1 1 # Dpt 69 (Rhône)
-		>> python3 Fit.py France,PL        SEIR1R2  11 0 1 1 # tous les dpt du pay de la loire
-		>> python3 Fit.py France,PL+       SEIR1R2  11 0 1 1 # somme de tous les dpt du pay de la loire
-		>> python3 Fit.py France,all       SEIR1R2  11 0 1 1 # Tous les dpts français
-		>> python3 Fit.py France,metropole SEIR1R2  11 0 1 1 # Tous les dpts français de la métropole
-		>> python3 Fit.py France,69,01     SEIR1R2D 11 1 1 1 # Dpt 69 (Rhône) + Dpt 01 (Ain) with UKF filtering
+		>> python Fit.py FRANCE,D69         SEIR1R2  11 0 1 1 # Code Insee Dpt 69 (Rhône)
+		>> python Fit.py FRANCE,R84         SEIR1R2  11 0 1 1 # Tous les dpts de la Région dont le code Insee est 
+		>> python Fit.py FRANCE,R32+        SEIR1R2  11 0 1 1 # Somme de tous les dpts de la Région 32 (Hauts de F
+		>> python Fit.py FRANCE,MetropoleD  SEIR1R2  11 0 1 1 # Tous les départements de la France métropolitaies
+		>> python Fit.py FRANCE,MetropoleR+ SEIR1R2  11 0 1 1 # Somme des dpts de toutes les régions françaises
+		Toute combinaison est possible : exemple FRANCE,R32+,D05,R84
 		
-		argv[1] : Country (or list separeted by ','), or 'France' followed by a list of dpts. Default: France 
-		argv[2] : EDO model (SEIR1R2 or SEIR1R2D)                                             Default: SEIR2R2         
-		argv[3] : Shift of periods (in days).                                                 Default: 0
-		argv[4] : UKF filtering of data (0/1).                                                Default: 0
-		argv[5] : Verbose level (debug: 3, ..., almost mute: 0).                              Default: 1
-		argv[6] : Plot graphique (0/1).                                                       Default: 1
+		argv[1] : List of countries (ex. France,Germany,Italy), or see above.  Default: France 
+		argv[2] : EDO model (SEIR1R2 or SEIR1R2D).                             Default: SEIR2R2         
+		argv[3] : Shift of periods (in days).                                  Default: 11
+		argv[4] : UKF filtering of data (0/1).                                 Default: 0
+		argv[5] : Verbose level (debug: 3, ..., almost mute: 0).               Default: 1
+		argv[6] : Plot graphique (0/1).                                        Default: 1
 	"""
 
 	#Austria,Belgium,Croatia,Czechia,Finland,France,Germany,Greece,Hungary,Ireland,Italy,Lithuania,Poland,Portugal,Romania,Serbia,Spain,Switzerland,Ukraine
@@ -58,20 +59,39 @@ def main(sysargv):
 	places       = 'France'
 	listplaces   = list(places.split(','))
 	modeleString = 'SEIR1R2'
-	decalage3P   = 10
+	decalage3P   = 11
 	UKF_filt, UKF_filt01 = False, 0
 	verbose      = 1
 	plot         = True
 	France       = 'France'
 
 	# Parameters from argv
-	if len(sysargv)>1: places, listplaces = sysargv[1], list(sysargv[1].split(','))
-	FrDatabase, listplaces = getListPlaces(listplaces)
-	if len(sysargv)>2: modeleString  = sysargv[2]
-	if len(sysargv)>3: decalage3P    = int(sysargv[3])
+	if len(sysargv)>1: places, liste = sysargv[1], list(sysargv[1].split(','))
+	if len(sysargv)>2: modeleString = sysargv[2]
+	if len(sysargv)>3: decalage3P   = int(sysargv[3])
 	if len(sysargv)>4 and int(sysargv[4])==1: UKF_filt, UKF_filt01 = True, 1
-	if len(sysargv)>5: verbose       = int(sysargv[5])
-	if len(sysargv)>6 and int(sysargv[6])==0: plot     = False
+	if len(sysargv)>5: verbose      = int(sysargv[5])
+	if len(sysargv)>6 and int(sysargv[6])==0: plot = False
+
+	listplaces = []
+	listnames  = []
+	if liste[0]=='FRANCE':
+		FrDatabase = True
+		liste = liste[1:]
+		for el in liste:
+			l,n=getPlace(el)
+			if el=='MetropoleR+':
+				for l1,n1 in zip(l,n):
+					listplaces.extend(l1)
+					listnames.extend([n1])
+			else:
+				listplaces.extend(l)
+				listnames.extend(n)
+		places = [el[0] for el in listnames]
+		places = 'FRANCE,'+','.join(places)
+	else:
+		listplaces = liste[:]
+		FrDatabase = False
 
 	# le modèle à traiter (SEIR1R2 or SEIR1R2D)
 	if modeleString == 'SEIR1R2':
@@ -85,7 +105,7 @@ def main(sysargv):
 	if verbose>0:
 		print('  Full command line : '+sysargv[0]+' '+places+' '+modeleString+' '+str(decalage3P)+' '+str(UKF_filt)+' '+str(verbose)+' '+str(plot), flush=True)
 	
-
+	
 	# fit avec une seule période
 	##################################
 	# nbperiodes = 1 # ne peut pas etre changé
@@ -128,7 +148,7 @@ def main(sysargv):
 
 		# Get the full name of the place to process, and the special dates corresponding to the place
 		if FrDatabase == True: 
-			placefull   = 'France-' + place
+			placefull   = 'France-' + listnames[indexplace][0]
 		else:
 			placefull   = place
 
@@ -162,7 +182,7 @@ def main(sysargv):
 
 		# Dessin des dérivées
 		filename = prefFig + str(decalage3P) + '_Diff_Piecewise.png'
-		title    = place + ' - Shift=' + str(decalage3P) + ' day(s)'
+		title    = placefull + ' - Shift=' + str(decalage3P) + ' day(s)'
 		if modeleString=='SEIR1R2':
 			listPlots = ['dcasesplusdeaths', 'mc_piecewise']
 		if modeleString=='SEIR1R2D':
@@ -171,7 +191,7 @@ def main(sysargv):
 
 		# Dessin des résidus des dérivées
 		filename = prefFig + str(decalage3P) + '_Diff_PiecewiseResiduals.png'
-		title    = place + ' - Shift=' + str(decalage3P) + ' day(s)'
+		title    = placefull + ' - Shift=' + str(decalage3P) + ' day(s)'
 		if modeleString=='SEIR1R2':
 			listPlots = ['mc_piecewise_residual']
 		if modeleString=='SEIR1R2D':
@@ -186,7 +206,7 @@ def main(sysargv):
 
 		# Get the full name of the place to process, and the special dates corresponding to the place
 		if FrDatabase == True: 
-			placefull   = 'France-' + place
+			placefull   = 'France-' + listnames[indexplace][0]
 		else:
 			placefull   = place
 
@@ -211,14 +231,14 @@ def main(sysargv):
 		if modeleString == 'SEIR1R2D':
 			liste_pd_piecewise[indexplace].loc[:, ('Fp')]  = model_piecewise [indexplace, :, 5]
 
-		title    = place + ' - Shift=' + str(decalage3P) + ' day(s)'
+		title    = placefull + ' - Shift=' + str(decalage3P) + ' day(s)'
 		listePlot=['Ep', 'Ip', 'R1p']
 		if modeleString=='SEIR1R2D':
 			listePlot.append('Fp')
 		filename = prefFig + str(decalage3P) + '_' + ''.join(map(str, listePlot)) + '_piecewise.png'
 		PlotModel(modeleString, liste_pd_piecewise[indexplace], title, filename, y=listePlot, Dates=DatesString, textannotation=ListeTestPlace[indexplace])
 
-		title    = place + ' - Shift=' + str(decalage3P) + ' day(s)'
+		title    = placefull + ' - Shift=' + str(decalage3P) + ' day(s)'
 		listePlot=['R1p']
 		if modeleString=='SEIR1R2D':
 			listePlot.append('Fp')
@@ -483,7 +503,7 @@ def PlotFitPiecewiseResidual(modeleString, pd, titre, filenameFig, y, Dates=None
 
 #         # Get the full name of the place to process, and the special dates corresponding to the place
 #         if FrDatabase == True: 
-#             placefull   = 'France-' + place
+#             placefull   = 'France-' + listnames[indexplace][0]
 #         else:
 #             placefull   = place
 
@@ -492,7 +512,7 @@ def PlotFitPiecewiseResidual(modeleString, pd, titre, filenameFig, y, Dates=None
 #         prefFig = repertoire + str(decalage) + '/'
 
 #         filename = prefFig + 'Diff_' + ch + '_Shift' + str(decalage) + '.png'
-#         title    = place + ' - Shift=' + str(decalage) + ' day(s)'
+#         title    = placefull + ' - Shift=' + str(decalage) + ' day(s)'
 #         PlotFit(modeleString, data_deriv[indexplace], model_derive[indexplace], title, filename, ch, listetextannotation[indexplace])
 
 
