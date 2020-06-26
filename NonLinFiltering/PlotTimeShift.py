@@ -209,11 +209,18 @@ def main(sysargv):
 			if param==len(labelsparam)-1: # c'est à dire R0
 				with open(fileR0moyen, 'a') as text_file:
 					Lieu = ''.join(filter(str.isdigit, listnames[indexplace][0]))
+					if 'A' in listnames[indexplace][0]: # Dpt de Corse
+						Lieu = Lieu+'A' 
+					if 'B' in listnames[indexplace][0]: # Dpt de Corse
+						Lieu = Lieu+'B' 
 					chaine = Lieu+','
 					for period in range(len(labelsperiod)):
-						R0mean = np.mean(Y2[:, period])
+						R0mean = round(np.mean(Y2[:, period]), 2)
 						chaine += str(R0mean)+','
-					chaine += ListeDateI0[indexplace]+'\n'
+					if round(np.mean(Y2[:, 0]), 2) != -1.:
+						chaine += ListeDateI0[indexplace]+'\n'
+					else:
+						chaine += 'Invalid\n'
 					text_file.write(chaine)
 					print('chaine=', chaine) # moyenne uniquement pour la 3ieme période
 

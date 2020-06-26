@@ -73,11 +73,13 @@ def main(sysargv):
 		name_shp   = 'departements-20140306-5m'
 		filterArea = ['971', '972', '973', '974', '976']
 		strTile    = '[2020-05-18\u21922020-06-24]'
+		textOnMap  = False
 		#url_dep    = 'http://osm13.openstreetmap.fr/~cquest/openfla/export/departements-20140306-5m-shp.zip'
 	elif mapType=='REG':
 		name_shp   = 'regions-20190101'
 		filterArea = ['01', '02', '03', '04', '06'] # Guadeloupe, Martinique, Guyane, La Réunion, Mayotte
 		strTile    = '[2020-05-18\u21922020-06-24]'
+		textOnMap  = True
 		#url_region = 'http://osm13.openstreetmap.fr/~cquest/openfla/export/regions-20190101-shp.zip'
 	else:
 		print('Only DPT or REG accepted! --> exit!')
@@ -133,12 +135,12 @@ def main(sysargv):
 	##################################################################
 	
 	# Le min et le max des 3 colonnes
-	a = df1[list(df1)[1:-2]].values
+	a = df1[list(df1)[1:4]].values
 	minRO=np.amin(np.amin(a))
 	if minRO==-1.:
 		#find th second minimum value (to avoid -1 value whose meaning is to say that the place has a non-meaning RO)
 		minRO = np.amin(np.array(a)[a != np.amin(a)])
-	maxRO = df1[list(df1)[1:-2]].max().max()
+	maxRO = df1[list(df1)[1:4]].max().max()
 	if verbose>0:
 		print('minRO=', minRO)
 		print('maxRO=', maxRO)
@@ -157,29 +159,34 @@ def main(sysargv):
 		# display the map with the RO data
 		img_name = repertoire + filenamewithoutext + '_P' + str(p) + '.png'
 		title    = 'R0 par' + mapType + '(vert' + '\u2192' + 'R0 non significatif) \n' + strTile + ' - model: ' + modeleString
-		save_mapFranceR0(df1, met, newcmpR0, title, img_name, labelRO, minRO, maxRO, tile_zoom, alpha, figsize)
+		save_mapFranceR0(df1, met, newcmpR0, title, img_name, labelRO, minRO, maxRO, tile_zoom, alpha, figsize, textOnMap)
 
 	# PARTIE SUR I0
 	##################################################################
 	
-	dateFirstCase = df1['DateFirstCase'].values
-	sorted(dateFirstCase, key=lambda x: datetime.strptime(x, strDate))
-	minDateIO = datetime.strptime(dateFirstCase.min(), strDate)
-	maxDateIO = datetime.strptime(dateFirstCase.max(), strDate)
+	dateFirstCase = df1['DateFirstCase'].values.tolist()
+	while 'Invalid' in dateFirstCase: dateFirstCase.remove('Invalid') 
+	dateFirstCase.sort()
+	minDateIO = datetime.strptime(dateFirstCase[0], strDate)
+	maxDateIO = datetime.strptime(dateFirstCase[-1], strDate)
 	if verbose>0:
 		print('minDateIO=', minDateIO)
 		print('maxDateIO=', maxDateIO)
 
 	# On dessine la carte des dates du 1er infecté
 	img_name = repertoire + filenamewithoutext + '_I0.png'
-	title    = '1er infecté par ' + mapType + ', [' + dateFirstCase.min() +', ' + dateFirstCase.max() + '] - ' + modeleString
+	title    = '1er infecté par ' + mapType + ', [' + minDateIO.strftime(strDate) +', ' + maxDateIO.strftime(strDate) + '] - ' + modeleString
 
+	dateFirstCase = df1['DateFirstCase'].values.tolist()
 	deltaFirstCase = []
 	for index in range(len(dateFirstCase)):
-		deltaFirstCase.append(float((datetime.strptime(dateFirstCase[index], strDate)-minDateIO).days))
+		if dateFirstCase[index] != 'Invalid':
+			deltaFirstCase.append(float((datetime.strptime(dateFirstCase[index], strDate)-minDateIO).days))
+		else:
+			deltaFirstCase.append(np.nan)
 	df1['deltaI0'] = np.resize(deltaFirstCase,len(df1))
 	
-	save_mapFranceI0(df1, met, newcmpR0, title, img_name, 'deltaI0', 0., float((maxDateIO-minDateIO).days), tile_zoom, alpha, figsize)
+	save_mapFranceI0(df1, met, newcmpR0, title, img_name, 'deltaI0', 0., float((maxDateIO-minDateIO).days), tile_zoom, alpha, figsize, True)
 
 
 	# # Parse recorded days and save one image for each day
