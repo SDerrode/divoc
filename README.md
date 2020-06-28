@@ -1,13 +1,15 @@
 # Projet divoc
 
-Collection of some  Python3 scripts (and some Jupyter Notebooks) to process Covid Data collected on the web. 
+Collection of Python3 scripts to process Covid Data collected on the web. 
 
 <!--The programs are based on the Kalman-like filters implemented by Roger R Labbe Jr. in the [FilterPy](https://filterpy.readthedocs.io/en/latest/index.html) python module. -->
 
 
-Here is a result of using the script _Fit\_SEIR1R2F.py_ when France is selected (see text below).
+Here is a result of using the script _Fit.py_ when France is selected (see text below).
 
-![Image fit France](./France_DiffR1_BothFit_Shift6.png "Fir result for France")
+![Image fit France](./France_DiffR1_BothFit.png "Fit result for France")
+
+#TO REWRITE ENTERELY!!!
 
 
 
