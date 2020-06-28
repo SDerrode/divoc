@@ -25,23 +25,25 @@ def main(sysargv):
 
 		For countries (European database)
 		>> python Fit.py 
-		>> python Fit.py France SEIR1R2 11 0 1 1
-		>> python Fit.py Italy,Spain SEIR1R2D 11 1 1 1 # Italy and Spain, with UKF filtering
+		>> python Fit.py France      0 SEIR1R2 11 0 1 1
+		>> python Fit.py Italy,Spain 1 SEIR1R2D 11 1 1 1 # Italy and Spain, with UKF filtering
 
 		For French Region (French database)
-		>> python Fit.py FRANCE,D69         SEIR1R2  11 0 1 1 # Code Insee Dpt 69 (Rhône)
-		>> python Fit.py FRANCE,R84         SEIR1R2  11 0 1 1 # Tous les dpts de la Région dont le code Insee est 
-		>> python Fit.py FRANCE,R32+        SEIR1R2  11 0 1 1 # Somme de tous les dpts de la Région 32 (Hauts de F
-		>> python Fit.py FRANCE,MetropoleD  SEIR1R2  11 0 1 1 # Tous les départements de la France métropolitaies
-		>> python Fit.py FRANCE,MetropoleR+ SEIR1R2  11 0 1 1 # Somme des dpts de toutes les régions françaises
-		Toute combinaison est possible : exemple FRANCE,R32+,D05,R84
+		>> python Fit.py FRANCE,D69         0 SEIR1R2  11 0 1 1 # Code Insee Dpt 69 (Rhône)
+		>> python Fit.py FRANCE,R84         0 SEIR1R2  11 0 1 1 # Tous les dpts de la Région dont le code Insee est 
+		>> python Fit.py FRANCE,R32+        0 SEIR1R2  11 0 1 1 # Somme de tous les dpts de la Région 32 (Hauts de F
+		>> python Fit.py FRANCE,MetropoleD  0 SEIR1R2  11 0 1 1 # Tous les départements de la France métropolitaine
+		>> python Fit.py FRANCE,MetropoleD+ 0 SEIR1R2  11 0 1 1 # Toute la France métropolitaine (en sommant les dpts)
+		>> python Fit.py FRANCE,MetropoleR+ 0 SEIR1R2  11 0 1 1 # Somme des dpts de toutes les régions françaises
+		Toute combinaison de lieux est possible : exemple FRANCE,R32+,D05,R84
 		
 		argv[1] : List of countries (ex. France,Germany,Italy), or see above.  Default: France 
-		argv[2] : EDO model (SEIR1R2 or SEIR1R2D).                             Default: SEIR2R2         
-		argv[3] : Shift of periods (in days).                                  Default: 11
-		argv[4] : UKF filtering of data (0/1).                                 Default: 0
-		argv[5] : Verbose level (debug: 3, ..., almost mute: 0).               Default: 1
-		argv[6] : Plot graphique (0/1).                                        Default: 1
+		argv[2] : Sex (male:1, female:2, both:0). Only for french database     Default: 0 
+		argv[3] : EDO model (SEIR1R2 or SEIR1R2D).                             Default: SEIR2R2         
+		argv[4] : Shift of periods (in days).                                  Default: 11
+		argv[5] : UKF filtering of data (0/1).                                 Default: 0
+		argv[6] : Verbose level (debug: 3, ..., almost mute: 0).               Default: 1
+		argv[7] : Plot graphique (0/1).                                        Default: 1
 	"""
 
 	#Austria,Belgium,Croatia,Czechia,Finland,France,Germany,Greece,Hungary,Ireland,Italy,Lithuania,Poland,Portugal,Romania,Serbia,Spain,Switzerland,Ukraine
@@ -51,27 +53,32 @@ def main(sysargv):
 	# Interpetation of arguments - reparation
 	######################################################@
 
-	if len(sysargv) > 7:
+	if len(sysargv) > 8:
 		print('  CAUTION : bad number of arguments - see help')
 		exit(1)
 
 	# Default value for parameters
-	places       = 'France'
-	listplaces   = list(places.split(','))
-	modeleString = 'SEIR1R2'
-	decalage3P   = 11
+	places        = 'France'
+	sexe, sexestr = 0, 'both'
+	listplaces    = list(places.split(','))
+	modeleString  = 'SEIR1R2'
+	decalage3P    = 11
 	UKF_filt, UKF_filt01 = False, 0
-	verbose      = 1
-	plot         = True
-	France       = 'France'
+	verbose       = 1
+	plot          = True
+	France        = 'France'
 
 	# Parameters from argv
 	if len(sysargv)>1: places, liste = sysargv[1], list(sysargv[1].split(','))
-	if len(sysargv)>2: modeleString = sysargv[2]
-	if len(sysargv)>3: decalage3P   = int(sysargv[3])
-	if len(sysargv)>4 and int(sysargv[4])==1: UKF_filt, UKF_filt01 = True, 1
-	if len(sysargv)>5: verbose      = int(sysargv[5])
-	if len(sysargv)>6 and int(sysargv[6])==0: plot = False
+	if len(sysargv)>2: sexe = int(sysargv[2])
+	if len(sysargv)>3: modeleString = sysargv[3]
+	if len(sysargv)>4: decalage3P   = int(sysargv[4])
+	if len(sysargv)>5 and int(sysargv[5])==1: UKF_filt, UKF_filt01 = True, 1
+	if len(sysargv)>6: verbose      = int(sysargv[6])
+	if len(sysargv)>7 and int(sysargv[7])==0: plot = False
+	if sexe not in [0,1,2]:	sexe, sexestr = 0, 'both'      # sexe indiférencié
+	if sexe == 1: 		          sexestr =    'male'
+	if sexe == 2:                 sexestr =    'female'
 
 	listplaces = []
 	listnames  = []
@@ -103,7 +110,7 @@ def main(sysargv):
 		exit(1)
 
 	if verbose>0:
-		print('  Full command line : '+sysargv[0]+' '+places+' '+modeleString+' '+str(decalage3P)+' '+str(UKF_filt)+' '+str(verbose)+' '+str(plot), flush=True)
+		print('  Full command line : '+sysargv[0]+' '+places+' '+str(sexe)+' '+modeleString+' '+str(decalage3P)+' '+str(UKF_filt)+' '+str(verbose)+' '+str(plot), flush=True)
 	
 	
 	# fit avec une seule période
@@ -112,7 +119,7 @@ def main(sysargv):
 	# decalage1P = 0 # ne peut pas etre changé
 	
 	# model_allinone, ListeTextParamPlace_allinone, liste_pd_allinone, data_deriv_allinone, model_deriv_allinone, _, _, ListeDateI0 = \
-	#         fit([places, nbperiodes, decalage1P, UKF_filt01, 0, 0])
+	#         fit([places, sexe, nbperiodes, decalage1P, UKF_filt01, 0, 0])
 
 	# ListeTestPlace = []
 	# for indexplace in range(len(listplaces)):
@@ -129,7 +136,7 @@ def main(sysargv):
 	nbperiodes = -1
 
 	model_piecewise, ListeTextParamPlace_piecewise, liste_pd_piecewise, data_deriv_piecewise, model_deriv_piecewise, _, _, ListeDateI0 = \
-			fit([places, nbperiodes, decalage3P, UKF_filt01, 0, 0])
+			fit([places, sexe, nbperiodes, decalage3P, UKF_filt01, 0, 0])
 
 	ListeTestPlace = []
 	for indexplace in range(len(listplaces)):
@@ -153,7 +160,7 @@ def main(sysargv):
 			placefull   = place
 
 		# Repertoire des figures
-		repertoire = getRepertoire(UKF_filt, './figures/'+modeleString+'_UKFilt/'+placefull+'/'+str(decalage3P), './figures/'+modeleString+'/'+placefull+'/'+str(decalage3P))
+		repertoire = getRepertoire(UKF_filt, './figures/'+modeleString+'_UKFilt/'+placefull+'/sexe_'+str(sexe)+'_shift'+str(decalage3P), './figures/'+modeleString+'/'+placefull+'/sexe_'+str(sexe)+'_shift'+str(decalage3P))
 		prefFig    = repertoire + '/Fit_'
 
 		# Preparation plot pandas
@@ -182,7 +189,7 @@ def main(sysargv):
 
 		# Dessin des dérivées
 		filename = prefFig + str(decalage3P) + '_Diff_Piecewise.png'
-		title    = placefull + ' - Shift=' + str(decalage3P) + ' day(s)'
+		title    = placefull + ' - Sex=' + sexestr + ' - Shift=' + str(decalage3P) + ' day(s)'
 		if modeleString=='SEIR1R2':
 			listPlots = ['dcasesplusdeaths', 'mc_piecewise']
 		if modeleString=='SEIR1R2D':
@@ -191,7 +198,7 @@ def main(sysargv):
 
 		# Dessin des résidus des dérivées
 		filename = prefFig + str(decalage3P) + '_Diff_PiecewiseResiduals.png'
-		title    = placefull + ' - Shift=' + str(decalage3P) + ' day(s)'
+		title    = placefull + ' - Sex=' + sexestr + ' - Shift=' + str(decalage3P) + ' day(s)'
 		if modeleString=='SEIR1R2':
 			listPlots = ['mc_piecewise_residual']
 		if modeleString=='SEIR1R2D':
@@ -211,7 +218,7 @@ def main(sysargv):
 			placefull   = place
 
 		# Repertoire des figures
-		repertoire = getRepertoire(UKF_filt, './figures/'+modeleString+'_UKFilt/'+placefull+'/'+str(decalage3P), './figures/'+modeleString+'/'+placefull+'/'+str(decalage3P))
+		repertoire = getRepertoire(UKF_filt, './figures/'+modeleString+'_UKFilt/'+placefull+'/sexe_'+str(sexe)+'_shift'+str(decalage3P), './figures/'+modeleString+'/'+placefull+'/sexe_'+str(sexe)+'_shift'+str(decalage3P))
 		prefFig    = repertoire + '/Fit_'
 
 		# Preparation plot pandas
@@ -231,14 +238,14 @@ def main(sysargv):
 		if modeleString == 'SEIR1R2D':
 			liste_pd_piecewise[indexplace].loc[:, ('Fp')]  = model_piecewise [indexplace, :, 5]
 
-		title    = placefull + ' - Shift=' + str(decalage3P) + ' day(s)'
+		title    = placefull + ' - Sex=' + sexestr + ' - Shift=' + str(decalage3P) + ' day(s)'
 		listePlot=['Ep', 'Ip', 'R1p']
 		if modeleString=='SEIR1R2D':
 			listePlot.append('Fp')
 		filename = prefFig + str(decalage3P) + '_' + ''.join(map(str, listePlot)) + '_piecewise.png'
 		PlotModel(modeleString, liste_pd_piecewise[indexplace], title, filename, y=listePlot, Dates=DatesString, textannotation=ListeTestPlace[indexplace])
 
-		title    = placefull + ' - Shift=' + str(decalage3P) + ' day(s)'
+		title    = placefull + ' - Sex=' + sexestr + ' - Shift=' + str(decalage3P) + ' day(s)'
 		listePlot=['R1p']
 		if modeleString=='SEIR1R2D':
 			listePlot.append('Fp')
@@ -508,8 +515,8 @@ def PlotFitPiecewiseResidual(modeleString, pd, titre, filenameFig, y, Dates=None
 #             placefull   = place
 
 #         # Repertoire des figures
-#         repertoire = getRepertoire(UKF_filt, './figures/' + modeleString + '_UKFilt/'+placefull, './figures/' + modeleString + '/' + placefull)
-#         prefFig = repertoire + str(decalage) + '/'
+#         repertoire = getRepertoire(UKF_filt, './figures/'+modeleString+'_UKFilt/'+placefull+'/sexe_'+str(sexe)+'_shift'+str(decalage3P), './figures/'+modeleString+'/'+placefull+'/sexe_'+str(sexe)+'_shift'+str(decalage3P))
+#		prefFig = repertoire + str(decalage) + '/'
 
 #         filename = prefFig + 'Diff_' + ch + '_Shift' + str(decalage) + '.png'
 #         title    = placefull + ' - Shift=' + str(decalage) + ' day(s)'

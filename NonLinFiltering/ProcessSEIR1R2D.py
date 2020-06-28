@@ -34,31 +34,33 @@ def fit(sysargv):
 
 		For countries (European database)
 		>> python ProcessSEIR1R2D.py 
-		>> python ProcessSEIR1R2D.py France 1 0 0 1 1
-		>> python ProcessSEIR1R2D.py France 3 8 0 1 1
-		>> python ProcessSEIR1R2D.py France,Germany 1 0 0 1 1
+		>> python ProcessSEIR1R2D.py France 0 1 0 0 1 1
+		>> python ProcessSEIR1R2D.py France 2 3 8 0 1 1          # 3 périodes pour les femmes en France avec un décalage de 11 jours
+		>> python ProcessSEIR1R2D.py France,Germany 1 1 0 0 1 1 # 1 période pour les hommes francais et les hommes allemands 
 
 		For French Region (French database)
-		>> python ProcessSEIR1R2D.py FRANCE,D69         -1 11 0 1 1 # Code Insee Dpt 69 (Rhône)
-		>> python ProcessSEIR1R2D.py FRANCE,R84         -1 11 0 1 1 # Tous les dpts de la Région dont le code Insee est 
-		>> python ProcessSEIR1R2D.py FRANCE,R32+        -1 11 0 1 1 # Somme de tous les dpts de la Région 32 (Hauts de F
-		>> python ProcessSEIR1R2D.py FRANCE,MetropoleD  -1 11 0 1 1 # Tous les départements de la France métropolitaies
-		>> python ProcessSEIR1R2D.py FRANCE,MetropoleR+ -1 11 0 1 1 # Somme des dpts de toutes les régions françaises
-		Toute combinaison est possible : exemple FRANCE,R32+,D05,R84
+		>> python ProcessSEIR1R2D.py FRANCE,D69         0 -1 11 0 1 1 # Code Insee Dpt 69 (Rhône)
+		>> python ProcessSEIR1R2D.py FRANCE,R84         0 -1 11 0 1 1 # Tous les dpts de la Région dont le code Insee est 
+		>> python ProcessSEIR1R2D.py FRANCE,R32+        0 -1 11 0 1 1 # Somme de tous les dpts de la Région 32 (Hauts-de-France)
+		>> python ProcessSEIR1R2D.py FRANCE,MetropoleD  0 -1 11 0 1 1 # Tous les départements de la France métropolitaine
+		>> python ProcessSEIR1R2D.py FRANCE,MetropoleD+ 0 -1 11 0 1 1 # Toute la France métropolitaine (en sommant les dpts)
+		>> python ProcessSEIR1R2D.py FRANCE,MetropoleR+ 0 -1 11 0 1 1 # Somme des dpts de toutes les régions françaises
+		Toute combinaison est possible de lieu : exemple FRANCE,R32+,D05,R84
 		
 		argv[1] : List of countries (ex. France,Germany,Italy), or see above.          Default: France 
-		argv[2] : Periods (1 -> 1 period ('all-in-on'), 'x!=1' -> severall periods).   Default: -1
-		argv[3] : Shift of periods (in days).                                          Default: 11
-		argv[4] : UKF filtering of data (0/1).                                         Default: 0
-		argv[5] : Verbose level (debug: 3, ..., almost mute: 0).                       Default: 1
-		argv[6] : Plot graphique (0/1).                                                Default: 1
+		argv[2] : Sex (male:1, female:2, both:0). Only for french database             Default: 0 
+		argv[3] : Periods ('1' -> 1 period ('all-in-on'), '!=1' -> severall periods).  Default: -1
+		argv[4] : Shift of periods (in days).                                          Default: 11
+		argv[5] : UKF filtering of data (0/1).                                         Default: 0
+		argv[6] : Verbose level (debug: 3, ..., almost mute: 0).                       Default: 1
+		argv[7] : Plot graphique (0/1).                                                Default: 1
 	"""
 
 	#Austria,Belgium,Croatia,Czechia,Finland,France,Germany,Greece,Hungary,Ireland,Italy,Lithuania,Poland,Portugal,Romania,Serbia,Spain,Switzerland,Ukraine
 	#Austria,Belgium,Croatia,Czechia,Finland,France,Germany,Greece,Hungary,Ireland,Italy,Poland,Portugal,Romania,Serbia,Spain,Switzerland,Ukraine
 	# Il y a 18 pays
 	
-	if len(sysargv) > 6:
+	if len(sysargv) > 7:
 		print('  CAUTION : bad number of arguments - see help')
 		exit(1)
 
@@ -70,27 +72,32 @@ def fit(sysargv):
 	recouvrement     = -1
 	dt               = 1
 	France           = 'France'
+	thresholdSignif  = 2E-6
 
 	# Interpetation of arguments - reparation
 	######################################################@
 
 	# Default value for parameters
-	listplaces = ['France']
-	nbperiodes = -1
-	decalage   = 11
-	UKF_filt   = False
-	verbose    = 1
-	plot       = True
+	listplaces    = ['France']
+	sexe, sexestr = 0, 'both'
+	nbperiodes    = -1
+	decalage      = 11
+	UKF_filt      = False
+	verbose       = 1
+	plot          = True
 
 	# Parameters from argv
-	if len(sysargv)>0: liste      = list(sysargv[0].split(','))
-	if len(sysargv)>1: nbperiodes = int(sysargv[1])
-	if len(sysargv)>2: decalage   = int(sysargv[2])
-	if len(sysargv)>3 and int(sysargv[3])==1: UKF_filt = True
-	if len(sysargv)>4: verbose    = int(sysargv[4])
-	if len(sysargv)>5 and int(sysargv[5])==0: plot     = False
-	if nbperiodes==1: 
-		decalage = 0  # nécessairement pas de décalage (on compense le recouvrement)
+	if len(sysargv)>0: liste = list(sysargv[0].split(','))
+	if len(sysargv)>1: sexe = int(sysargv[1])
+	if len(sysargv)>2: nbperiodes = int(sysargv[2])
+	if len(sysargv)>3: decalage   = int(sysargv[3])
+	if len(sysargv)>4 and int(sysargv[4])==1: UKF_filt = True
+	if len(sysargv)>5: verbose    = int(sysargv[5])
+	if len(sysargv)>6 and int(sysargv[6])==0: plot     = False
+	if nbperiodes==1:       decalage = 0  # nécessairement pas de décalage (on compense le recouvrement)
+	if sexe not in [0,1,2]:	sexe, sexestr = 0, 'both'      # sexe indiférencié
+	if sexe == 1: 		          sexestr =    'male'
+	if sexe == 2:                 sexestr =    'female'
 	
 	listplaces = []
 	listnames  = []
@@ -116,7 +123,7 @@ def fit(sysargv):
 	# Data reading to get first and last date available in the data set
 	######################################################@
 	if FrDatabase == True: 
-		pd_exerpt, HeadData, N, readStartDateStr, readStopDateStr = readDataFrance(['D69'],   readStartDateStr, readStopDateStr, fileLocalCopy, verbose=0)
+		pd_exerpt, HeadData, N, readStartDateStr, readStopDateStr = readDataFrance(['D69'],   readStartDateStr, readStopDateStr, fileLocalCopy, sexe, verbose=0)
 	else:
 		pd_exerpt, HeadData, N, readStartDateStr, readStopDateStr = readDataEurope(France, readStartDateStr, readStopDateStr, fileLocalCopy, verbose=0)
 	dataLength = pd_exerpt.shape[0]
@@ -169,7 +176,7 @@ def fit(sysargv):
 		# data reading of the observations
 		#############################################################################
 		if FrDatabase == True:
-			pd_exerpt, HeadData, N, readStartDateStr, readStopDateStr = readDataFrance(place, readStartDateStr, readStopDateStr, fileLocalCopy, verbose=0)
+			pd_exerpt, HeadData, N, readStartDateStr, readStopDateStr = readDataFrance(place, readStartDateStr, readStopDateStr, fileLocalCopy, sexe, verbose=0)
 		else:
 			pd_exerpt, HeadData, N, readStartDateStr, readStopDateStr = readDataEurope(place, readStartDateStr, readStopDateStr, fileLocalCopy, verbose=0)
 
@@ -209,8 +216,8 @@ def fit(sysargv):
 		
 		# Repertoire des figures
 		if plot==True:
-			repertoire = getRepertoire(UKF_filt, './figures/SEIR1R2D_UKFilt/'+placefull+ '/' + str(decalage), './figures/SEIR1R2D/' + placefull+ '/' + str(decalage))
-			prefFig    = repertoire + '/Process_'
+			repertoire = getRepertoire(UKF_filt, './figures/SEIR1R2D_UKFilt/'+placefull+'/sexe_'+str(sexe)+'_shift'+str(decalage), './figures/SEIR1R2D/'+placefull+'/sexe_'+str(sexe)+'_shift'+str(decalage))
+			prefFig    = repertoire+'/Process_'
 		
 		# Remise à 0 des données
 		data.fill(0.)
@@ -291,8 +298,10 @@ def fit(sysargv):
 			# Solve ode avant optimization
 			sol_ode = solveur.solveEDO(time)
 			# calcul time shift initial (ts) with respect to data
-			ts         = solveur.compute_tsfromEQM(data[slicedata, :], T, indexdata)
-			#solveur.TS = ts
+			if i==0:
+				ts = solveur.compute_tsfromEQM(data[slicedata, :], T, indexdata)
+			else:
+				solveur.TS = ts = 0
 			sliceedo = slice(ts, min(ts+dataLengthPeriod, T))
 			if verbose>0:
 				print(solveur)
@@ -300,7 +309,7 @@ def fit(sysargv):
 
 			# plot
 			if plot==True:
-				titre = placefull + '- Period ' + str(i) + '\\' + str(len(ListDatesStr)-1) + ' - [' + fitStartDateStr + '\u2192' + addDaystoStrDate(fitStopDateStr, -1) + '] (Shift=' + str(decalage) + ')'
+				titre = placefull + '- Period ' + str(i) + '\\' + str(len(ListDatesStr)-1) + ' - [' + fitStartDateStr + '\u2192' + addDaystoStrDate(fitStopDateStr, -1) + '] (Sex=', + sexestr + 'Shift=' + str(decalage) + ')'
 				listePlot = indexdata
 				filename  = prefFig + str(decalage) + '_Period' + str(i) + '_' + ''.join(map(str, listePlot)) + 'Init.png'
 				solveur.plotEDO(filename, titre, sliceedo, slicedata, plot=listePlot, data=data, text=solveur.getTextParam(fitStartDateStr))
@@ -322,9 +331,10 @@ def fit(sysargv):
 			# Solve ode avant optimization
 			sol_ode = solveur.solveEDO(time)
 			# calcul time shift with respect to data
-			ts            = solveur.compute_tsfromEQM(data[slicedata, :], T, indexdata)
-			#ts = solveur.TS
-			#print('ts=', ts)
+			if i==0:
+				ts = solveur.compute_tsfromEQM(data[slicedata, :], T, indexdata)
+			else:
+				solveur.TS = ts = 0
 			sliceedo      = slice(ts, min(ts+dataLengthPeriod, T))
 			sliceedoderiv = slice(sliceedo.start+1, sliceedo.stop)
 			if verbose>0:
@@ -337,12 +347,12 @@ def fit(sysargv):
 					input('attente')
 
 			# sauvegarde des param (tableau et texte)
-			ROsignificatif=True
-			threshold = (data[slicedata.stop-1, 0]-data[slicedata.start, 0])/getNbDaysBetweenDateFromString(fitStartDateStr, fitStopDateStr)
-			if  threshold <1.0: # moins de 1 cas détecté par jour sur la période 3
+			seuil = (data[slicedata.stop-1, 0]-data[slicedata.start, 0])/getNbDaysBetweenDateFromString(fitStartDateStr, fitStopDateStr)/N
+			if seuil<thresholdSignif:
 				ROsignificatif = False
 				ListetabParamModelPlace.append([a1, b1, c1, f1, mu1, xi1, -1.])
 			else:
+				ROsignificatif = True
 				ListetabParamModelPlace.append([a1, b1, c1, f1, mu1, xi1, R0])
 			ListeTextParamPlace.append(solveur.getTextParamWeak(fitStartDateStr, ROsignificatif))
 			
@@ -352,7 +362,7 @@ def fit(sysargv):
 			modelR1_all_period   = sol_ode[sliceedoderiv, indexdata]
 
 			if plot==True:
-				titre = placefull + '- Period ' + str(i) + '\\' + str(len(ListDatesStr)-1) + ' - [' + fitStartDateStr + '\u2192' + addDaystoStrDate(fitStopDateStr, -1) + '] (Shift=' + str(decalage) + ')'
+				titre = placefull + '- Period ' + str(i) + '\\' + str(len(ListDatesStr)-1) + ' - [' + fitStartDateStr + '\u2192' + addDaystoStrDate(fitStopDateStr, -1) + '] (Sex=', + sexestr + 'Shift=' + str(decalage) + ')'
 				
 				# listePlot = [0,1,2,3,4,5]
 				# filename  = prefFig + str(decalage) + '_Period' + str(i) + '_' + ''.join(map(str, listePlot)) + '.png'

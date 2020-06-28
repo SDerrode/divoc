@@ -68,18 +68,21 @@ def main(sysargv):
 	if len(sysargv)>4 and int(sysargv[4])==1: UKF_filt, UKF_filt01 = True, 1
 	if len(sysargv)>5: verbose = int(sysargv[5])
 	filenamewithoutext = os.path.splitext(filename)[0]
+	modeleString2 =f'SEIR\N{SUPERSCRIPT ONE}R\N{SUPERSCRIPT TWO}'
 
 	if mapType=='DPT':
-		name_shp   = 'departements-20140306-5m'
-		filterArea = ['971', '972', '973', '974', '976']
-		strTile    = '[2020-05-18\u21922020-06-24]'
-		textOnMap  = False
+		name_shp    = 'departements-20140306-5m'
+		filterArea  = ['971', '972', '973', '974', '976']
+		strTile     = '[2020-06-24]'
+		textMapType = "Departments"
+		#textOnMap   = False
 		#url_dep    = 'http://osm13.openstreetmap.fr/~cquest/openfla/export/departements-20140306-5m-shp.zip'
 	elif mapType=='REG':
-		name_shp   = 'regions-20190101'
-		filterArea = ['01', '02', '03', '04', '06'] # Guadeloupe, Martinique, Guyane, La Réunion, Mayotte
-		strTile    = '[2020-05-18\u21922020-06-24]'
-		textOnMap  = True
+		name_shp    = 'regions-20190101'
+		filterArea  = ['01', '02', '03', '04', '06'] # Guadeloupe, Martinique, Guyane, La Réunion, Mayotte
+		strTile     = '[2020-06-24]'
+		textMapType = "Regions"
+		#textOnMap   = True
 		#url_region = 'http://osm13.openstreetmap.fr/~cquest/openfla/export/regions-20190101-shp.zip'
 	else:
 		print('Only DPT or REG accepted! --> exit!')
@@ -130,6 +133,7 @@ def main(sysargv):
 	# df1['coords'] = df1['geometry'].apply(lambda x: x.centroid.coords[:])
 	# df1['coords'] = [coords[0] for coords in df1['coords']]
 
+	
 
 	# PARTIE SUR R0
 	##################################################################
@@ -158,8 +162,8 @@ def main(sysargv):
 		
 		# display the map with the RO data
 		img_name = repertoire + filenamewithoutext + '_P' + str(p) + '.png'
-		title    = 'R0 par' + mapType + '(vert' + '\u2192' + 'R0 non significatif) \n' + strTile + ' - model: ' + modeleString
-		save_mapFranceR0(df1, met, newcmpR0, title, img_name, labelRO, minRO, maxRO, tile_zoom, alpha, figsize, textOnMap)
+		title    = 'Estimated ' + f'R\N{SUBSCRIPT ZERO}'+ ', scale: ' + textMapType + '\n' + strTile + ' - ' + modeleString2 + ' model'
+		save_mapFranceR0(df1, met, newcmpR0, title, img_name, labelRO, minRO, maxRO, tile_zoom, alpha, figsize, mapType)
 
 	# PARTIE SUR I0
 	##################################################################
@@ -175,7 +179,7 @@ def main(sysargv):
 
 	# On dessine la carte des dates du 1er infecté
 	img_name = repertoire + filenamewithoutext + '_I0.png'
-	title    = '1er infecté par ' + mapType + ', [' + minDateIO.strftime(strDate) +', ' + maxDateIO.strftime(strDate) + '] - ' + modeleString
+	title    = 'Date of first infection, scale: ' + textMapType + '\n[' + minDateIO.strftime(strDate) +', ' + maxDateIO.strftime(strDate) + '] - ' + modeleString2 + ' model'
 
 	dateFirstCase = df1['DateFirstCase'].values.tolist()
 	deltaFirstCase = []
@@ -186,7 +190,7 @@ def main(sysargv):
 			deltaFirstCase.append(np.nan)
 	df1['deltaI0'] = np.resize(deltaFirstCase,len(df1))
 	
-	save_mapFranceI0(df1, met, newcmpR0, title, img_name, 'deltaI0', 0., float((maxDateIO-minDateIO).days), tile_zoom, alpha, figsize, True)
+	save_mapFranceI0(df1, met, title, img_name, 'deltaI0', 0., float((maxDateIO-minDateIO).days), tile_zoom, alpha, figsize, mapType)
 
 
 	# # Parse recorded days and save one image for each day

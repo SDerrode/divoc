@@ -162,7 +162,7 @@ def colorFader(c1, c2, mix=0, alpha=1.): #fade (linear interpolate) from color c
 	return col
 		
 
-def readDataFrance(placeliste=['D69'], dateMinStr=None, dateMaxStr=None, fileLocalCopy=False, verbose=0):
+def readDataFrance(placeliste=['D69'], dateMinStr=None, dateMaxStr=None, fileLocalCopy=False, sexe=0, verbose=0):
 	'''
 		Lecture des données du gouvernement français (data.gouv.fr)
 		Les données débutent à la date de confinement (pourquoi?)
@@ -175,6 +175,7 @@ def readDataFrance(placeliste=['D69'], dateMinStr=None, dateMaxStr=None, fileLoc
 	else:
 		place = [placeliste[0][1:]]
 	# print('place=', place)
+	# print('len(place)=', len(place))
 	# input('attente')
 
 	covid_orig = None
@@ -197,9 +198,16 @@ def readDataFrance(placeliste=['D69'], dateMinStr=None, dateMaxStr=None, fileLoc
 		print('TAIL=', covid_orig.tail())
 
 	covid_orig.drop(columns=['hosp', 'rea'], inplace=True)
-	covid_country0 = covid_orig.query(expr='sexe==0').drop(columns=['sexe'])
+	# print('nombre de ligne covid_orig=', len(covid_orig.index))
+	covid_country0 = covid_orig.query(expr='sexe==@sexe').drop(columns=['sexe'])
+	# print('nombre de ligne covid_country0=', len(covid_country0.index))
 	covid_country1 = covid_country0.query(expr='dep in @place')
+	# print('covid_country1.tail(20)=', covid_country1.tail(20))
+	# covid_country1.to_csv('toto.csv')
+	#print('nombre de ligne groupby=', len(covid_country1.groupby(covid_country1.index)))
 	covid_country2 = covid_country1.groupby(covid_country1.index).sum()
+	# print('covid_country2.tail()=', covid_country2.tail())
+	# input('attente')
 	
 	if verbose>1:
 		print('TAIL2=', covid_country2.head())
@@ -222,7 +230,7 @@ def readDataFrance(placeliste=['D69'], dateMinStr=None, dateMaxStr=None, fileLoc
 	# On recherche la taille de la population en France estimée en 2020
 	# site we dont est extrait le fichier local: https://www.insee.fr/fr/statistiques/1893198
 	db_pop_size = pd.read_csv('./data/popsizedpt_2020.csv', sep=';')
-	pop_size    = int(db_pop_size.loc[place[0]]["popsize"])
+	pop_size    = np.sum(db_pop_size.loc[place]["popsize"].values)
 	
 	return excerpt_country2, list(excerpt_country2), pop_size, dateMinStr, dateMaxStr
 

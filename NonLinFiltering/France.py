@@ -8,7 +8,7 @@ import geopandas         as gpd
 import seaborn           as sns
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
-def save_mapFranceR0(df, met, newcmp, title, img_name, labelRO, vmin, vmax, tile_zoom, alpha, figsize, textOnMap):
+def save_mapFranceR0(df, met, newcmp, title, img_name, labelRO, vmin, vmax, tile_zoom, alpha, figsize, mapType):
 	
 	# Load the map tile with contextily
 	w, s, e, n = met.total_bounds
@@ -21,20 +21,19 @@ def save_mapFranceR0(df, met, newcmp, title, img_name, labelRO, vmin, vmax, tile
 	gdf_3857['coords'] = gdf_3857['geometry'].apply(lambda x: x.centroid.coords[:])
 	gdf_3857['coords'] = [coords[0] for coords in gdf_3857['coords']]
 
-	# Prepare the figure and plot the background
-	f, ax = plt.subplots(figsize=figsize)
+	# Prepare the figure
 	fig, (ax, hax) = plt.subplots(1, 2, gridspec_kw={'width_ratios': [10, 1]}, figsize=(12, 6))
 
 	#######################@ Pour ax
 	ax.imshow(bck, extent=ext, interpolation='sinc', aspect='equal', alpha=0.4)  # load background map
 	
 	# Plot the map with transparency
-	# divider = make_axes_locatable(ax)
-	# cax     = divider.append_axes('right', size='5%', pad=0.15)  # GeoPandas trick to adjust the legend bar
+	divider = make_axes_locatable(ax)
+	cax     = divider.append_axes('right', size='5%', pad=0.15)  # GeoPandas trick to adjust the legend bar
 	gdf_3857.plot(
 		column    = labelRO,  # R0 for the places
 		ax        = ax,
-		#cax       = cax,
+		cax       = cax,
 		alpha     = alpha,
 		edgecolor = 'k',
 		legend    = True,
@@ -52,15 +51,17 @@ def save_mapFranceR0(df, met, newcmp, title, img_name, labelRO, vmin, vmax, tile
 			},
 	)
 
-	if textOnMap==True:
+	if mapType=='REG':
+		fontsize = 8
+		weight   = 'bold'
 		for _, row in gdf_3857.iterrows():
-			ax.text(s='#'+row['Place']+'\n'+u'$R_0$:' + str(round(row[labelRO], 2)), x=row['coords'][0], y = row['coords'][1],
-				   horizontalalignment='center', verticalalignment='center', fontdict = {'size': 7})
-	# if textOnMap==False:
-	# 	for _, row in gdf_3857.iterrows():
-	# 		ax.text(s=u'$R_0$:' + str(round(row[labelRO], 2)), x=row['coords'][0], y = row['coords'][1],
-	# 			   horizontalalignment='center', verticalalignment='center', fontdict = {'size': 5})
-
+			if np.isnan(row[labelRO])==False:
+				s='#'+row['Place']+'\n'+f'R\N{SUBSCRIPT ZERO}:' + str(round(row[labelRO], 2))
+			else:
+				s='#'+row['Place']
+			ax.text(s=s, x=row['coords'][0], y = row['coords'][1],
+				   horizontalalignment='center', verticalalignment='center', fontdict = {'size': fontsize, 'weight': weight})
+	
 
 	# Affine la visu du plot
 	ax.set_axis_off()
@@ -68,12 +69,10 @@ def save_mapFranceR0(df, met, newcmp, title, img_name, labelRO, vmin, vmax, tile
 	ax.get_yaxis().set_visible(False)
 	ax.set_title(title, fontsize=14)
 
-
 	#######################@ Pour hax
 	sns.distplot(df[labelRO], kde=True, 
 			 vertical=True,
 			 bins=int(20), color = 'darkblue',
-			 #orientation='horizontal',
 			 hist_kws={'edgecolor': 'black'},
 			 kde_kws={'linewidth': 2}, ax=hax,
 			 rug=True, hist=False)
@@ -84,13 +83,14 @@ def save_mapFranceR0(df, met, newcmp, title, img_name, labelRO, vmin, vmax, tile
 	hax.get_xaxis().set_visible(False)
 	hax.get_yaxis().set_visible(False)
 
-	plt.subplots_adjust(wspace = -0.15, hspace = -0.15)
+	plt.subplots_adjust(wspace = -0.45, hspace = -0.45)
+	#plt.subplots_adjust(wspace = 0., hspace = -0.)
 
 	plt.savefig(img_name, bbox_inches='tight') # to remove border
-	plt.close(f)
+	plt.close(fig)
 
 
-def save_mapFranceI0(df, met, newcmp, title, img_name, deltaIO, vmin, vmax, tile_zoom, alpha, figsize, textOnMap):
+def save_mapFranceI0(df, met, title, img_name, deltaIO, vmin, vmax, tile_zoom, alpha, figsize, mapType):
 
 	# Load the map tile with contextily
 	w, s, e, n = met.total_bounds
@@ -104,7 +104,9 @@ def save_mapFranceI0(df, met, newcmp, title, img_name, deltaIO, vmin, vmax, tile
 	gdf_3857['coords'] = [coords[0] for coords in gdf_3857['coords']]
 
 	# Prepare the figure and plot the background
-	f, ax = plt.subplots(figsize=figsize)
+	fig, (ax, hax) = plt.subplots(1, 2, gridspec_kw={'width_ratios': [10, 1]}, figsize=(12, 6))
+
+	#######################@ Pour ax
 	ax.imshow(bck, extent=ext, interpolation='sinc', aspect='equal', alpha=0.4)  # load background map
 	
 	# Plot the map with transparency
@@ -130,20 +132,56 @@ def save_mapFranceI0(df, met, newcmp, title, img_name, deltaIO, vmin, vmax, tile
 			},
 	)
 
-	if textOnMap==True:
+	if mapType=='REG':
+		fontsize = 8
+		weight   = 'bold'
 		for _, row in gdf_3857.iterrows():
 			if row['DateFirstCase'] != 'Invalid':
-				ax.text(s=str(row['DateFirstCase']), x=row['coords'][0], y = row['coords'][1],
-					   horizontalalignment='center', verticalalignment='center', fontdict = {'size': 7})
+				s='#'+row['Place']+'\n'+str(row['DateFirstCase']).replace('2020-', '')
+			else:
+				s='#'+row['Place']
+			ax.text(s=s, x=row['coords'][0], y = row['coords'][1],
+				   horizontalalignment='center', verticalalignment='center', fontdict = {'size': fontsize, 'weight': weight})
 	
 	
+	# Zoom sur la région parisienne
+	# create some data to use for the plot
+	# dt = 0.001
+	# t = np.arange(0.0, 10.0, dt)
+	# r = np.exp(-t[:1000]/0.05)               # impulse response
+	# x = np.random.randn(len(t))
+	# s = np.convolve(x, r)[:len(x)]*dt  # colored noise
+
+	# a = plt.axes([.13, .68, .17, .17], facecolor='y')
+	# #n, bins, patches = plt.hist(s, 400, normed=1)
+	# #plt.title('Probability')
+	# plt.xticks([])
+	# plt.yticks([])
+
 	# Affine la visu du plot
 	ax.set_axis_off()
 	ax.get_xaxis().set_visible(False)
 	ax.get_yaxis().set_visible(False)
 	ax.set_title(title, fontsize=14)
+
+	#######################@ Pour hax
+	sns.distplot(df[deltaIO], kde=True, 
+			 vertical=True,
+			 bins=int(20), color = 'darkblue',
+			 hist_kws={'edgecolor': 'black'},
+			 kde_kws={'linewidth': 2}, ax=hax,
+			 rug=True, hist=False)
+	hax.set_ylim([vmin, vmax])
+	hax.set_ylabel('')
+	# Affine la visu du plot
+	hax.set_axis_off()
+	hax.get_xaxis().set_visible(False)
+	hax.get_yaxis().set_visible(False)
+
+	# Enregistrement de la figure
+	plt.subplots_adjust(wspace = -0.45, hspace = -0.45)
 	plt.savefig(img_name, bbox_inches='tight') # to remove border
-	plt.close(f)
+	plt.close(fig)
 
 
 def getRegionFromCodeInsee(codeR):
@@ -220,7 +258,7 @@ def getPlace(element):
 				getRegionFromCodeInsee('R93+'), \
 			], \
 			[['R84+'], ['R27+'], ['R53+'], ['R24+'], ['R94+'], ['R44+'], ['R32+'], ['R11+'], ['R28+'], ['R75+'], ['R76+'], ['R52+'], ['R93+']]
-	if element=='MetropoleD': 
+	if element=='MetropoleD' or element=='MetropoleD+': 
 		listdpts = []
 		for i in range(1,96):
 			number_str = str(i)
@@ -229,7 +267,10 @@ def getPlace(element):
 		listdpts.remove(['D20']) # Ce département n'est pas dans les données
 		listdpts.append(['D2A'])
 		listdpts.append(['D2B'])
-		return listdpts, listdpts
+		if element=='MetropoleD':
+			return listdpts, listdpts
+		else:
+			return [listdpts], [['MetropoleD+']]
 
 if __name__ == '__main__':
 	# print(getRegionFromCodeInsee('R52'))
