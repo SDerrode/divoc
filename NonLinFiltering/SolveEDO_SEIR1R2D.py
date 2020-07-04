@@ -16,8 +16,8 @@ from SolveEDO        import SolveEDO
 from SEIR1R2D        import SEIR1R2D
 from common          import addDaystoStrDate, getRepertoire
 
-dpi     = 120    # plot resolution of saved figures
-figsize = (8, 4) # figure's size (width, height)
+# dpi     = 120    # plot resolution of saved figures
+# figsize = (8, 4) # figure's size (width, height)
 
 
 class SolveEDO_SEIR1R2D(SolveEDO):
@@ -35,18 +35,18 @@ class SolveEDO_SEIR1R2D(SolveEDO):
 		self.y0 = S0, E0, I0, R10, R20, D0
 		self.nbparam = len(self.y0)
 
-		self.indexdata=[3,5]
+		self.indexdata = [3,5]
 
 		# Modèle d'eq. diff non linéaires
 		self.modele = SEIR1R2D(self.N, dt=self.dt)
 
-	def getTextParam(self, startDate=None, ROsignificatif=True):
-		S = super().getTextParam(startDate, ROsignificatif)
+	def getTextParam(self, startDate=None, ROsignificatif=True, Degenerate_case=False, Period=1):
+		S = super().getTextParam(startDate, ROsignificatif, Degenerate_case, Period=Period)
 		S += '\n' + r'  $D_0=' + str(self.y0[5]) + '$'
 		return S
 
-	def getTextParamWeak(self, startDate=None, ROsignificatif=True):
-		S = super().getTextParamWeak(startDate,ROsignificatif)
+	def getTextParamWeak(self, startDate=None, ROsignificatif=True, Period=1):
+		S = super().getTextParamWeak(startDate, ROsignificatif, Period=Period)
 		return S
 
 	def setN(self, N):

@@ -15,16 +15,15 @@ import requests
 import zipfile
 import io
 import pathlib
-import numpy                 as np
-import matplotlib            as mpl
-import matplotlib.pyplot     as plt
-import pandas                as pd
-import geopandas             as gpd
-from datetime                import timedelta, date
+import numpy              as np
+import matplotlib         as mpl
+import matplotlib.pyplot  as plt
+import pandas             as pd
+import geopandas          as gpd
 
-from datetime                import datetime, timedelta
-from common                  import getRepertoire, getColorMap
-from France                  import save_mapFranceR0, save_mapFranceI0
+from datetime             import date, datetime, timedelta
+from common               import getRepertoire, getColorMap
+from France               import save_mapFranceR0, save_mapFranceI0
 
 strDate = "%Y-%m-%d"
 
@@ -34,7 +33,8 @@ def main(sysargv):
 		:Example:
 
 		For countries (European database)
-		>> python MapFranceR0.py DPT R0Moyen_11_12.csv
+		>> python MapFranceR0.py DPT R0Moyen_13_14_DPT.csv
+		>> python MapFranceR0.py REG R0Moyen_13_14_REG.csv
 
 		argv[1] : France departments ('DPT') or France regions ('REG')
 		argv[2] : Name of the file to process
@@ -47,9 +47,9 @@ def main(sysargv):
 	local_path    = 'shapefileFrance/'
 	figsize       = (15, 15)
 	tile_zoom     = 6
-	indexmaxcolor = 2000
+	indexmaxcolor = 4000
 	alpha         = 0.70
-	blackstartP   = 5
+	blackstartP   = 100
 
 	##################################################################@
 	# Gestion des arguments
@@ -120,7 +120,7 @@ def main(sysargv):
 	met = met['geometry']
 
 	# Load labelRO data into a pandas DataFrame
-	repertoire = getRepertoire(UKF_filt, './figures/'+modeleString+'_UKFilt/', './figures/'+modeleString+'/')
+	repertoire = getRepertoire(UKF_filt, './figures/'+modeleString+'_UKFilt/TimeShift/', './figures/'+modeleString+'/TimeShift/')
 	df1        = pd.read_csv(repertoire+filename, dtype={'Place': 'str'}) #, parse_dates=[[2]]
 
 	# on rajoute la géométrie
@@ -133,45 +133,69 @@ def main(sysargv):
 	# df1['coords'] = df1['geometry'].apply(lambda x: x.centroid.coords[:])
 	# df1['coords'] = [coords[0] for coords in df1['coords']]
 
-	
-
-	# PARTIE SUR R0
-	##################################################################
-	
 	# Le min et le max des 3 colonnes
 	a = df1[list(df1)[1:4]].values
 	minRO=np.amin(np.amin(a))
-	if minRO==-1.:
+	if minRO == -1:
 		#find th second minimum value (to avoid -1 value whose meaning is to say that the place has a non-meaning RO)
 		minRO = np.amin(np.array(a)[a != np.amin(a)])
+		print('-->minRO=', minRO)
 	maxRO = df1[list(df1)[1:4]].max().max()
 	if verbose>0:
 		print('minRO=', minRO)
 		print('maxRO=', maxRO)
 
-	# replace les -1 par des nan pour être traités comme des données manquantes
-	df1.replace(-1, np.nan, inplace=True)
-
 	# carte de couleurs (commune aux 3 périodes)
 	mycolormapR0, newcmpR0 = getColorMap(indexmaxcolor, minRO, maxRO, blackstartP, alpha)
-
+	
+	# PARTIE SUR R0
+	##################################################################
 	# On dessine les cartes pour les 3 R0
 	for p in range(3):
 		labelRO = 'R0MoyenP'+str(p)
 		print('PROCESSING of', labelRO)
+
+		# # Le min et le max de la colonne
+		# a = df1[list(df1)[p+1]].values
+		# minRO=np.amin(np.amin(a))
+		# if minRO == -1:
+		# 	#find th second minimum value (to avoid -1 value whose meaning is to say that the place has a non-meaning RO)
+		# 	minRO = np.amin(np.array(a)[a != np.amin(a)])
+		# 	print('-->minRO=', minRO)
+		# maxRO = df1[list(df1)[p+1]].max().max()
+		# if verbose>0:
+		# 	print('minRO=', minRO)
+		# 	print('maxRO=', maxRO)
+
+		# replace les -1 par des nan pour être traités comme des données manquantes
+		df1[list(df1)[p+1]].replace(-1, np.nan, inplace=True)
 		
 		# display the map with the RO data
 		img_name = repertoire + filenamewithoutext + '_P' + str(p) + '.png'
-		title    = 'Estimated ' + f'R\N{SUBSCRIPT ZERO}'+ ', scale: ' + textMapType + '\n' + strTile + ' - ' + modeleString2 + ' model'
+		title    = 'Estimated ' + f'R\N{SUBSCRIPT ZERO}'+ ', scale: ' + textMapType + ' - ' + modeleString2 + ' model'
 		save_mapFranceR0(df1, met, newcmpR0, title, img_name, labelRO, minRO, maxRO, tile_zoom, alpha, figsize, mapType)
 
 	# PARTIE SUR I0
 	##################################################################
 	
+	# on enleve du min, max les dates des territoires exclus durant P0
+	for index, row in df1.iterrows():
+	     # access data using column names
+	     #print(index, row['delay'], row['distance'], row['origin'])
+	     if row['R0MoyenP0']==-1.: 
+	     	df1.at[index, 'DateFirstCase'] = 'Invalid'
+	     	# row['DateFirstCase']='Invalid'
+	     	# print('row =', row)
+	     	# print('index =', index)
+	     	# input('pause')
 	dateFirstCase = df1['DateFirstCase'].values.tolist()
-	while 'Invalid' in dateFirstCase: dateFirstCase.remove('Invalid') 
+
+	while 'Invalid' in dateFirstCase: 
+		dateFirstCase.remove('Invalid') 
+	
 	dateFirstCase.sort()
-	minDateIO = datetime.strptime(dateFirstCase[0], strDate)
+
+	minDateIO = datetime.strptime(dateFirstCase[0],  strDate)
 	maxDateIO = datetime.strptime(dateFirstCase[-1], strDate)
 	if verbose>0:
 		print('minDateIO=', minDateIO)
@@ -179,7 +203,7 @@ def main(sysargv):
 
 	# On dessine la carte des dates du 1er infecté
 	img_name = repertoire + filenamewithoutext + '_I0.png'
-	title    = 'Date of first infection, scale: ' + textMapType + '\n[' + minDateIO.strftime(strDate) +', ' + maxDateIO.strftime(strDate) + '] - ' + modeleString2 + ' model'
+	title    = 'Date of first infection, scale: ' + textMapType + ' - ' + modeleString2 + ' model'
 
 	dateFirstCase = df1['DateFirstCase'].values.tolist()
 	deltaFirstCase = []

@@ -38,8 +38,8 @@ class SEIR1R2:
 		S += '\n  b=' + str(np.round(self.b, decimals=3)) + '\n  c=' + str(np.round(self.c, decimals=3)) + '\n  f=' + str(np.round(self.f, decimals=3))
 		return S
 
-	def getTextParam(self, ROsignificatif=True):
-		S  = 'Model '  + self.modelShortName + ':'
+	def getTextParam(self, ROsignificatif=True, Period=1):
+		S = 'Model '  + self.modelShortName +  ' - Period ' + str(Period) + ':'
 		S += '\n' + r'  $a='  + str(np.round(self.a, decimals=4)) + r', b=' + str(np.round(self.b, decimals=4)) + '$'
 		S += '\n' + r'  $c='  + str(np.round(self.c, decimals=4)) + r', f=' + str(np.round(self.f, decimals=4)) + '$'
 		if self.c!= 0. and ROsignificatif==True:

@@ -41,8 +41,8 @@ class SEIR1R2D(SEIR1R2):
 		else:
 			self.R0 = -1.
 
-	def getTextParam(self, ROsignificatif=True):
-		S  = 'Model '  + self.modelShortName + ':'
+	def getTextParam(self, ROsignificatif=True, Period=1):
+		S  = 'Model '  + self.modelShortName +  ' - Period ' + str(Period) + ':'
 		S += '\n' + r'  $a='    + str(np.round(self.a, decimals=4))  + r', b='   + str(np.round(self.b, decimals=4))  + '$'
 		S += '\n' + r'  $c='    + str(np.round(self.c, decimals=4))  + r', f='   + str(np.round(self.f, decimals=4))  + '$'
 		S += '\n' + r'  $\mu='  + str(np.round(self.mu, decimals=5)) + r', \xi=' + str(np.round(self.xi, decimals=5)) + '$'

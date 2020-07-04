@@ -8,6 +8,8 @@ import geopandas         as gpd
 import seaborn           as sns
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
+dpi=300
+
 def save_mapFranceR0(df, met, newcmp, title, img_name, labelRO, vmin, vmax, tile_zoom, alpha, figsize, mapType):
 	
 	# Load the map tile with contextily
@@ -36,6 +38,7 @@ def save_mapFranceR0(df, met, newcmp, title, img_name, labelRO, vmin, vmax, tile
 		cax       = cax,
 		alpha     = alpha,
 		edgecolor = 'k',
+		linewidth = 0.7,
 		legend    = True,
 		cmap      = newcmp,
 		vmin      = vmin,
@@ -44,15 +47,16 @@ def save_mapFranceR0(df, met, newcmp, title, img_name, labelRO, vmin, vmax, tile
 		#missing_kwds={'color': 'lightgrey'},
 		missing_kwds={
 				"color": "lightgreen",
-				"edgecolor": "green",
-				"alpha": 0.2,
+				"edgecolor": "k",
+				"alpha": 0.5,
+				"linewidth": 0.7,
 				#"hatch": "///",
 				"label": "Missing values",
 			},
 	)
 
 	if mapType=='REG':
-		fontsize = 8
+		fontsize = 10
 		weight   = 'bold'
 		for _, row in gdf_3857.iterrows():
 			if np.isnan(row[labelRO])==False:
@@ -61,7 +65,15 @@ def save_mapFranceR0(df, met, newcmp, title, img_name, labelRO, vmin, vmax, tile
 				s='#'+row['Place']
 			ax.text(s=s, x=row['coords'][0], y = row['coords'][1],
 				   horizontalalignment='center', verticalalignment='center', fontdict = {'size': fontsize, 'weight': weight})
-	
+	if mapType=='DPT':
+		fontsize = 7
+		weight   = 'normal' #bold, normal
+		for _, row in gdf_3857.iterrows():
+			if row['Place'] not in ['75', '92', '93', '94']:
+				s='#'+row['Place']
+				ax.text(s=s, x=row['coords'][0], y = row['coords'][1],
+					   horizontalalignment='center', verticalalignment='center', fontdict = {'size': fontsize, 'weight': weight})
+
 
 	# Affine la visu du plot
 	ax.set_axis_off()
@@ -86,7 +98,7 @@ def save_mapFranceR0(df, met, newcmp, title, img_name, labelRO, vmin, vmax, tile
 	plt.subplots_adjust(wspace = -0.45, hspace = -0.45)
 	#plt.subplots_adjust(wspace = 0., hspace = -0.)
 
-	plt.savefig(img_name, bbox_inches='tight') # to remove border
+	plt.savefig(img_name, bbox_inches='tight', dpi=dpi) # to remove border
 	plt.close(fig)
 
 
@@ -118,6 +130,7 @@ def save_mapFranceI0(df, met, title, img_name, deltaIO, vmin, vmax, tile_zoom, a
 		cax       = cax,
 		alpha     = alpha,
 		edgecolor = 'k',
+		linewidth = 0.7,
 		legend    = True,
 		cmap      = 'YlOrRd_r',
 		vmin      = vmin,
@@ -125,15 +138,16 @@ def save_mapFranceI0(df, met, title, img_name, deltaIO, vmin, vmax, tile_zoom, a
 		#legend_kwds={'label': "Dates I0 from " + minDateIO.strftime("%Y-%m-%d")},
 		missing_kwds={
 				"color": "lightgreen",
-				"edgecolor": "green",
-				"alpha": 0.2,
+				"edgecolor": "k",
+				"alpha": 0.5,
+				"linewidth": 0.7,
 				#"hatch": "///",
 				"label": "Missing values",
 			},
 	)
 
 	if mapType=='REG':
-		fontsize = 8
+		fontsize = 10
 		weight   = 'bold'
 		for _, row in gdf_3857.iterrows():
 			if row['DateFirstCase'] != 'Invalid':
@@ -142,7 +156,15 @@ def save_mapFranceI0(df, met, title, img_name, deltaIO, vmin, vmax, tile_zoom, a
 				s='#'+row['Place']
 			ax.text(s=s, x=row['coords'][0], y = row['coords'][1],
 				   horizontalalignment='center', verticalalignment='center', fontdict = {'size': fontsize, 'weight': weight})
-	
+	if mapType=='DPT':
+		fontsize = 7
+		weight   = 'normal' #bold, normal
+		for _, row in gdf_3857.iterrows():
+			if row['Place'] not in ['75', '92', '93', '94']:
+				s='#'+row['Place']
+				ax.text(s=s, x=row['coords'][0], y = row['coords'][1],
+					   horizontalalignment='center', verticalalignment='center', fontdict = {'size': fontsize, 'weight': weight})
+
 	
 	# Zoom sur la région parisienne
 	# create some data to use for the plot
@@ -180,7 +202,7 @@ def save_mapFranceI0(df, met, title, img_name, deltaIO, vmin, vmax, tile_zoom, a
 
 	# Enregistrement de la figure
 	plt.subplots_adjust(wspace = -0.45, hspace = -0.45)
-	plt.savefig(img_name, bbox_inches='tight') # to remove border
+	plt.savefig(img_name, bbox_inches='tight', dpi=dpi) # to remove border
 	plt.close(fig)
 
 
@@ -256,8 +278,7 @@ def getPlace(element):
 				getRegionFromCodeInsee('R28+'), getRegionFromCodeInsee('R75+'), \
 				getRegionFromCodeInsee('R76+'), getRegionFromCodeInsee('R52+'), \
 				getRegionFromCodeInsee('R93+'), \
-			], \
-			[['R84+'], ['R27+'], ['R53+'], ['R24+'], ['R94+'], ['R44+'], ['R32+'], ['R11+'], ['R28+'], ['R75+'], ['R76+'], ['R52+'], ['R93+']]
+			], [['R84+'], ['R27+'], ['R53+'], ['R24+'], ['R94+'], ['R44+'], ['R32+'], ['R11+'], ['R28+'], ['R75+'], ['R76+'], ['R52+'], ['R93+']]
 	if element=='MetropoleD' or element=='MetropoleD+': 
 		listdpts = []
 		for i in range(1,96):

@@ -7,13 +7,15 @@ import numpy             as np
 import matplotlib        as mpl
 import matplotlib.pyplot as plt
 
+# from matplotlib import rc
+# rc('text', usetex=True)
 
 from sklearn.metrics import mean_squared_error
 
 from datetime           import datetime, timedelta
 from Covid_SpecialDates import Covid_SpecialDates
 
-dpi           = 120    # plot resolution of saved figures
+dpi           = 300    # plot resolution of saved figures
 figsize       = (8, 4) # figure's size (width, height)
 strDate       = "%Y-%m-%d"
 
@@ -35,28 +37,28 @@ def getMaxEQM(sol_edo_R1, data, T):
 	return ts0
 
 def midDateStr(startDate, endDate):
-	d1 = datetime.strptime(startDate,"%Y-%m-%d")
-	d2 = datetime.strptime(endDate,"%Y-%m-%d")
+	d1 = datetime.strptime(startDate,strDate)
+	d2 = datetime.strptime(endDate,strDate)
 	d  = d1.date() + (d2.date()-d1.date()) / 2
-	return d.strftime("%Y-%m-%d")
+	return d.strftime(strDate)
 
 def addDaystoStrDate(startDate, d):
 	d = int(d)
-	d1 = datetime.strptime(startDate,"%Y-%m-%d")
+	d1 = datetime.strptime(startDate,strDate)
 	d2 = d1.date() + timedelta(d)
-	return d2.strftime("%Y-%m-%d")
+	return d2.strftime(strDate)
 
 def getLowerDateFromString(strdate1, strdate2):
-	d1 = datetime.strptime(strdate1,"%Y-%m-%d")
-	d2 = datetime.strptime(strdate1,"%Y-%m-%d")
+	d1 = datetime.strptime(strdate1,strDate)
+	d2 = datetime.strptime(strdate1,strDate)
 	if d1<d2:
-		return d1.strftime("%Y-%m-%d")
+		return d1.strftime(strDate)
 	else:
-		return d2.strftime("%Y-%m-%d")
+		return d2.strftime(strDate)
 
 def getNbDaysBetweenDateFromString(strdate1, strdate2):
-	d1 = datetime.strptime(strdate1,"%Y-%m-%d")
-	d2 = datetime.strptime(strdate2,"%Y-%m-%d")
+	d1 = datetime.strptime(strdate1,strDate)
+	d2 = datetime.strptime(strdate2,strDate)
 	return (d2-d1).days
 
 def readDates(place, verbose=0):
@@ -147,7 +149,9 @@ def getColorMap(indexmaxcolor, minRO, maxRO, blackstart, alpha=1.):
 		colred = np.zeros(shape=(B+1, 4))
 		for i in range(B+1):
 			colred[i] = colorFader('white', 'red', i/(B+1), alpha)
-		mycolormap[0:B+1, :] = colred[0:B+1, :]
+		# print(np.shape(mycolormap[0:B+1, :]))
+		# print(np.shape(colred[0:B+1, :]))
+		mycolormap[0:B+1, :] = colred[0:min(B+1,indexmaxcolor), :]
 		#mycolormap[B:,  :] = black
 	else:
 		mycolormap[:,  :] = black
@@ -180,7 +184,7 @@ def readDataFrance(placeliste=['D69'], dateMinStr=None, dateMaxStr=None, fileLoc
 
 	covid_orig = None
 	if fileLocalCopy==True:
-		name = './data/csvFrance_2020-06-24.csv'
+		name = './data/csvFrance_2020-07-01.csv'
 		try:
 			covid_orig = pd.read_csv(name, sep=';', parse_dates=[2], dayfirst=True)
 		except:
@@ -214,25 +218,32 @@ def readDataFrance(placeliste=['D69'], dateMinStr=None, dateMaxStr=None, fileLoc
 	
 	# extraction entre dateMin et dateMaxStr
 	if dateMinStr==None:
-		dateMinStr = covid_country2.index[0].strftime("%Y-%m-%d")
+		dateMinStr = covid_country2.index[0].strftime(strDate)
 	if dateMaxStr==None:
-		dateMaxStr = addDaystoStrDate(covid_country2.index[-1].strftime("%Y-%m-%d"), 1)
+		dateMaxStr = addDaystoStrDate(covid_country2.index[-1].strftime(strDate), 1)
 	if verbose>1:
 		print('dateMinStr=', dateMinStr, ', dateMaxStr=', dateMaxStr)
+
 	excerpt_country2 = covid_country2.loc[dateMinStr:dateMaxStr].copy()
 	# On rajoute la somme des cas et des morts
 	excerpt_country2.loc[:, ('radplusdc')] = excerpt_country2.loc[:, ('rad','dc')].sum(axis=1)
-	
+	dateFirstNonZeroStr = excerpt_country2['rad'].ne(0).idxmax().strftime(strDate)
+
 	if verbose>0:
-		print('HEAD=', excerpt_country2.head())
+		print('dateMinStr=', dateMinStr, ', dateMaxStr=', dateMaxStr)
+		print('HEAD=', excerpt_country2.head(16))
 		print('TAIL=', excerpt_country2.tail())
+		print('first non zeros rad', dateFirstNonZeroStr)
+		input('pause')
 	
 	# On recherche la taille de la population en France estimée en 2020
-	# site we dont est extrait le fichier local: https://www.insee.fr/fr/statistiques/1893198
+	# Url dont est extrait le fichier local: https://www.insee.fr/fr/statistiques/1893198
 	db_pop_size = pd.read_csv('./data/popsizedpt_2020.csv', sep=';')
 	pop_size    = np.sum(db_pop_size.loc[place]["popsize"].values)
+	if sexe in [1, 2]: 
+		pop_size /= 2. # autant d'hommes que de femmes
 	
-	return excerpt_country2, list(excerpt_country2), pop_size, dateMinStr, dateMaxStr
+	return excerpt_country2, list(excerpt_country2), int(pop_size), dateMinStr, dateMaxStr, dateFirstNonZeroStr
 
 
 def readDataEurope(country='France', dateMinStr=None, dateMaxStr=None, fileLocalCopy=False, verbose=0):
@@ -275,26 +286,27 @@ def readDataEurope(country='France', dateMinStr=None, dateMaxStr=None, fileLocal
 	
 	# extraction entre dateMin et dateMaxStr
 	if dateMinStr==None:
-		dateMinStr = covid_country1.index[0].strftime("%Y-%m-%d")
+		dateMinStr = covid_country1.index[0].strftime(strDate)
 	if dateMaxStr==None:
-		dateMaxStr = addDaystoStrDate(covid_country1.index[-1].strftime("%Y-%m-%d"), 1)
+		dateMaxStr = addDaystoStrDate(covid_country1.index[-1].strftime(strDate), 1)
 	if verbose>1:
 		print('dateMinStr=', dateMinStr, ', dateMaxStr=', dateMaxStr)
 	excerpt_country1 = covid_country1.loc[dateMinStr:dateMaxStr].copy()
 	# On rajoute la somme des cas et des morts
 	excerpt_country1.loc[:, ('casesplusdeaths')] = excerpt_country1.loc[:, ('cases','deaths')].sum(axis=1)
+	dateFirstNonZeroStr = excerpt_country1['cases'].ne(0).idxmax().strftime(strDate)
 
 	# On rempli les données manquantes avec la données la plus proche
 	idx = pd.date_range(start=excerpt_country1.index.min(), end=excerpt_country1.index.max())
 	excerpt_country1 = excerpt_country1.reindex(idx, method='nearest')
 	# On complète éventuellement au début avec des 0
-	idx = pd.date_range(start=datetime.strptime(dateMinStr,"%Y-%m-%d"), end=datetime.strptime(dateMaxStr,"%Y-%m-%d")-timedelta(1))
+	idx = pd.date_range(start=datetime.strptime(dateMinStr,strDate), end=datetime.strptime(dateMaxStr,strDate)-timedelta(1))
 	excerpt_country1 = excerpt_country1.reindex(idx, fill_value=0.)
 
 	if verbose>0:
 		print('TAIL=', excerpt_country1.tail())
 	
-	return excerpt_country1, list(excerpt_country1), pop_size, dateMinStr, dateMaxStr
+	return excerpt_country1, list(excerpt_country1), int(pop_size), dateMinStr, dateMaxStr, dateFirstNonZeroStr
 
 
 def get_WE_indice(pd):
@@ -325,7 +337,7 @@ def PlotData(pd, titre, filenameFig, y, color='black', Dates=None):
 
 	if len(y)==0 or y is None: pass
 	
-	fig = plt.figure(facecolor='w',figsize=figsize)
+	fig = plt.figure(facecolor='w', figsize=figsize)
 	ax = fig.add_subplot(111, facecolor='#dddddd', axisbelow=True)
 
 	# Dessin des courbes théoriques

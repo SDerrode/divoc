@@ -58,7 +58,7 @@ def main(sysargv):
         Toute combinaison est possible : exemple FRANCE,R32+,D05,R84
 
         argv[1] : List of countries (ex. France,Germany,Italy), or see above. Default: France 
-        argv[2] : Sex (male:1, female:2, both:0). Only for french database    Default: 0
+        argv[2] : Sex (male:1, female:2, male+female:0). Only for french database    Default: 0
         argv[3] : Verbose level (debug: 3, ..., almost mute: 0).              Default: 1
     """
 
@@ -81,15 +81,15 @@ def main(sysargv):
     ######################################################@
 
     # Default value for parameters
-    listplaces = ['France']
-    sexe, sexestr = 0, 'both'
-    verbose    = 1
+    listplaces    = ['France']
+    sexe, sexestr = 0, 'male+female'
+    verbose       = 1
     
     # Parameters from argv
     if len(sysargv)>1: liste   = list(sysargv[1].split(','))
     if len(sysargv)>2: sexe = int(sysargv[2])
     if len(sysargv)>3: verbose = int(sysargv[3])
-    if sexe not in [0,1,2]: sexe, sexestr = 0, 'both'      # sexe indiférencié
+    if sexe not in [0,1,2]: sexe, sexestr = 0, 'male+female'      # sexe indiférencié
     if sexe == 1:                 sexestr =    'male'
     if sexe == 2:                 sexestr =    'female'
 
@@ -133,16 +133,17 @@ def main(sysargv):
         # Lecture des données et copy of the observation
         #############################################################################
         if FrDatabase==True:
-            pd_exerpt, HeadData, N, readStartDateStr, readStopDateStr = readDataFrance(place, readStartDateStr, readStopDateStr, fileLocalCopy, sexe, verbose=0)
+            pd_exerpt, HeadData, N, readStartDateStr, readStopDateStr, dateFirstNonZeroStr = readDataFrance(place, readStartDateStr, readStopDateStr, fileLocalCopy, sexe, verbose=0)
         else:
-            pd_exerpt, HeadData, N, readStartDateStr, readStopDateStr = readDataEurope(place, readStartDateStr, readStopDateStr, fileLocalCopy, verbose=0)
+            pd_exerpt, HeadData, N, readStartDateStr, readStopDateStr, dateFirstNonZeroStr = readDataEurope(place, readStartDateStr, readStopDateStr, fileLocalCopy, verbose=0)
 
         readStartDate = datetime.strptime(readStartDateStr, "%Y-%m-%d")
         readStopDate  = datetime.strptime(readStopDateStr,  "%Y-%m-%d")
         dataLength = pd_exerpt.shape[0]
-        if verbose>1:
+        if verbose>0:
             print('readStartDateStr=', readStartDateStr, ', readStopDateStr=', readStopDateStr)
             print('readStartDate   =', readStartDate,    ', readStopDate   =', readStopDate)
+            print('dateFirstNonZeroStr=', dateFirstNonZeroStr)
             #input('pause')
 
         # On ajoute le gradient

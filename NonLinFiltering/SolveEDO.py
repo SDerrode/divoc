@@ -37,28 +37,25 @@ class SolveEDO:
 		S = self.modele.__str__()
 		return S
 
-	def getTextParam(self, startDate=None, ROsignificatif=True):
-		S  = self.modele.getTextParam(ROsignificatif)
+	def getTextParam(self, startDate=None, ROsignificatif=True, Degenerate_case=False, Period=1):
+		if Degenerate_case==False:
+			S = self.modele.getTextParam(ROsignificatif, Period=Period)
+		else:
+			S = 'Degenerate case - Period ' + str(Period)
 		S += '\nSolveur init:\n'# + '\n  N=' + str(self.N) + '\n  dt='+str(self.dt) \
 		S += r'  $S_0=' + str(self.y0[0]) + '$\n'
 		S += r'  $E_0=' + str(self.y0[1]) + r', I_0='+str(self.y0[2]) + '$\n'
 		S += r'  $R^1_0=' + str(self.y0[3]) + r', R^2_0=' + str(self.y0[4])+ '$'
-		if self.TS != -1:
-			if startDate==None:
-				S += '\n  Time Shift=$'+str(self.TS)+'$'
-			else:
-				dateI0 = addDaystoStrDate(startDate, -self.TS)
-				S += '\n  Start date:'+dateI0
+		if startDate!=None:
+			dateI0 = addDaystoStrDate(startDate, -self.TS)
+			S += '\n  Date ' + r'$d_{I==1}$' + ':'+dateI0
 		return S
 
-	def getTextParamWeak(self, startDate=None, ROsignificatif=True):
-		S  = self.modele.getTextParam(ROsignificatif)
-		if self.TS != -1:
-			if startDate==None:
-				S += '\n  Time Shift=$'+str(self.TS)+'$'
-			else:
-				dateI0 = addDaystoStrDate(startDate, -self.TS)
-				S += '\n  Start date:'+dateI0
+	def getTextParamWeak(self, startDate=None, ROsignificatif=True, Period=1):
+		S  = self.modele.getTextParam(ROsignificatif, Period=Period)
+		if startDate!=None:
+			dateI0 = addDaystoStrDate(startDate, -self.TS)
+			S += '\n  Date ' + r'$d_{I==1}$' + ':'+dateI0
 		return S
 
 	def getParamInit(self):
@@ -201,6 +198,7 @@ class SolveEDO:
 		ax.xaxis.set_tick_params(length=0)
 		ax.grid(b=True, which='major', c='w', lw=1, ls='-')
 		ax.xaxis.set_major_locator(MaxNLocator(integer=True))
+		ax.yaxis.set_major_locator(MaxNLocator(integer=True))
 		
 		legend = ax.legend()
 		legend.get_frame().set_alpha(0.5)
@@ -250,6 +248,7 @@ class SolveEDO:
 		ax.xaxis.set_tick_params(length=0)
 		ax.grid(b=True, which='major', c='w', lw=1, ls='-')
 		ax.xaxis.set_major_locator(MaxNLocator(integer=True))
+		ax.yaxis.set_major_locator(MaxNLocator(integer=True))
 		
 		legend = ax.legend()
 		legend.get_frame().set_alpha(0.5)

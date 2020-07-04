@@ -16,8 +16,8 @@ from SolveEDO        import SolveEDO
 from SEIR1R2         import SEIR1R2
 from common          import addDaystoStrDate, getRepertoire
 
-dpi     = 120    # plot resolution of saved figures
-figsize = (8, 4) # figure's size (width, height)
+# dpi     = 120    # plot resolution of saved figures
+# figsize = (8, 4) # figure's size (width, height)
 
 
 class SolveEDO_SEIR1R2(SolveEDO):
@@ -75,10 +75,10 @@ class SolveEDO_SEIR1R2(SolveEDO):
 		# params.add('c',   value=c0,      vary=True, min=0.010, max=0.2) 
 		# params.add('f',   value=f0,      vary=True, min=0.001, max=0.4)
 
-		params.add('a',   value=a0,      vary=True, min=0.0, max=0.99) 
-		params.add('b',   value=b0,      vary=True, min=0.0, max=0.99) 
-		params.add('c',   value=c0,      vary=True, min=0.0, max=0.99) 
-		params.add('f',   value=f0,      vary=True, min=0.0, max=0.99)
+		params.add('a',   value=a0,      vary=True, min=0.05, max=0.95) 
+		params.add('b',   value=b0,      vary=True, min=0.05, max=0.95) 
+		params.add('c',   value=c0,      vary=True, min=0.05, max=0.95) 
+		params.add('f',   value=f0,      vary=True, min=0.05, max=0.95)
 		# params.add('a',   value=a0,      vary=True, min=0.3*a0, max=1./0.3*a0)
 		# params.add('b',   value=b0,      vary=True, min=0.5*b0, max=1./0.5*b0)
 		# params.add('c',   value=c0,      vary=True, min=0.5*c0, max=1./0.5*c0)

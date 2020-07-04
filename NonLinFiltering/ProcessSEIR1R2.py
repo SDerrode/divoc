@@ -48,19 +48,20 @@ def fit(sysargv):
 		Toute combinaison de lieu est possible : exemple FRANCE,R32+,D05,R84
 		
 		argv[1] : List of countries (ex. France,Germany,Italy), or see above.          Default: France 
-		argv[2] : Sex (male:1, female:2, both:0). Only for french database             Default: 0 
-		argv[3] : Periods ('1' -> 1 period ('all-in-on'), '!=1' -> severall periods).  Default: -1
+		argv[2] : Sex (male:1, female:2, male+female:0). Only for french database             Default: 0 
+		argv[3] : Periods ('1' -> 1 period ('all-in-one'), '!=1' -> severall periods). Default: -1
 		argv[4] : Shift of periods (in days).                                          Default: 11
 		argv[5] : UKF filtering of data (0/1).                                         Default: 0
 		argv[6] : Verbose level (debug: 3, ..., almost mute: 0).                       Default: 1
 		argv[7] : Plot graphique (0/1).                                                Default: 1
+		argv[8] : Stop Date                                                            Default: None
 	"""
 	
 	#Austria,Belgium,Croatia,Czechia,Finland,France,Germany,Greece,Hungary,Ireland,Italy,Lithuania,Poland,Portugal,Romania,Serbia,Spain,Switzerland,Ukraine
 	#Austria,Belgium,Croatia,Czechia,Finland,France,Germany,Greece,Hungary,Ireland,Italy,Poland,Portugal,Romania,Serbia,Spain,Switzerland,Ukraine
 	# Il y a 18 pays
 
-	if len(sysargv) > 7:
+	if len(sysargv) > 8:
 		print('  CAUTION : bad number of arguments - see help')
 		exit(1)
 
@@ -68,23 +69,24 @@ def fit(sysargv):
 	######################################################@
 	fileLocalCopy    = True  # if we upload the file from the url (to get latest data) or from a local copy file
 	readStartDateStr = "2020-03-01" # "2020-03-01" Le 8 mars, pour inclure un grand nombre de pays européens dont la date de premier était postérieur au 1er mars
-	readStopDateStr  = None
 	recouvrement     = -1
 	dt               = 1
 	France           = 'France'
-	thresholdSignif  = 1.7E-6
+	thresholdSignif  = 1.5E-6 # 1.7E-6 (2.1E-6 pour exclure la corse)
+	
 
-	# Interpetation of arguments - reparation
+	# Interpretation of arguments - reparation
 	######################################################@
 
 	# Default value for parameters
-	listplaces = ['France']
-	sexe, sexestr = 0, 'both'
-	nbperiodes = -1
-	decalage   = 11
-	UKF_filt   = False
-	verbose    = 1
-	plot       = True
+	listplaces      = ['France']
+	sexe, sexestr   = 0, 'male+female'
+	nbperiodes      = -1
+	decalage        = 11
+	UKF_filt        = False
+	verbose         = 1
+	plot            = True
+	readStopDateStr = "2020-06-30"
 
 	# Parameters from argv
 	######################################@
@@ -96,21 +98,21 @@ def fit(sysargv):
 	if len(sysargv)>4 and int(sysargv[4])==1: UKF_filt = True
 	if len(sysargv)>5: verbose    = int(sysargv[5])
 	if len(sysargv)>6 and int(sysargv[6])==0: plot     = False
+	if len(sysargv)>7: readStopDateStr = sysargv[7]
 	if nbperiodes==1:       decalage = 0  # nécessairement pas de décalage (on compense le recouvrement)
-	if sexe not in [0,1,2]:	sexe, sexestr = 0, 'both'      # sexe indiférencié
+	if sexe not in [0,1,2]:	sexe, sexestr = 0, 'male+female'      # sexe indiférencié
 	if sexe == 1: 		          sexestr =    'male'
 	if sexe == 2:                 sexestr =    'female'
 	
-
 	listplaces = []
 	listnames  = []
 	if liste[0]=='FRANCE':
 		FrDatabase = True
-		liste = liste[1:]
+		liste      = liste[1:]
 		for el in liste:
-			l,n=getPlace(el)
+			l, n = getPlace(el)
 			if el=='MetropoleR+':
-				for l1,n1 in zip(l,n):
+				for l1, n1 in zip(l, n):
 					listplaces.extend(l1)
 					listnames.extend([n1])
 			else:
@@ -127,9 +129,9 @@ def fit(sysargv):
 	# Data reading to get first and last date available in the data set
 	######################################################
 	if FrDatabase == True: 
-		pd_exerpt, HeadData, N, readStartDateStr, readStopDateStr = readDataFrance(['D69'], readStartDateStr, readStopDateStr, fileLocalCopy, sexe, verbose=0)
+		pd_exerpt, HeadData, N, readStartDateStr, readStopDateStr, _ = readDataFrance(['D69'], readStartDateStr, readStopDateStr, fileLocalCopy, sexe, verbose=0)
 	else:
-		pd_exerpt, HeadData, N, readStartDateStr, readStopDateStr = readDataEurope(France,  readStartDateStr, readStopDateStr, fileLocalCopy, verbose=0)
+		pd_exerpt, HeadData, N, readStartDateStr, readStopDateStr, _ = readDataEurope(France,  readStartDateStr, readStopDateStr, fileLocalCopy, verbose=0)
 	dataLength = pd_exerpt.shape[0]
 
 	readStartDate = datetime.strptime(readStartDateStr, strDate)
@@ -142,10 +144,10 @@ def fit(sysargv):
 		readStopDateStr  = pd_exerpt.index[-1].strftime(strDate)
 
 	dataLength = pd_exerpt.shape[0]
-	if verbose>1:
+	if verbose>0:
 		print('readStartDateStr=', readStartDateStr, ', readStopDateStr=', readStopDateStr)
 		print('readStartDate   =', readStartDate,    ', readStopDate   =', readStopDate)
-		print('dataLength=', dataLength)
+		print('dataLength      =', dataLength)
 		#input('pause')
 
 	# Collections of data return by this function
@@ -180,13 +182,15 @@ def fit(sysargv):
 		# data reading of the observations
 		#############################################################################
 		if FrDatabase == True:
-			pd_exerpt, HeadData, N, readStartDateStr, readStopDateStr = readDataFrance(place, readStartDateStr, readStopDateStr, fileLocalCopy, sexe, verbose=0)
+			pd_exerpt, HeadData, N, readStartDateStr, readStopDateStr, dateFirstNonZeroStr = readDataFrance(place, readStartDateStr, readStopDateStr, fileLocalCopy, sexe, verbose=0)
 		else:
-			pd_exerpt, HeadData, N, readStartDateStr, readStopDateStr = readDataEurope(place, readStartDateStr, readStopDateStr, fileLocalCopy, verbose=0)
+			pd_exerpt, HeadData, N, readStartDateStr, readStopDateStr, dateFirstNonZeroStr = readDataEurope(place, readStartDateStr, readStopDateStr, fileLocalCopy, verbose=0)
+
+		shift_0value = getNbDaysBetweenDateFromString(readStartDateStr, dateFirstNonZeroStr)
 
 		# UKF Filtering ?
 		if UKF_filt == True:
-			data2filter = pd_exerpt[HeadData[2]].tolist()
+			data2filter = pd_exerpt[HeadData[0]].tolist()
 			sigmas = MerweScaledSigmaPoints(n=1, alpha=.5, beta=2., kappa=0.)
 			ukf    = UKF(dim_x=1, dim_z=1, fx=fR1, hx=hR1, dt=dt, points=sigmas)
 			# Filter init
@@ -200,8 +204,8 @@ def fit(sysargv):
 			
 			# UKF filtering and smoothing, batch mode
 			R1filt, _ = ukf.batch_filter(data2filter)
-			HeadData[2] = HeadData[2] + ' filt'
-			pd_exerpt[HeadData[2]] = R1filt
+			HeadData[0] = HeadData[0] + ' filt'
+			pd_exerpt[HeadData[0]] = R1filt
 
 		# Get the list of dates to process
 		ListDates, ListDatesStr = GetPairListDates(readStartDate, readStopDate, DatesString, decalage+recouvrement, nbperiodes, recouvrement)
@@ -217,7 +221,7 @@ def fit(sysargv):
 
 		# Repertoire des figures
 		if plot==True:
-			repertoire = getRepertoire(UKF_filt, './figures/SEIR1R2_UKFilt/'+placefull+'/sexe_'+str(sexe)+'_shift'+str(decalage), './figures/SEIR1R2/'+placefull+'/sexe_'+str(sexe)+'_shift'+str(decalage))
+			repertoire = getRepertoire(UKF_filt, './figures/SEIR1R2_UKFilt/'+placefull+'/sexe_'+str(sexe)+'_shift_'+str(decalage), './figures/SEIR1R2/'+placefull+'/sexe_'+str(sexe)+'_shift_'+str(decalage))
 			prefFig    = repertoire+'/Process_'
 		
 		# Remise à 0 des données
@@ -231,11 +235,18 @@ def fit(sysargv):
 		ListetabParamModelPlace = []
 		ListeEQM                = []
 
+		DEGENERATE_CASE = False
+
 		for i in range(len(ListDatesStr)):
 
 			# dates of the current period
 			fitStartDate,    fitStopDate    = ListDates[i]
 			fitStartDateStr, fitStopDateStr = ListDatesStr[i]
+
+			# Est-on dans un CAS degénéré?
+			# print(getNbDaysBetweenDateFromString(dateFirstNonZeroStr, fitStopDateStr))
+			if getNbDaysBetweenDateFromString(dateFirstNonZeroStr, fitStopDateStr)<5: # Il faut au moins 5 données pour fitter
+				DEGENERATE_CASE = True
 
 			if i>0:
 				DatesString.addOtherDates(fitStartDateStr)
@@ -244,7 +255,7 @@ def fit(sysargv):
 			dataLengthPeriod = 0
 			indMinPeriod     = (fitStartDate-readStartDate).days
 
-			for j, z in enumerate(pd_exerpt.loc[fitStartDateStr:addDaystoStrDate(fitStopDateStr, -1), (HeadData[2])]):
+			for j, z in enumerate(pd_exerpt.loc[fitStartDateStr:addDaystoStrDate(fitStopDateStr, -1), (HeadData[0])]):
 				data[indMinPeriod+j, 0] = z
 				dataLengthPeriod +=1
 			slicedata      = slice(indMinPeriod, indMinPeriod+dataLengthPeriod)
@@ -263,7 +274,10 @@ def fit(sysargv):
 			# paramètres initiaux à optimiser
 			
 			if i==0:
-				ts=getNbDaysBetweenDateFromString(DatesString.listFirstCaseDates[0], readStartDateStr)
+				datelegend = fitStartDateStr
+				# ts=getNbDaysBetweenDateFromString(DatesString.listFirstCaseDates[0], readStartDateStr)
+				# En premiere approximation, on prend la date du premier cas estimé pour le pays (même si c'est faux pour les régions et dpts)
+				ts=getNbDaysBetweenDateFromString(DatesString.listFirstCaseDates[0], dateFirstNonZeroStr)
 				if ts<0:
 					continue # On passe au pays suivant
 				if nbperiodes!=1: # pour plusieurs périodes
@@ -279,10 +293,11 @@ def fit(sysargv):
 				# R20 = int((1.-f0)*(R10/f0))
 				
 			if i==1 or i==2:
+				datelegend = None
 				_, a0, b0, c0, f0 = solveur.modele.getParam()
 				R10 = int(data[indMinPeriod, 0]) # on corrige R1 à la valeur numérique 
 				if i == 1:
-					a0 /= 4. # le confinement réduit drastiquement (pour aider l'optimisation) 
+					a0 /= 3. # le confinement réduit drastiquement (pour aider l'optimisation) 
 				T  = 120
 				ts = 0
 
@@ -307,11 +322,15 @@ def fit(sysargv):
 				print('  ts='+str(ts))
 			
 			# plot
-			if plot==True:
+			if plot==True and DEGENERATE_CASE==False:
 				titre = placefull+'- Period '+str(i)+'\\'+str(len(ListDatesStr)-1)+' - ['+fitStartDateStr+'\u2192'+addDaystoStrDate(fitStopDateStr, -1)+'] (Sex=' + sexestr+ ', Shift='+str(decalage)+')'
 				listePlot = [3]
 				filename  = prefFig+str(decalage)+'_Period'+str(i)+'_'+''.join(map(str, listePlot))+'Init.png'
-				solveur.plotEDO(filename, titre, sliceedo, slicedata, plot=listePlot, data=data, text=solveur.getTextParam(fitStartDateStr))
+				if i==0: 
+					date=fitStartDateStr
+				else:
+					date=None
+				solveur.plotEDO(filename, titre, sliceedo, slicedata, plot=listePlot, data=data, text=solveur.getTextParam(datelegend, Period=i))
 
 			# Parameters optimization
 			############################################################################
@@ -343,46 +362,56 @@ def fit(sysargv):
 				print(solveur)
 				print('  ts='+str(ts))
 			if i==0: # on se souvient de la date du premier infesté
-				dateI0 = addDaystoStrDate(fitStartDateStr, -ts)
+				dateI0 = addDaystoStrDate(fitStartDateStr, -ts+shift_0value) 
 				if verbose>2:
 					print('dateI0=', dateI0)
 					input('attente')
 
 			# Sauvegarde des param (tableau et texte)
 			seuil = (data[slicedata.stop-1, 0]-data[slicedata.start, 0])/getNbDaysBetweenDateFromString(fitStartDateStr, fitStopDateStr)/N
-			if seuil<thresholdSignif:
+			if DEGENERATE_CASE==True:
 				ROsignificatif = False
-				ListetabParamModelPlace.append([a1, b1, c1, f1, -1.])
+				ListetabParamModelPlace.append([-1., -1., -1., -1., -1.])
 			else:
-				ROsignificatif = True
-				ListetabParamModelPlace.append([a1, b1, c1, f1, R0])
-			# print('seuil=', seuil)
-			# print('ROsignificatif=', ROsignificatif)
-			# print('R0=', R0)
+				if seuil<thresholdSignif:
+					ROsignificatif = False
+					ListetabParamModelPlace.append([a1, b1, c1, f1, -1.])
+				else:
+					ROsignificatif = True
+					ListetabParamModelPlace.append([a1, b1, c1, f1, R0])
+				# print('seuil=', seuil)
+				# print('ROsignificatif=', ROsignificatif)
+				# print('R0=', R0)
+				#input('pause')
 	
-			ListeTextParamPlace.append(solveur.getTextParamWeak(fitStartDateStr, ROsignificatif))
+			ListeTextParamPlace.append(solveur.getTextParamWeak(datelegend, ROsignificatif, Period=i))
 			
 			data_deriv_period    = (data[slicedataderiv, :]           - data   [slicedataderiv.start-1:slicedataderiv.stop-1, :])        / dt
 			modelR1_deriv_period = (sol_ode[sliceedoderiv, indexdata] - sol_ode[sliceedoderiv.start-1 :sliceedoderiv.stop-1, indexdata]) / dt
 			data_all_period      = data[slicedataderiv, :]
 			modelR1_all_period   = sol_ode[sliceedoderiv, indexdata]
 
-			if plot==True:
+			if plot==True and DEGENERATE_CASE==False:
 				titre = placefull + '- Period ' + str(i) + '\\' + str(len(ListDatesStr)-1) + ' - [' + fitStartDateStr + '\u2192' + addDaystoStrDate(fitStopDateStr, -1) +'] (Sex=' + sexestr + ', Shift=' + str(decalage) + ')'
+
+				if i==0: 
+					date=fitStartDateStr
+				else:
+					date=None
 				
 				# listePlot =[0,1,2,3,4]
 				# filename  = prefFig + str(decalage) + '_Period' + str(i) + '_' + ''.join(map(str, listePlot)) + '.png'
-				# solveur.plotEDO(filename, titre, sliceedo, slicedata, plot=listePlot, data=data, text=solveur.getTextParam(fitStartDateStr, ROsignificatif))
+				# solveur.plotEDO(filename, titre, sliceedo, slicedata, plot=listePlot, data=data, text=solveur.getTextParam(datelegend, ROsignificatif, DEGENERATE_CASE, Period=i))
 				listePlot =[1,2,3]
 				filename  = prefFig + str(decalage) + '_Period' + str(i) + '_' + ''.join(map(str, listePlot)) + 'Final.png'
-				solveur.plotEDO(filename, titre, sliceedo, slicedata, plot=listePlot, data=data, text=solveur.getTextParam(fitStartDateStr, ROsignificatif))
+				solveur.plotEDO(filename, titre, sliceedo, slicedata, plot=listePlot, data=data, text=solveur.getTextParam(datelegend, ROsignificatif, DEGENERATE_CASE, Period=i))
 				listePlot =[3]
 				filename  = prefFig + str(decalage) + '_Period' + str(i) + '_' + ''.join(map(str, listePlot)) + 'Final.png'
-				solveur.plotEDO(filename, titre, sliceedo, slicedata, plot=listePlot, data=data, text=solveur.getTextParam(fitStartDateStr, ROsignificatif))
+				solveur.plotEDO(filename, titre, sliceedo, slicedata, plot=listePlot, data=data, text=solveur.getTextParam(datelegend, ROsignificatif, DEGENERATE_CASE, Period=i))
 
 				# dérivée  numérique de R1
 				filename = prefFig + str(decalage) + '_Period' + str(i) + '_' + ''.join(map(str, listePlot)) + 'Deriv.png'
-				solveur.plotEDO_deriv(filename, titre, sliceedoderiv, slicedataderiv, data_deriv_period, indexdata, text=solveur.getTextParam(fitStartDateStr, ROsignificatif))
+				solveur.plotEDO_deriv(filename, titre, sliceedoderiv, slicedataderiv, data_deriv_period, indexdata, text=solveur.getTextParam(datelegend, ROsignificatif, DEGENERATE_CASE, Period=i))
 
 			# sol_ode_withSwitch = solveur.solveEDO_withSwitch(T, timeswitch=ts+dataLengthPeriod)
 

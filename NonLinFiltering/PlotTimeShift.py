@@ -15,37 +15,38 @@ from SolveEDO_SEIR1R2D import SolveEDO_SEIR1R2D
 from ProcessSEIR1R2D   import fit as fitProcessSEIR1R2D
 from ProcessSEIR1R2    import fit as fitProcessSEIR1R2
 
-dpi     = 120    # plot resolution of saved figures
+dpi     = 300    # plot resolution of saved figures
 figsize = (8, 4) # figure's size (width, height)
 
 # blackstart    = 2.0
 
-def main(sysargv):
+def PlotTimeShift(sysargv):
 
 	"""
 		:Example:
 
 		For countries (European database)
 		>> python PlotTimeShift.py 
-		>> python PlotTimeShift.py France      0 SEIR1R2  0 11,12 1 1
-		>> python PlotTimeShift.py Italy,Spain 1 SEIR1R2D 1 11,12 0 1 # Italy and Spain, with UKF filterin1
+		>> python PlotTimeShift.py France      0 SEIR1R2  0 13,14 1 1
+		>> python PlotTimeShift.py Italy,Spain 1 SEIR1R2D 1 13,14 0 1 # Italy and Spain, with UKF filterin1
 
 		For French Region (French database)
-		>> python PlotTimeShift.py FRANCE,D69         0 SEIR1R2  0 11,12 0 1 # Code Insee Dpt 69 (Rhône)
-		>> python PlotTimeShift.py FRANCE,R84         0 SEIR1R2  0 11,12 0 1 # Tous les dpts de la Région dont le code Insee est  regions)
-		>> python PlotTimeShift.py FRANCE,R32+        0 SEIR1R2  0 11,12 0 1 # Somme de tous les dpts de la Région 32 (Hauts de F French regions)
-		>> python PlotTimeShift.py FRANCE,MetropoleD  0 SEIR1R2  0 11,12 0 1 # Tous les départements de la France métropolitaine
-		>> python PlotTimeShift.py FRANCE,MetropoleD+ 0 SEIR1R2  0 11,12 0 1 # Toute la France métropolitaine (en sommant les dpts)
-		>> python PlotTimeShift.py FRANCE,MetropoleR+ 0 SEIR1R2  0 11,12 0 1 # Somme des dpts de toutes les régions françaises
+		>> python PlotTimeShift.py FRANCE,D69         0 SEIR1R2  0 13,14 0 1 # Code Insee Dpt 69 (Rhône)
+		>> python PlotTimeShift.py FRANCE,R84         0 SEIR1R2  0 13,14 0 1 # Tous les dpts de la Région dont le code Insee est  regions)
+		>> python PlotTimeShift.py FRANCE,R32+        0 SEIR1R2  0 13,14 0 1 # Somme de tous les dpts de la Région 32 (Hauts de F French regions)
+		>> python PlotTimeShift.py FRANCE,MetropoleD  0 SEIR1R2  0 13,14 0 1 # Tous les départements de la France métropolitaine
+		>> python PlotTimeShift.py FRANCE,MetropoleD+ 0 SEIR1R2  0 13,14 0 1 # Toute la France métropolitaine (en sommant les dpts)
+		>> python PlotTimeShift.py FRANCE,MetropoleR+ 0 SEIR1R2  0 13,14 0 1 # Somme des dpts de toutes les régions françaises
 		Toute combinaison de lieux est possible : exemple FRANCE,R32+,D05,R84
 		
 		argv[1] : List of countries (ex. France,Germany,Italy), or see above.  Default: France 
-		argv[2] : Sex (male:1, female:2, both:0). Only for french database     Default: 0 
+		argv[2] : Sex (male:1, female:2, male+female:0). Only for french database     Default: 0 
 		argv[3] : EDO model (SEIR1R2 or SEIR1R2D).                             Default: SEIR2R2         
 		argv[4] : UKF filtering of data (0/1).                                 Default: 0
-		argv[5] : min shift, max shift, ex. 2,10.                              Default: 11,12
+		argv[5] : min shift, max shift, ex. 2,10.                              Default: 13,14
 		argv[6] : Verbose level (debug: 3, ..., almost mute: 0).               Default: 1
 		argv[7] : Plot graphique (0/1).                                        Default: 1
+		argv[8] : stopDate.                                                    Default: None
 	"""
 
 	#Austria,Belgium,Croatia,Czechia,Finland,France,Germany,Greece,Hungary,Ireland,Italy,Lithuania,Poland,Portugal,Romania,Serbia,Spain,Switzerland,Ukraine
@@ -58,19 +59,20 @@ def main(sysargv):
 	# Interpretation of arguments - reparation
 	######################################################@
 
-	if len(sysargv) > 8:
+	if len(sysargv) > 9:
 		print('  CAUTION : bad number of arguments - see help')
 		exit(1)
 
 	# Default value for parameters
 	places                 = 'France'
-	sexe, sexestr          = 0, 'both'
+	sexe, sexestr          = 0, 'male+female'
 	listplaces             = list(places.split(','))
 	modeleString           = 'SEIR1R2'
 	UKF_filt, UKF_filt01   = False, 0  #True, 1
-	shift_mini, shift_maxi = 11,12     #4,18
+	shift_mini, shift_maxi = 13,14     #4,18
 	verbose                = 1
 	plot                   = True
+	stopDate               = None
 	
 	# Parameters from argv
 	if len(sysargv)>1: places, liste = sysargv[1], list(sysargv[1].split(','))
@@ -80,8 +82,12 @@ def main(sysargv):
 	if len(sysargv)>5: shift_mini, shift_maxi = map(int, sysargv[5].split(','))
 	if len(sysargv)>6: verbose = int(sysargv[6])
 	if len(sysargv)>7 and int(sysargv[7])==0: plot = False
+	if len(sysargv)>8: stopDate = sysargv[8]
 	if shift_maxi-shift_mini==1:
 		plot = False # Pas de plot possible s'il n'y a qu'une seule données
+	if sexe not in [0,1,2]:	sexe, sexestr = 0, 'male+female'      # sexe indiférencié
+	if sexe == 1: 		          sexestr =    'male'
+	if sexe == 2:                 sexestr =    'female'
 
 	listplaces = []
 	listnames  = []
@@ -105,9 +111,11 @@ def main(sysargv):
 
 	# le modèle à traiter (SEIR1R2 or SEIR1R2D)
 	if modeleString == 'SEIR1R2':
-		fit = fitProcessSEIR1R2
+		fit           = fitProcessSEIR1R2
+		modeleString2 =f'SEIR\N{SUPERSCRIPT ONE}R\N{SUPERSCRIPT TWO}'
 	elif modeleString == 'SEIR1R2D':
 		fit = fitProcessSEIR1R2D
+		modeleString2 =f'SEIR\N{SUPERSCRIPT ONE}R\N{SUPERSCRIPT TWO}D'
 	else:
 		print('Wrong EDO model, only SEIR1R2 or SEIR1R2D available!')
 		exit(1)
@@ -127,9 +135,10 @@ def main(sysargv):
 
 	for decalage in range(shift_mini, shift_maxi):
 
-		print('TIME-SHIFT', str(decalage), 'OVER', str(shift_maxi))
+		if verbose>0:
+			print('TIME-SHIFT', str(decalage), 'OVER', str(shift_maxi))
 	
-		_, _, _, _, _, tabParamModel, ListeEQM, ListeDateI0 = fit([places, sexe, nbperiodes, decalage, UKF_filt, 0, 0])
+		_, _, _, _, _, tabParamModel, ListeEQM, ListeDateI0 = fit([places, sexe, nbperiodes, decalage, UKF_filt, 0, 0, stopDate])
 
 		TAB_decalage.append(float(decalage))
 		TAB_param_model.append(tabParamModel)
@@ -140,23 +149,26 @@ def main(sysargv):
 	#input('apuse')
 
 	# On enregistre le R0 moyen de la 3ieme période pour faire carte graphique
-	rep  = getRepertoire(UKF_filt, './figures/'+modeleString+'_UKFilt/', './figures/'+modeleString+'/')
+	rep  = getRepertoire(UKF_filt, './figures/'+modeleString+'_UKFilt/TimeShift/', './figures/'+modeleString+'/TimeShift/')
 	fileR0moyen = rep+'/R0Moyen_' + str(shift_mini)+ '_' + str(shift_maxi) +'.csv'
 	if os.path.exists(fileR0moyen):
 		os.remove(fileR0moyen)
 	with open(fileR0moyen, 'a') as text_file:
 		text_file.write('Place,R0MoyenP0,R0MoyenP1,R0MoyenP2,DateFirstCase\n')
 	
+	ListeChaines = []
 	for indexplace, place in enumerate(listplaces):
 
 		# Get the full name of the place to process, and the special dates corresponding to the place
 		if FrDatabase == True: 
 			placefull   = 'France-' + listnames[indexplace][0]
+			placefull1   = listnames[indexplace][0]
 		else:
 			placefull   = place
 
 		# Repertoire des figures
-		repertoire = getRepertoire(UKF_filt, './figures/'+modeleString+'_UKFilt/'+placefull+'/sexe_'+str(sexe), './figures/'+modeleString+'/'+placefull+'/sexe_'+str(sexe))
+		ch1 = placefull+'/sexe_'+str(sexe)+'_shift_'+str(shift_mini)+'_'+str(shift_maxi)
+		repertoire = getRepertoire(UKF_filt, './figures/'+modeleString+'_UKFilt/'+ch1, './figures/'+modeleString+'/'+ch1)
 		prefFig    = repertoire+'/'
 
 		nbperiodes = len(TAB_param_model[0][indexplace][:])
@@ -180,18 +192,18 @@ def main(sysargv):
 
 			if plot==True:
 				texte = list(map( lambda s: s.replace('$', '').replace('\\', '').replace('_', ''), labelsparam[:-1]))
-				titre    = placefull + ', Sex:' + sexestr + ' - ' + modeleString + ' parameters evolution for ' + labelsperiod[period]
-				filename = prefFig   + 'EvolParam_Period' + str(period) + '_' + ''.join(texte) + '.png'
+				titre    = placefull + ', Sex:' + sexestr + ' - ' + modeleString2 + ' parameters evolution for ' + labelsperiod[period]
+				filename = prefFig   + 'Plot_TS' + str(period) + '_' + ''.join(texte) + '.png'
 				plotData(TAB_decalage, Y1[:, :-1], titre, filename, labelsparam[:-1])
-				titre    = placefull + ', Sex:' + sexestr + ' - ' + modeleString + ' parameters evolution for ' + labelsperiod[period]
-				filename = prefFig   + 'EvolParam_Period' + str(period) + '_R0.png'
+				titre    = placefull + ', Sex:' + sexestr + ' - ' + modeleString2 + ' parameters evolution for ' + labelsperiod[period]
+				filename = prefFig   + 'Plot_TS' + str(period) + '_R0.png'
 				plotData(TAB_decalage, Y1[:, -1].reshape(shift_maxi-shift_mini, 1), titre, filename, [labelsparam[-1]])
 
 
 		# plot pour les paramètres
 		##########################################
-		if os.path.exists(prefFig+'EvolParams.txt'):
-			os.remove(prefFig+'EvolParams.txt')
+		if os.path.exists(prefFig+'Plot_TS.txt'):
+			os.remove(prefFig+'Plot_TS.txt')
 
 		Y2 = np.zeros(shape=(shift_maxi-shift_mini, len(labelsperiod)))
 		for param in range(len(labelsparam)):
@@ -203,12 +215,12 @@ def main(sysargv):
 					except IndexError:
 						Y2[decalage, period] = 0.
 			if plot==True:
-				titre    = placefull + ', Sex:' + sexestr + ' - ' + modeleString + ' periods evolution for param ' + labelsparam[param]
-				filename = prefFig   + 'EvolPeriod_Param' + labelsparam[param].replace('$', '') + '.png'
+				titre    = placefull + ', Sex:' + sexestr + ' - ' + modeleString2 + ' periods evolution for param ' + labelsparam[param]
+				filename = prefFig   + 'Plot_TS_Param' + labelsparam[param].replace('$', '') + '.png'
 				plotData(TAB_decalage, Y2, titre, filename, labelsperiod)
 
 			# Write parameters in a file
-			with open(prefFig+'EvolParams.txt', 'a') as text_file:
+			with open(prefFig+'Plot_TS.txt', 'a') as text_file:
 				text_file.write('\n\nParam: %s' % labelsparam[param].replace('$', '').replace('\\', ''))
 				for period in range(len(labelsperiod)):
 					#text_file.write('\n  -->%s:\n' % labelsperiod[period])
@@ -216,11 +228,18 @@ def main(sysargv):
 			
 			if param==len(labelsparam)-1: # c'est à dire R0
 				with open(fileR0moyen, 'a') as text_file:
-					Lieu = ''.join(filter(str.isdigit, placefull))
-					if 'A' in placefull: # Dpt de Corse
-						Lieu = Lieu+'A' 
-					if 'B' in placefull: # Dpt de Corse
-						Lieu = Lieu+'B' 
+					# print('placefull1=', placefull1)
+					# print('place=', place)
+					# print('listnames=', listnames)
+					#input('apuse')
+					#Lieu = ''.join(filter(str.isdigit, placefull1))
+					Lieu = placefull1
+					if placefull1[0]=='D' or placefull1[0]=='R':
+						Lieu = Lieu[1:]
+					if placefull1[-1]=='+':
+						Lieu = Lieu[:-1]
+					if Lieu[-1]=='D':
+						Lieu = Lieu[:-1]
 					chaine = Lieu+','
 					for period in range(len(labelsperiod)):
 						if -1. in Y2[:, period]:
@@ -241,9 +260,10 @@ def main(sysargv):
 						chaine += 'Invalid'
 					else:
 						chaine += TAB_ListeDateI0[Indice][indexplace]
-					text_file.write(chaine)
-
-					print('chaine=', chaine)
+					text_file.write(chaine+'\n')
+					if verbose>0:
+						print('chaine=', chaine)
+					ListeChaines.append(chaine)
 
 		# plot de l'EQM
 		##########################################
@@ -275,9 +295,11 @@ def main(sysargv):
 			#plt.ylim([0, 1.0])
 
 			# ajout d'un text d'annotation
-			plt.title(placefull + ', Sex:' + sexestr + ' - ' + modeleString + ', EQM on the number of detected cases' )
-			plt.savefig(prefFig + 'EvolPeriod_EQM_Deriv.png', dpi=dpi)
+			plt.title(placefull + ', Sex:' + sexestr + ' - ' + modeleString2 + ', EQM on ' + f'R\N{SUPERSCRIPT ONE}' )
+			plt.savefig(prefFig + 'Plot_TS_EQM_Deriv.png', dpi=dpi)
 			plt.close()
+
+	return ListeChaines
 
 
 def plotData(X, Y, titre, filename, labels):
@@ -310,6 +332,6 @@ def plotData(X, Y, titre, filename, labels):
 
 
 if __name__ == '__main__':
-	main(sys.argv)
+	ListeChaines = PlotTimeShift(sys.argv)
 
 
