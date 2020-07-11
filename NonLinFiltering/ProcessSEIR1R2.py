@@ -158,6 +158,7 @@ def fit(sysargv):
 	modelR1_all   = np.zeros(shape=(len(listplaces), dataLength, 1))
 	Listepd            = []
 	ListetabParamModel = []
+	ListetabIEnd       = []
 
 	# data observed
 	data = np.zeros(shape=(dataLength, 1))
@@ -233,6 +234,7 @@ def fit(sysargv):
 		
 		ListeTextParamPlace     = []
 		ListetabParamModelPlace = []
+		ListetabIEndPlace       = []
 		ListeEQM                = []
 
 		DEGENERATE_CASE = False
@@ -323,9 +325,14 @@ def fit(sysargv):
 			
 			# plot
 			if plot==True and DEGENERATE_CASE==False:
-				titre = placefull+'- Period '+str(i)+'\\'+str(len(ListDatesStr)-1)+' - ['+fitStartDateStr+'\u2192'+addDaystoStrDate(fitStopDateStr, -1)+'] (Sex=' + sexestr+ ', Shift='+str(decalage)+')'
+				commontitre=placefull+'- Period '+str(i)+'\\'+str(len(ListDatesStr)-1)+' - ['+fitStartDateStr+'\u2192'+addDaystoStrDate(fitStopDateStr, -1)
+				if sexe==0:
+					titre = commontitre + '] (Delay (delta)='+str(decalage)+')'
+				else:
+					titre = commontitre + '] (Sex=' + sexestr+ ', Delay (delta)='+str(decalage)+')'
+
 				listePlot = [3]
-				filename  = prefFig+str(decalage)+'_Period'+str(i)+'_'+''.join(map(str, listePlot))+'Init.png'
+				filename = prefFig+str(decalage)+'_Period'+str(i)+'_'+''.join(map(str, listePlot))+'Init.png'
 				if i==0: 
 					date=fitStartDateStr
 				else:
@@ -392,7 +399,11 @@ def fit(sysargv):
 			modelR1_all_period   = sol_ode[sliceedoderiv, indexdata]
 
 			if plot==True and DEGENERATE_CASE==False:
-				titre = placefull + '- Period ' + str(i) + '\\' + str(len(ListDatesStr)-1) + ' - [' + fitStartDateStr + '\u2192' + addDaystoStrDate(fitStopDateStr, -1) +'] (Sex=' + sexestr + ', Shift=' + str(decalage) + ')'
+				commontitre = placefull + '- Period ' + str(i) + '\\' + str(len(ListDatesStr)-1) + ' - [' + fitStartDateStr + '\u2192' + addDaystoStrDate(fitStopDateStr, -1)
+				if sexe==0:
+					titre = commontitre +'] (Delay (delta)=' + str(decalage) + ')'
+				else:
+					titre = commontitre +'] (Sex=' + sexestr + ', Delay (delta)=' + str(decalage) + ')'
 
 				if i==0: 
 					date=fitStartDateStr
@@ -427,6 +438,8 @@ def fit(sysargv):
 			# preparation for next iteration
 			_, E0, I0, R10, R20 = map(int, sol_ode[ts+dataLengthPeriod+recouvrement, :])
 			#print('A LA FIN : E0, I0, R10, R20=', E0, I0, R10, R20)
+			# On rempli le tableau des Infecté en fin de période
+			ListetabIEndPlace.append(I0)
 
 			if verbose>1:
 				input('next step')
@@ -442,9 +455,10 @@ def fit(sysargv):
 		# udpate des listes pour transmission
 		ListeTextParam.append(ListeTextParamPlace)
 		ListetabParamModel.append(ListetabParamModelPlace)
+		ListetabIEnd.append(ListetabIEndPlace)
 
-	return modelSEIR1R2, ListeTextParam, Listepd, data_deriv, modelR1_deriv, ListetabParamModel, ListeEQM, ListeDateI0
+	return modelSEIR1R2, ListeTextParam, Listepd, data_deriv, modelR1_deriv, ListetabParamModel, ListetabIEnd, ListeEQM, ListeDateI0
 
 
 if __name__ == '__main__':
-	modelSEIR1R2, ListeTextParam, Listepd, data_deriv, modelR1_deriv, ListetabParamModel, ListeEQM, ListeDateI0 = fit(sys.argv[1:])
+	modelSEIR1R2, ListeTextParam, Listepd, data_deriv, modelR1_deriv, ListetabParamModel, ListetabIEnd, ListeEQM, ListeDateI0 = fit(sys.argv[1:])

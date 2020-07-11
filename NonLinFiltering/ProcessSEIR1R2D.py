@@ -324,7 +324,12 @@ def fit(sysargv):
 
 			# plot
 			if plot==True and DEGENERATE_CASE==False:
-				titre = placefull + '- Period ' + str(i) + '\\' + str(len(ListDatesStr)-1) + ' - [' + fitStartDateStr + '\u2192' + addDaystoStrDate(fitStopDateStr, -1) + '] (Sex=', + sexestr + 'Shift=' + str(decalage) + ')'
+				commontitre = placefull + '- Period ' + str(i) + '\\' + str(len(ListDatesStr)-1) + ' - [' + fitStartDateStr + '\u2192' + addDaystoStrDate(fitStopDateStr, -1)
+				if sewe==0:
+					titre = commontitre + '] (Delay (delta)=' + str(decalage) + ')'
+				else:
+					titre = commontitre + '] (Sex=', + sexestr + ', Delay (delta)=' + str(decalage) + ')'
+
 				listePlot = indexdata
 				filename  = prefFig + str(decalage) + '_Period' + str(i) + '_' + ''.join(map(str, listePlot)) + 'Init.png'
 				solveur.plotEDO(filename, titre, sliceedo, slicedata, plot=listePlot, data=data, text=solveur.getTextParam(datelegend, Period=i))
@@ -388,7 +393,12 @@ def fit(sysargv):
 			modelR1_all_period   = sol_ode[sliceedoderiv, indexdata]
 
 			if plot==True and DEGENERATE_CASE==False:
-				titre = placefull + '- Period ' + str(i) + '\\' + str(len(ListDatesStr)-1) + ' - [' + fitStartDateStr + '\u2192' + addDaystoStrDate(fitStopDateStr, -1) + '] (Sex=', + sexestr + 'Shift=' + str(decalage) + ')'
+				commontitre = placefull + '- Period ' + str(i) + '\\' + str(len(ListDatesStr)-1) + ' - [' + fitStartDateStr + '\u2192' + addDaystoStrDate(fitStopDateStr, -1)
+				if sexe==0:
+					titre = commontitre + '] (Delay (delta)=' + str(decalage) + ')'
+				else:
+					titre = commontitre + '] (Sex=', + sexestr + ', Delay (delta)=' + str(decalage) + ')'
+
 
 				# listePlot = [0,1,2,3,4,5]
 				# filename  = prefFig + str(decalage) + '_Period' + str(i) + '_' + ''.join(map(str, listePlot)) + '.png'

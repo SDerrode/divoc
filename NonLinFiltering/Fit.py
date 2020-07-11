@@ -118,7 +118,7 @@ def main(sysargv):
 	# nbperiodes = 1 # ne peut pas etre changé
 	# decalage1P = 0 # ne peut pas etre changé
 	
-	# model_allinone, ListeTextParamPlace_allinone, liste_pd_allinone, data_deriv_allinone, model_deriv_allinone, _, _, ListeDateI0 = \
+	# model_allinone, ListeTextParamPlace_allinone, liste_pd_allinone, data_deriv_allinone, model_deriv_allinone, _, _, _, ListeDateI0 = \
 	#         fit([places, sexe, nbperiodes, decalage1P, UKF_filt01, 0, 0])
 
 	# ListeTestPlace = []
@@ -135,7 +135,7 @@ def main(sysargv):
 	##################################
 	nbperiodes = -1
 
-	model_piecewise, ListeTextParamPlace_piecewise, liste_pd_piecewise, data_deriv_piecewise, model_deriv_piecewise, _, _, ListeDateI0 = \
+	model_piecewise, ListeTextParamPlace_piecewise, liste_pd_piecewise, data_deriv_piecewise, model_deriv_piecewise, _, _, _, ListeDateI0 = \
 			fit([places, sexe, nbperiodes, decalage3P, UKF_filt01, 0, 0])
 
 	ListeTestPlace = []
@@ -189,7 +189,10 @@ def main(sysargv):
 
 		# Dessin des dérivées
 		filename = prefFig + str(decalage3P) + '_Diff_Piecewise.png'
-		title    = placefull2 + ' - Sex=' + sexestr + ' - Shift=' + str(decalage3P) + ' day(s)'
+		if sexe==0:
+			title = placefull2 + ' - Delay (delta)=' + str(decalage3P) + ' day(s)'
+		else:
+			title = placefull2 + ' - Sex=' + sexestr + ', Delay (delta)=' + str(decalage3P) + ' day(s)'
 		if modeleString=='SEIR1R2':
 			listPlots = ['dcasesplusdeaths', 'mc_piecewise']
 		if modeleString=='SEIR1R2D':
@@ -198,7 +201,11 @@ def main(sysargv):
 
 		# Dessin des résidus des dérivées
 		filename = prefFig + str(decalage3P) + '_Diff_PiecewiseResiduals.png'
-		title    = placefull2 + ' - Sex=' + sexestr + ' - Shift=' + str(decalage3P) + ' day(s)'
+		if sexe==0:
+			title = placefull2 + ' - Delay (delta)=' + str(decalage3P) + ' day(s)'
+		else:
+			title = placefull2 + ' - Sex=' + sexestr + ', Delay (delta)=' + str(decalage3P) + ' day(s)'
+
 		if modeleString=='SEIR1R2':
 			listPlots = ['mc_piecewise_residual']
 		if modeleString=='SEIR1R2D':
@@ -206,7 +213,7 @@ def main(sysargv):
 		PlotFitPiecewiseResidual(modeleString, liste_pd_piecewise[indexplace], title, filename, y=listPlots, Dates=DatesString, textannotation=ListeTestPlace[indexplace])
 
 
-	# Plot the two SEIR1R2
+	# Plot the three SEIR1R2
 	##################################
 
 	for indexplace, place in enumerate(listplaces):
@@ -231,32 +238,38 @@ def main(sysargv):
 		else:
 			DatesString = readDates(place, verbose)
 
-		liste_pd_piecewise[indexplace].loc[:, ('Sp')]  = model_piecewise [indexplace, :, 0]
-		liste_pd_piecewise[indexplace].loc[:, ('Ep')]  = model_piecewise [indexplace, :, 1]
-		liste_pd_piecewise[indexplace].loc[:, ('Ip')]  = model_piecewise [indexplace, :, 2]
-		liste_pd_piecewise[indexplace].loc[:, ('R1p')] = model_piecewise [indexplace, :, 3]
-		liste_pd_piecewise[indexplace].loc[:, ('R2p')] = model_piecewise [indexplace, :, 4]
+		liste_pd_piecewise[indexplace].loc[:, ('S(t)')]  = model_piecewise [indexplace, :, 0]
+		liste_pd_piecewise[indexplace].loc[:, ('E(t)')]  = model_piecewise [indexplace, :, 1]
+		liste_pd_piecewise[indexplace].loc[:, ('I(t)')]  = model_piecewise [indexplace, :, 2]
+		liste_pd_piecewise[indexplace].loc[:, ('R1(t)')] = model_piecewise [indexplace, :, 3]
+		liste_pd_piecewise[indexplace].loc[:, ('R2(t)')] = model_piecewise [indexplace, :, 4]
 		if modeleString == 'SEIR1R2D':
-			liste_pd_piecewise[indexplace].loc[:, ('Fp')]  = model_piecewise [indexplace, :, 5]
+			liste_pd_piecewise[indexplace].loc[:, ('F(t)')]  = model_piecewise [indexplace, :, 5]
 
-		title    = placefull2 + ' - Sex=' + sexestr + ' - Shift=' + str(decalage3P) + ' day(s)'
-		listePlot=['Ep', 'Ip', 'R1p']
-		if modeleString=='SEIR1R2D':
-			listePlot.append('Fp')
-		filename = prefFig + str(decalage3P) + '_' + ''.join(map(str, listePlot)) + '_piecewise.png'
-		PlotModel(modeleString, liste_pd_piecewise[indexplace], title, filename, y=listePlot, Dates=DatesString, textannotation=ListeTestPlace[indexplace])
+		if sexe==0:
+			titre = placefull2 + ' - Delay (delta)=' + str(decalage3P) + ' day(s)'
+		else:
+			titre = placefull2 + ' - Sex=' + sexestr + ', Delay (delta)=' + str(decalage3P) + ' day(s)'
 
-		title    = placefull2 + ' - Sex=' + sexestr + ' - Shift=' + str(decalage3P) + ' day(s)'
-		listePlot=['R1p']
+		listePlot=['E(t)', 'I(t)', 'R1(t)']
 		if modeleString=='SEIR1R2D':
-			listePlot.append('Fp')
+			listePlot.append('F(t)')
 		filename = prefFig + str(decalage3P) + '_' + ''.join(map(str, listePlot)) + '_piecewise.png'
-		PlotModel(modeleString, liste_pd_piecewise[indexplace], title, filename, y=listePlot, Dates=DatesString, textannotation=ListeTestPlace[indexplace])
+		PlotModel(modeleString, liste_pd_piecewise[indexplace], titre, filename, y=listePlot, Dates=DatesString, textannotation=ListeTestPlace[indexplace])
+
+		listePlot=['R1(t)']
+		if modeleString=='SEIR1R2D':
+			listePlot.append('F(t)')
+		filename = prefFig + str(decalage3P) + '_' + ''.join(map(str, listePlot)) + '_piecewise.png'
+		PlotModel(modeleString, liste_pd_piecewise[indexplace], titre, filename, y=listePlot, Dates=DatesString, textannotation=ListeTestPlace[indexplace])
 
 
 def PlotModel(modeleString, pd, titre, filenameFig, y, Dates=None, textannotation=''):
 	
 	if len(y)==0 or y is None: pass
+
+	# on enlev la dernière valeur
+	pd = pd.iloc[:-1]
 
 	# juste pour récupérer des couleurs sohérentes
 	if modeleString=='SEIR1R2':
@@ -267,12 +280,12 @@ def PlotModel(modeleString, pd, titre, filenameFig, y, Dates=None, textannotatio
 	mod = solveur.modele
 	listeColor = []
 	for p in y:
-		if p=='Sp' : listeColor.append(mod.getColor(0))
-		if p=='Ep' : listeColor.append(mod.getColor(1))
-		if p=='Ip' : listeColor.append(mod.getColor(2))
-		if p=='R1p': listeColor.append(mod.getColor(3))
-		if p=='R2p': listeColor.append(mod.getColor(4))
-		if p=='Fp' : listeColor.append(mod.getColor(5))
+		if p=='S(t)' : listeColor.append(mod.getColor(0))
+		if p=='E(t)' : listeColor.append(mod.getColor(1))
+		if p=='I(t)' : listeColor.append(mod.getColor(2))
+		if p=='R1(t)': listeColor.append(mod.getColor(3))
+		if p=='R2(t)': listeColor.append(mod.getColor(4))
+		if p=='F(t)' : listeColor.append(mod.getColor(5))
 
 	fig = plt.figure(facecolor='w', figsize=figsize)
 	ax = fig.add_subplot(111, facecolor='#dddddd', axisbelow=True)
@@ -327,8 +340,8 @@ def PlotFitPiecewise(modeleString, pd, titre, filenameFig, y, Dates=None, textan
 
 	if len(y)==0 or y is None: pass
 
-	# on supprime la première ligne de données (car ce sont des dérivées)
-	pd = pd.iloc[1:]
+	# on enlev la dernière valeur
+	pd = pd.iloc[:-1]
 	
 	fig = plt.figure(facecolor='w', figsize=figsize)
 	ax  = fig.add_subplot(111, facecolor='#dddddd', axisbelow=True)
@@ -403,8 +416,8 @@ def PlotFitPiecewiseResidual(modeleString, pd, titre, filenameFig, y, Dates=None
 
 	if len(y)==0 or y is None: pass
 
-	# on supprime la première ligne de données (car ce sont des dérivées)
-	pd = pd.iloc[1:]
+	# on enlev la dernière valeur
+	pd = pd.iloc[:-1]
 	
 	fig = plt.figure(facecolor='w', figsize=figsize)
 	ax  = fig.add_subplot(111, facecolor='#dddddd', axisbelow=True)

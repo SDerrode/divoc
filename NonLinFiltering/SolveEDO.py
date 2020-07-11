@@ -48,14 +48,14 @@ class SolveEDO:
 		S += r'  $R^1_0=' + str(self.y0[3]) + r', R^2_0=' + str(self.y0[4])+ '$'
 		if startDate!=None:
 			dateI0 = addDaystoStrDate(startDate, -self.TS)
-			S += '\n  Date ' + r'$d_{I==1}$' + ':'+dateI0
+			S += '\n  Date ' + r'$d_{I=1}$' + ':'+dateI0
 		return S
 
 	def getTextParamWeak(self, startDate=None, ROsignificatif=True, Period=1):
 		S  = self.modele.getTextParam(ROsignificatif, Period=Period)
 		if startDate!=None:
 			dateI0 = addDaystoStrDate(startDate, -self.TS)
-			S += '\n  Date ' + r'$d_{I==1}$' + ':'+dateI0
+			S += '\n  Date ' + r'$d_{I=1}$' + ':'+dateI0
 		return S
 
 	def getParamInit(self):

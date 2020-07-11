@@ -8,9 +8,10 @@ import geopandas         as gpd
 import seaborn           as sns
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
-dpi=300
+dpi = 300
 
-def save_mapFranceR0(df, met, newcmp, title, img_name, labelRO, vmin, vmax, tile_zoom, alpha, figsize, mapType):
+
+def save_mapFranceR0(df, met, newcmp, title, img_name, labelRO, labelI, vmin, vmax, tile_zoom, alpha, figsize, mapType):
 	
 	# Load the map tile with contextily
 	w, s, e, n = met.total_bounds
@@ -46,31 +47,35 @@ def save_mapFranceR0(df, met, newcmp, title, img_name, labelRO, vmin, vmax, tile
 		#legend_kwds={'label': "Mean R0"},
 		#missing_kwds={'color': 'lightgrey'},
 		missing_kwds={
-				"color": "lightgreen",
-				"edgecolor": "k",
+				#"color": "lightgreen",
+				"facecolor": "black",
+				"edgecolor": "white",
 				"alpha": 0.5,
-				"linewidth": 0.7,
-				#"hatch": "///",
+				"linewidth": 0.5,
+				"hatch": "///",
+				#patterns possible for hatch= ('-', '+', 'x', '\\', '*', 'o', 'O', '.')
 				"label": "Missing values",
 			},
 	)
 
+	#  facecolor="none", hatch="X", edgecolor="b", linewidth=0.0
+
 	if mapType=='REG':
-		fontsize = 10
+		fontsize = 9
 		weight   = 'bold'
 		for _, row in gdf_3857.iterrows():
 			if np.isnan(row[labelRO])==False:
-				s='#'+row['Place']+'\n'+f'R\N{SUBSCRIPT ZERO}:' + str(round(row[labelRO], 2))
+				s='#'+row['Place']+'\n'+f'R\N{SUBSCRIPT ZERO}:' + str(round(row[labelRO], 2))+'\n'+'I:' + str(row[labelI])
 			else:
-				s='#'+row['Place']
+				s='#'+row['Place']+'\n'+'I:' + str(row[labelI])
 			ax.text(s=s, x=row['coords'][0], y = row['coords'][1],
 				   horizontalalignment='center', verticalalignment='center', fontdict = {'size': fontsize, 'weight': weight})
 	if mapType=='DPT':
-		fontsize = 7
+		fontsize = 6
 		weight   = 'normal' #bold, normal
 		for _, row in gdf_3857.iterrows():
 			if row['Place'] not in ['75', '92', '93', '94']:
-				s='#'+row['Place']
+				s='#'+row['Place']+'\n'+'I:' + str(row[labelI])
 				ax.text(s=s, x=row['coords'][0], y = row['coords'][1],
 					   horizontalalignment='center', verticalalignment='center', fontdict = {'size': fontsize, 'weight': weight})
 
@@ -137,11 +142,13 @@ def save_mapFranceI0(df, met, title, img_name, deltaIO, vmin, vmax, tile_zoom, a
 		vmax      = vmax,
 		#legend_kwds={'label': "Dates I0 from " + minDateIO.strftime("%Y-%m-%d")},
 		missing_kwds={
-				"color": "lightgreen",
-				"edgecolor": "k",
+				#"color": "lightgreen",
+				"facecolor": "black",
+				"edgecolor": "white",
 				"alpha": 0.5,
-				"linewidth": 0.7,
-				#"hatch": "///",
+				"linewidth": 0.5,
+				"hatch": "///",
+				#patterns possible for hatch= ('-', '+', 'x', '\\', '*', 'o', 'O', '.')
 				"label": "Missing values",
 			},
 	)

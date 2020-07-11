@@ -130,6 +130,7 @@ def PlotTimeShift(sysargv):
 	
 	TAB_decalage    = []
 	TAB_param_model = []
+	TAB_IEnd = []
 	TAB_ListeEQM    = []
 	TAB_ListeDateI0 = []
 
@@ -138,10 +139,11 @@ def PlotTimeShift(sysargv):
 		if verbose>0:
 			print('TIME-SHIFT', str(decalage), 'OVER', str(shift_maxi))
 	
-		_, _, _, _, _, tabParamModel, ListeEQM, ListeDateI0 = fit([places, sexe, nbperiodes, decalage, UKF_filt, 0, 0, stopDate])
+		_, _, _, _, _, tabParamModel, tabIEnd, ListeEQM, ListeDateI0 = fit([places, sexe, nbperiodes, decalage, UKF_filt, 0, 0, stopDate])
 
 		TAB_decalage.append(float(decalage))
 		TAB_param_model.append(tabParamModel)
+		TAB_IEnd.append(tabIEnd)
 		TAB_ListeEQM.append(ListeEQM)
 		TAB_ListeDateI0.append(ListeDateI0)
 
@@ -154,7 +156,7 @@ def PlotTimeShift(sysargv):
 	if os.path.exists(fileR0moyen):
 		os.remove(fileR0moyen)
 	with open(fileR0moyen, 'a') as text_file:
-		text_file.write('Place,R0MoyenP0,R0MoyenP1,R0MoyenP2,DateFirstCase\n')
+		text_file.write('Place,R0MoyenP0,R0MoyenP1,R0MoyenP2,DateFirstCase,IEndP0,IEndP1,IEndP2\n')
 	
 	ListeChaines = []
 	for indexplace, place in enumerate(listplaces):
@@ -191,11 +193,13 @@ def PlotTimeShift(sysargv):
 					Y1[decalage, :] = 0.
 
 			if plot==True:
+				if sexe==0:
+					titre = placefull + ' - ' + modeleString2 + ' parameters evolution for ' + labelsperiod[period]
+				else:
+					titre = placefull + ' - Sex=' + sexestr + ', ' + modeleString2 + ' parameters evolution for ' + labelsperiod[period]
 				texte = list(map( lambda s: s.replace('$', '').replace('\\', '').replace('_', ''), labelsparam[:-1]))
-				titre    = placefull + ', Sex:' + sexestr + ' - ' + modeleString2 + ' parameters evolution for ' + labelsperiod[period]
 				filename = prefFig   + 'Plot_TS' + str(period) + '_' + ''.join(texte) + '.png'
 				plotData(TAB_decalage, Y1[:, :-1], titre, filename, labelsparam[:-1])
-				titre    = placefull + ', Sex:' + sexestr + ' - ' + modeleString2 + ' parameters evolution for ' + labelsperiod[period]
 				filename = prefFig   + 'Plot_TS' + str(period) + '_R0.png'
 				plotData(TAB_decalage, Y1[:, -1].reshape(shift_maxi-shift_mini, 1), titre, filename, [labelsparam[-1]])
 
@@ -211,11 +215,14 @@ def PlotTimeShift(sysargv):
 			for decalage in range(shift_maxi-shift_mini):
 				for period in range(len(labelsperiod)):
 					try:
-						Y2[decalage, period] = np.round(TAB_param_model[decalage][indexplace][period][param],3)
+						Y2[decalage, period] = np.round(TAB_param_model[decalage][indexplace][period][param], 3)
 					except IndexError:
 						Y2[decalage, period] = 0.
 			if plot==True:
-				titre    = placefull + ', Sex:' + sexestr + ' - ' + modeleString2 + ' periods evolution for param ' + labelsparam[param]
+				if sexe==0:
+					titre = placefull + ' - ' + modeleString2 + ' periods evolution for param ' + labelsparam[param]
+				else:
+					titre = placefull + ' - Sex=' + sexestr + ', ' + modeleString2 + ' periods evolution for param ' + labelsparam[param]
 				filename = prefFig   + 'Plot_TS_Param' + labelsparam[param].replace('$', '') + '.png'
 				plotData(TAB_decalage, Y2, titre, filename, labelsperiod)
 
@@ -241,6 +248,7 @@ def PlotTimeShift(sysargv):
 					if Lieu[-1]=='D':
 						Lieu = Lieu[:-1]
 					chaine = Lieu+','
+					# Les R0 moyens pour les 3 périodes
 					for period in range(len(labelsperiod)):
 						if -1. in Y2[:, period]:
 							R0Est = -1.
@@ -253,14 +261,21 @@ def PlotTimeShift(sysargv):
 								Indice = np.where(Y2[:, period]==R0Est)[0][0]
 								# print('Indice=', Indice)
 								# input('apuse')
-						chaine += str(R0Est)+','
+						chaine += str(R0Est) + ','
 					
+					# La date du premier infecté
 					#Si -1. pour la periode 0, alors pas de date
 					if -1. in Y2[:, 0]:
 						chaine += 'Invalid'
 					else:
 						chaine += TAB_ListeDateI0[Indice][indexplace]
+
+					# Les infectés en fin de période pour les 3 périodes
+					for period in range(len(labelsperiod)):
+						chaine += ',' + str(TAB_IEnd[decalage][indexplace][period])
+					
 					text_file.write(chaine+'\n')
+
 					if verbose>0:
 						print('chaine=', chaine)
 					ListeChaines.append(chaine)
@@ -295,7 +310,11 @@ def PlotTimeShift(sysargv):
 			#plt.ylim([0, 1.0])
 
 			# ajout d'un text d'annotation
-			plt.title(placefull + ', Sex:' + sexestr + ' - ' + modeleString2 + ', EQM on ' + f'R\N{SUPERSCRIPT ONE}' )
+			if sexe==0:
+				titre = placefull + ' - ' + modeleString2 + ', EQM on ' + f'R\N{SUPERSCRIPT ONE}'
+			else:
+				titre = placefull + ' - Sex=' + sexestr + ', ' + modeleString2 + ', EQM on ' + f'R\N{SUPERSCRIPT ONE}'
+			plt.title(titre)
 			plt.savefig(prefFig + 'Plot_TS_EQM_Deriv.png', dpi=dpi)
 			plt.close()
 

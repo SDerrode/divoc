@@ -153,6 +153,7 @@ def main(sysargv):
 	# On dessine les cartes pour les 3 R0
 	for p in range(3):
 		labelRO = 'R0MoyenP'+str(p)
+		labelI  = 'IEndP'+str(p)
 		print('PROCESSING of', labelRO)
 
 		# # Le min et le max de la colonne
@@ -173,7 +174,7 @@ def main(sysargv):
 		# display the map with the RO data
 		img_name = repertoire + filenamewithoutext + '_P' + str(p) + '.png'
 		title    = 'Estimated ' + f'R\N{SUBSCRIPT ZERO}'+ ', scale: ' + textMapType + ' - ' + modeleString2 + ' model'
-		save_mapFranceR0(df1, met, newcmpR0, title, img_name, labelRO, minRO, maxRO, tile_zoom, alpha, figsize, mapType)
+		save_mapFranceR0(df1, met, newcmpR0, title, img_name, labelRO, labelI, minRO, maxRO, tile_zoom, alpha, figsize, mapType)
 
 	# PARTIE SUR I0
 	##################################################################

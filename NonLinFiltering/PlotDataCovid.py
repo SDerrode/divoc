@@ -155,14 +155,18 @@ def main(sysargv):
         # print('HeadData=', HeadData)
         # print('liste=', list(pd_exerpt))
 
-        PlotData(pd_exerpt, titre=placefull+' - Sex:' + sexestr, filenameFig=prefFig+       HeadData[0]+'.png',                         y=HeadData[0],                 color='red',   Dates=DatesString)
-        PlotData(pd_exerpt, titre=placefull+' - Sex:' + sexestr, filenameFig=prefFig+       HeadData[1]+'.png',                         y=HeadData[1],                 color='black', Dates=DatesString)
-        PlotData(pd_exerpt, titre=placefull+' - Sex:' + sexestr, filenameFig=prefFig+       HeadData[2]+'.png',                         y=HeadData[2],                 color='black', Dates=DatesString)
-        PlotData(pd_exerpt, titre=placefull+' - Sex:' + sexestr, filenameFig=prefFig+       HeadData[0]+HeadData[1]+'.png',             y=[HeadData[0], HeadData[1]],  color=['red', 'black'], Dates=DatesString)
-        PlotData(pd_exerpt, titre=placefull+' - Sex:' + sexestr, filenameFig=prefFig+'Diff'+HeadData[0]+'.png',                         y=['Diff ' + HeadData[0]], color='red',   Dates=DatesString)
-        PlotData(pd_exerpt, titre=placefull+' - Sex:' + sexestr, filenameFig=prefFig+'Diff'+HeadData[1]+'.png',                         y=['Diff ' + HeadData[1]], color='black', Dates=DatesString)
-        PlotData(pd_exerpt, titre=placefull+' - Sex:' + sexestr, filenameFig=prefFig+'Diff'+HeadData[0]+HeadData[1]+'.png',             y=['Diff ' + HeadData[0], 'Diff ' + HeadData[1]], color=['red', 'black'], Dates=DatesString)
-        PlotData(pd_exerpt, titre=placefull+' - Sex:' + sexestr, filenameFig=prefFig+'Diff'+HeadData[0]+HeadData[1]+HeadData[2]+'.png', y=['Diff ' + HeadData[0], 'Diff ' + HeadData[1], 'Diff ' + HeadData[2]], color=['red', 'black', 'blue'], Dates=DatesString)
+        if sexe==0:
+            titre = placefull
+        else:
+            titre = placefull+' - Sex=' + sexestr
+        PlotData(pd_exerpt, titre=titre, filenameFig=prefFig+       HeadData[0]+'.png',                         y=HeadData[0],                 color='red',   Dates=DatesString)
+        PlotData(pd_exerpt, titre=titre, filenameFig=prefFig+       HeadData[1]+'.png',                         y=HeadData[1],                 color='black', Dates=DatesString)
+        PlotData(pd_exerpt, titre=titre, filenameFig=prefFig+       HeadData[2]+'.png',                         y=HeadData[2],                 color='black', Dates=DatesString)
+        PlotData(pd_exerpt, titre=titre, filenameFig=prefFig+       HeadData[0]+HeadData[1]+'.png',             y=[HeadData[0], HeadData[1]],  color=['red', 'black'], Dates=DatesString)
+        PlotData(pd_exerpt, titre=titre, filenameFig=prefFig+'Diff'+HeadData[0]+'.png',                         y=['Diff ' + HeadData[0]], color='red',   Dates=DatesString)
+        PlotData(pd_exerpt, titre=titre, filenameFig=prefFig+'Diff'+HeadData[1]+'.png',                         y=['Diff ' + HeadData[1]], color='black', Dates=DatesString)
+        PlotData(pd_exerpt, titre=titre, filenameFig=prefFig+'Diff'+HeadData[0]+HeadData[1]+'.png',             y=['Diff ' + HeadData[0], 'Diff ' + HeadData[1]], color=['red', 'black'], Dates=DatesString)
+        PlotData(pd_exerpt, titre=titre, filenameFig=prefFig+'Diff'+HeadData[0]+HeadData[1]+HeadData[2]+'.png', y=['Diff ' + HeadData[0], 'Diff ' + HeadData[1], 'Diff ' + HeadData[2]], color=['red', 'black', 'blue'], Dates=DatesString)
         
         # on filtre R1plusD par UKF
         #############################################################################
@@ -184,10 +188,13 @@ def main(sysargv):
 
         # plotting
         pd_exerpt[HeadData[2] + ' filt'] = R1filt
-        PlotData(pd_exerpt, titre=placefull+' - Sex:' + sexestr, filenameFig=prefFig+'filt'+HeadData[2]+'.png', y=[HeadData[2], HeadData[2] + ' filt'], color=['red', 'darkred'], Dates=DatesString)
-
+        if sexe==0:
+            titre = placefull
+        else:
+            titre = placefull+' - Sex=' + sexestr
+        PlotData(pd_exerpt, titre=titre, filenameFig=prefFig+'filt'+HeadData[2]+'.png', y=[HeadData[2], HeadData[2] + ' filt'], color=['red', 'darkred'], Dates=DatesString)
         pd_exerpt['Diff ' + HeadData[2] + ' filt']  = pd_exerpt[HeadData[2] + ' filt'].diff()
-        PlotData(pd_exerpt, titre=placefull+' - Sex:' + sexestr, filenameFig=prefFig+'diff_filt'+HeadData[2]+'.png', y=['Diff ' + HeadData[2], 'Diff ' + HeadData[2] + ' filt'], color=['red', 'darkred'], Dates=DatesString)
+        PlotData(pd_exerpt, titre=titre, filenameFig=prefFig+'diff_filt'+HeadData[2]+'.png', y=['Diff ' + HeadData[2], 'Diff ' + HeadData[2] + ' filt'], color=['red', 'darkred'], Dates=DatesString)
 
 
         # on filtre Diff R1 par UKF
@@ -211,7 +218,7 @@ def main(sysargv):
         # # UKF filtering and smoothing, batch mode
         # diffR1filt, _ = ukf.batch_filter(data)
         # pd_exerpt['diffR1 filt'] = diffR1filt
-        # PlotData(pd_exerpt, titre=placefull+' - Sex:' + sexestr, filenameFig=prefFig+'diffcases_filt'+HeadData[0]+'.png', y=['Diff cases', 'diffR1 filt'], color=['red', 'darkred'], Dates=DatesString)
+        # PlotData(pd_exerpt, titre=titre, filenameFig=prefFig+'diffcases_filt'+HeadData[0]+'.png', y=['Diff cases', 'diffR1 filt'], color=['red', 'darkred'], Dates=DatesString)
 
         # on filtre F par UKF
         #############################################################################
@@ -233,10 +240,10 @@ def main(sysargv):
 
         # plotting
         pd_exerpt[HeadData[1] + ' filt'] = Ffilt
-        PlotData(pd_exerpt, titre=placefull+' - Sex:' + sexestr, filenameFig=prefFig+'filt'+HeadData[1]+'.png', y=[HeadData[1], HeadData[1] + ' filt'], color=['gray', 'black'], Dates=DatesString)
+        PlotData(pd_exerpt, titre=titre, filenameFig=prefFig+'filt'+HeadData[1]+'.png', y=[HeadData[1], HeadData[1] + ' filt'], color=['gray', 'black'], Dates=DatesString)
 
         pd_exerpt['Diff ' + HeadData[1] + ' filt']  = pd_exerpt[HeadData[1] + ' filt'].diff()
-        PlotData(pd_exerpt, titre=placefull+' - Sex:' + sexestr, filenameFig=prefFig+'diff_filt'+HeadData[1]+'.png', y=['Diff ' + HeadData[1], 'Diff ' + HeadData[1] + ' filt'], color=['gray', 'black'], Dates=DatesString)
+        PlotData(pd_exerpt, titre=titre, filenameFig=prefFig+'diff_filt'+HeadData[1]+'.png', y=['Diff ' + HeadData[1], 'Diff ' + HeadData[1] + ' filt'], color=['gray', 'black'], Dates=DatesString)
 
 
         # on filtre R1 et F simultanément par UKF
@@ -260,12 +267,12 @@ def main(sysargv):
         # plotting
         pd_exerpt[HeadData[0]+' filtboth'] = R1Ffilt[:, 0]
         pd_exerpt[HeadData[1]+' filtboth'] = R1Ffilt[:, 1]
-        PlotData(pd_exerpt, titre=placefull+' - Sex:' + sexestr, filenameFig=prefFig+'filtboth'+HeadData[0]+HeadData[1]+'.png', \
+        PlotData(pd_exerpt, titre=titre, filenameFig=prefFig+'filtboth'+HeadData[0]+HeadData[1]+'.png', \
                 y=[HeadData[0], HeadData[0]+' filtboth', HeadData[1], HeadData[1]+' filtboth'], color=['red', 'darkred', 'gray', 'black'], Dates=DatesString)
 
         pd_exerpt['Diff '+HeadData[0]+' filtboth']  = pd_exerpt[HeadData[0]+' filtboth'].diff()
         pd_exerpt['Diff '+HeadData[1]+' filtboth']  = pd_exerpt[HeadData[1]+' filtboth'].diff()
-        PlotData(pd_exerpt, titre=placefull+' - Sex:' + sexestr, filenameFig=prefFig+'diff_filt'+HeadData[0]+HeadData[1]+'.png', \
+        PlotData(pd_exerpt, titre=titre, filenameFig=prefFig+'diff_filt'+HeadData[0]+HeadData[1]+'.png', \
                 y=['Diff '+HeadData[0], 'Diff '+HeadData[0]+' filtboth', 'Diff '+HeadData[1], 'Diff '+HeadData[1]+' filtboth', ], color=['red', 'darkred', 'gray', 'black'], Dates=DatesString)
 
 

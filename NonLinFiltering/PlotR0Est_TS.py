@@ -96,7 +96,11 @@ def main(sysargv):
 
 	# On s'occupe de l'évolution du R0 sur la période 2
 	filename = prefFig + str(TS) + '_R0P2.png'
-	title    = f'R\N{SUBSCRIPT ZERO}' + ' estimation w.r.t. to the end date for estimation - Sex=' + sexestr + ', Shift=' + str(TS) + ' day(s)'
+	if sexe==0:	
+		title    = f'R\N{SUBSCRIPT ZERO}' + ' estimation w.r.t. to the end date for estimation - Delay (delta)=' + str(TS) + ' day(s)'
+	else:
+		title    = f'R\N{SUBSCRIPT ZERO}' + ' estimation w.r.t. to the end date for estimation - Sex=' + sexestr + ', Delay (delta)=' + str(TS) + ' day(s)'
+
 	y='R0MoyenP2'
 	PlotR0Est_TS(modelString, df, y, title, filename)
 
