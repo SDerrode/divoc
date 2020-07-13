@@ -3,6 +3,10 @@ This file describes how to regenerate all the figures in the preprint entitled: 
 
 The commands exposed below give an idea on how to play with the scripts. Please refer to the first lines of the scripts to have more information on the possible arguments. 
 
+To run the scripts, you will need a number of python library, including among the less popular ones : datetime, dateutil, contextily, geopandas, warnings, requests, zipfile, io, pathlib, sklearn, filterpy, lmfit, lmfit
+
+In the preprint, we only deal with the SEIR1R2 model. I have started to work on a variation of this model called SEIR1R2D, which include dead in another way, but the model has not been tested very much, so be careful with this model!
+
 
 **Figure 1:**
     
