@@ -1,8 +1,7 @@
 # specific to this project
-NonLinFiltering/figures/*.png
-NonLinFiltering/testPython/
-NonLinFiltering/old/
-Notebooks/*.ipynb
+figures/*.png
+testPython/
+old/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
