@@ -14,7 +14,7 @@ In the preprint, we only deal with the SEIR1R2 model. I have started to work on 
 
 Files are generated in directory *./figures/SEIR1R2/France/sexe_0_delay_18/*
 
-Remark: Here *FRANCE,MetropoleD+* means that we add the data for all the departements in the database, to get results for France. You can also try *python Fit.py FRANCE,R53,D06,R84+ 0 SEIR1R2 18 0 1 1* to get the result for the department 06, for all the departments in the region 53 and for the region 84 (ie the sum of data for all the departments in the region 84).
+Remark: Here *FRANCE,MetropoleD+* means that we add the data for all the departements in the database, to get results for France. You can also try *python Fit.py FRANCE,R53,D06,R84+ 0 SEIR1R2 18 0 1 1* to get the result for the department 06, for all the departments in the region 53 and for the region 84 (*ie* the sum of data for all the departments in the region 84).
 
 **Figure 2:**
 
