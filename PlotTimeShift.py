@@ -56,13 +56,12 @@ def PlotTimeShift(sysargv):
 	######################################################@
 
 
-	SMALL_SIZE = 16
+	SMALL_SIZE  = 16
 	MEDIUM_SIZE = 20
 	BIGGER_SIZE = 24
 
 	plt.rc('font', size=SMALL_SIZE)          # controls default text sizes
 	plt.rc('axes', titlesize=SMALL_SIZE)     # fontsize of the axes title
-	#plt.rc('axes', labelsize=MEDIUM_SIZE)    # fontsize of the x and y labels
 	plt.rc('xtick', labelsize=SMALL_SIZE)    # fontsize of the tick labels
 	plt.rc('ytick', labelsize=SMALL_SIZE)    # fontsize of the tick labels
 	plt.rc('legend', fontsize=SMALL_SIZE)    # legend fontsize
@@ -81,7 +80,7 @@ def PlotTimeShift(sysargv):
 	shift_mini, shift_maxi = 18,19     #4,18
 	verbose                = 1
 	plot                   = True
-	stopDate               = "2020-07-01"
+	readStopDateStr        = "None" #"2020-07-01"
 	
 	# Parameters from argv
 	if len(sysargv)>1: places, liste = sysargv[1], list(sysargv[1].split(','))
@@ -91,12 +90,12 @@ def PlotTimeShift(sysargv):
 	if len(sysargv)>5: shift_mini, shift_maxi = map(int, sysargv[5].split(','))
 	if len(sysargv)>6: verbose = int(sysargv[6])
 	if len(sysargv)>7 and int(sysargv[7])==0: plot = False
-	if len(sysargv)>8: stopDate = sysargv[8]
+	if len(sysargv)>8: readStopDateStr = sysargv[8]
 	if shift_maxi-shift_mini==1:
 		plot = False # Pas de plot possible s'il n'y a qu'une seule données
 	if sexe not in [0,1,2]:	sexe, sexestr = 0, 'male+female'      # sexe indiférencié
-	if sexe == 1: 		          sexestr =    'male'
-	if sexe == 2:                 sexestr =    'female'
+	if sexe == 1: sexestr = 'male'
+	if sexe == 2: sexestr = 'female'
 
 	listplaces = []
 	listnames  = []
@@ -148,7 +147,7 @@ def PlotTimeShift(sysargv):
 		if verbose>0:
 			print('TIME-SHIFT', str(decalage), 'OVER', str(shift_maxi))
 	
-		_, _, _, _, _, tabParamModel, tabIEnd, ListeEQM, ListeDateI0 = fit([places, sexe, nbperiodes, decalage, UKF_filt, 0, 0, stopDate])
+		_, _, _, _, _, tabParamModel, tabIEnd, ListeEQM, ListeDateI0 = fit([places, sexe, nbperiodes, decalage, UKF_filt, 0, 0, readStopDateStr])
 
 		TAB_decalage.append(float(decalage))
 		TAB_param_model.append(tabParamModel)
@@ -164,7 +163,6 @@ def PlotTimeShift(sysargv):
 		labelsparam  = [r'$a$', r'$b$', r'$c$', r'$f$', r'$R_0$']
 	else:
 		labelsparam  = [r'$a$', r'$b$', r'$c$', r'$f$', r'$\mu$', r'$\xi$', r'$R_0$']
-	labelsperiod = ['Period 1', 'Period 2', 'Period 3']
 
 	# On enregistre le R0 moyen de la 3ieme période pour faire carte graphique
 	rep  = getRepertoire(UKF_filt, './figures/'+modeleString+'_UKFilt/TimeShift/', './figures/'+modeleString+'/TimeShift/')
@@ -172,7 +170,7 @@ def PlotTimeShift(sysargv):
 	if os.path.exists(fileR0moyen):
 		os.remove(fileR0moyen)
 	with open(fileR0moyen, 'a') as text_file:
-		text_file.write('Place,R0MoyenP0,R0MoyenP1,R0MoyenP2,DateFirstCase,IEndP0,IEndP1,IEndP2\n')
+		text_file.write('Place,R0MoyenP0,R0MoyenP1,R0MoyenP2,R0MoyenP3,DateFirstCase,IEndP0,IEndP1,IEndP2,IEndP3\n')
 
 
 	ListeChaines = []
@@ -194,8 +192,11 @@ def PlotTimeShift(sysargv):
 			prefFig    = repertoire+'/'
 
 		nbperiodes = len(TAB_param_model[0][indexplace][:])
+		labelsperiod = []
+		for p in range(nbperiodes):
+			labelsperiod.append('Period '+str(p))
 
-		# plot pour les 3 périodes
+		# plot pour les nbperiodes périodes
 		##########################################@
 		Y1 = np.zeros(shape=(shift_maxi-shift_mini, len(labelsparam)))
 		for period in range(nbperiodes):
@@ -224,11 +225,11 @@ def PlotTimeShift(sysargv):
 			if os.path.exists(prefFig+'Plot_TS.txt'):
 				os.remove(prefFig+'Plot_TS.txt')
 
-		Y2 = np.zeros(shape=(shift_maxi-shift_mini, len(labelsperiod)))
+		Y2 = np.zeros(shape=(shift_maxi-shift_mini, nbperiodes))
 		for param in range(len(labelsparam)):
 
 			for decalage in range(shift_maxi-shift_mini):
-				for period in range(len(labelsperiod)):
+				for period in range(nbperiodes):
 					try:
 						Y2[decalage, period] = np.round(TAB_param_model[decalage][indexplace][period][param], 3)
 					except IndexError:
@@ -244,17 +245,12 @@ def PlotTimeShift(sysargv):
 				# Write parameters in a file
 				with open(prefFig+'Plot_TS.txt', 'a') as text_file:
 					text_file.write('\n\nParam: %s' % labelsparam[param].replace('$', '').replace('\\', ''))
-					for period in range(len(labelsperiod)):
+					for period in range(nbperiodes):
 						#text_file.write('\n  -->%s:\n' % labelsperiod[period])
 						np.savetxt(text_file, Y2[:, period], delimiter=', ', newline=', ', fmt='%.4f', header='\n  -->'+labelsperiod[period]+': ')
 			
 			if param==len(labelsparam)-1: # c'est à dire R0
 				with open(fileR0moyen, 'a') as text_file:
-					# print('placefull=', placefull)
-					# print('place=', place)
-					# print('listnames=', listnames)
-					#input('apuse')
-					#Lieu = ''.join(filter(str.isdigit, placefull))
 					Lieu = placefull
 					if placefull[0]=='D' or placefull[0]=='R':
 						Lieu = Lieu[1:]
@@ -264,19 +260,15 @@ def PlotTimeShift(sysargv):
 						Lieu = Lieu[:-1]
 					chaine = Lieu+','
 					# Les R0 moyens pour les 3 périodes
-					for period in range(len(labelsperiod)):
+					for period in range(nbperiodes):
 						if -1. in Y2[:, period]:
 							R0Est = -1.
 						else:
-							#R0Est = np.mean(Y2[:, period])
-							# Valeur médiane
 							R0Est = sorted(Y2[:, period])[int((len(Y2[:, period])-1)/2)]
 							if period==0:
-								#print(Y2[:, period], R0Est)
 								Indice = np.where(Y2[:, period]==R0Est)[0][0]
-								# print('Indice=', Indice)
-								# input('apuse')
 						chaine += str(R0Est) + ','
+					if nbperiodes==3: chaine += ','
 					
 					# La date du premier infecté
 					#Si -1. pour la periode 0, alors pas de date
@@ -286,8 +278,9 @@ def PlotTimeShift(sysargv):
 						chaine += TAB_ListeDateI0[Indice][indexplace]
 
 					# Les infectés en fin de période pour les 3 périodes
-					for period in range(len(labelsperiod)):
+					for period in range(nbperiodes):
 						chaine += ',' + str(TAB_IEnd[decalage][indexplace][period])
+					if nbperiodes==3: chaine += ','
 					
 					text_file.write(chaine+'\n')
 
@@ -348,8 +341,8 @@ def PlotTimeShift(sysargv):
 			if i==len(labelsparam)-1:
 				xlim = False
 			for decalage in range(shift_maxi-shift_mini):
-				Y3 = np.zeros(shape=(len(labelsperiod), len(listplaces)))
-				for period in range(len(labelsperiod)):
+				Y3 = np.zeros(shape=(nbperiodes, len(listplaces)))
+				for period in range(nbperiodes):
 					for indexplace, place in enumerate(listplaces):
 						Y3[period, indexplace] = TAB_param_model[decalage][indexplace][period][i]
 

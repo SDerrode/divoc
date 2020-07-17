@@ -24,16 +24,15 @@ class SolveEDO:
 
 		self.verbose = verbose
 		
-		# Total population, N.
+		# Total population
 		self.N = N
-		# time shift with respect to some data
+		# Time delay
 		self.TS = -1
 
-		# Modèle d'eq. diff non linéaires
-		self.dt = dt # 1 day
+		self.dt = dt
 
 	def __str__(self):
-		S  = 'Solveur:\n  N=' + str(self.N) + '\n  dt='+str(self.dt) + '\n  y0='+ str(self.y0) + '\n  TS='+ str(self.TS) + '\n'
+		S  = 'Solver:\n  N=' + str(self.N) + '\n  dt='+str(self.dt) + '\n  y0='+ str(self.y0) + '\n  TS='+ str(self.TS) + '\n'
 		S = self.modele.__str__()
 		return S
 
@@ -62,19 +61,11 @@ class SolveEDO:
 		return self.y0
 
 	def compute_tsfromEQM(self, data, T, indexdata):
-		
 		dataLength = np.shape(data)[0]
 		eqm = np.zeros(shape=(T-dataLength))
 		for t in range(T-dataLength):
-			# print(np.shape(self.solution[t:t+dataLength, indexdata]))
-			# print(np.shape(data))
-			# input('apuse')
 			eqm[t] = mean_squared_error(self.solution[t:t+dataLength, indexdata], data)
-			# print('eqm[t]=', eqm[t])
-			# input('pause')
 		self.TS = np.argmin(eqm)
-		# print('self.TS=', self.TS)
-		# input('apsue')
 		return self.TS
 
 	def solveEDO_withSwitch(self, T, timeswitch=-1):
@@ -98,75 +89,6 @@ class SolveEDO:
 		# Integrate the EDO equations over the time grid t.
 		self.solution = odeint(self.modele.deriv, self.y0, time, args=self.modele.getParam())
 		return self.solution
-
-
-	# def simulEDO(self, T):
-	# 	self.solution = np.zeros(shape=(T, self.nbparam), dtype=int) # 5 parameters: S, E, I, R1, R2
-
-	# 	# initalisation
-	# 	self.solution[0, :] = self.y0
-	# 	# print('self.solution[0, :]=', self.solution[0, :])
-	# 	# input('pause')
-
-	# 	print('\n')
-	# 	for t in range(1, T):
-	# 		print('\rTime ', t, ' over ', T, '      ', end='', flush = True)
-
-	# 		# compartiment S
-	# 		tab = np.random.random_sample(size=(self.solution[t-1, 0],))
-	# 		mask = (tab <= self.modele.a).astype(np.int)
-	# 		self.solution[t, 1] =  np.sum(mask)
-	# 		self.solution[t, 0] =  self.solution[t-1, 0] - self.solution[t, 1]
-	# 		# print('self.solution[t, 1]=', self.solution[t, 1])
-	# 		# print('np.sum(mask)=', np.sum(mask))
-	# 		# print(self.solution[t-1, 0] - self.solution[t, 1])
-	# 		# input('apuse')
-
-	# 		tab = np.random.random_sample(size=(self.solution[t-1, 1],))
-	# 		mask = (tab <= self.modele.b).astype(np.int)
-	# 		self.solution[t, 2]  =  np.sum(mask)
-	# 		self.solution[t, 1] +=  self.solution[t-1, 1] - self.solution[t, 2]
-
-	# 		tab = np.random.random_sample(size=(self.solution[t-1, 2],))
-	# 		mask = (tab <= self.modele.c).astype(np.int)
-	# 		temp = np.sum(mask)
-	# 		self.solution[t, 3] =  int(temp * self.modele.f)
-	# 		self.solution[t, 4] =  np.sum(mask)-self.solution[t, 3]
-	# 		self.solution[t, 2] +=  self.solution[t-1, 2] - temp
-			
-	# 		# for individu in range(self.solution[t-1, 0]):
-	# 		# 	if random.random() <= self.modele.a: # passage de S à E
-	# 		# 		self.solution[t, 1] += 1
-	# 		# 	else:
-	# 		# 		self.solution[t, 0] += 1
-
-	# 		# # compartiment E
-	# 		# for individu in range(self.solution[t-1, 1]):
-	# 		# 	if random.random() <= self.modele.b: # passage de E à I
-	# 		# 		self.solution[t, 2] += 1
-	# 		# 	else:
-	# 		# 		self.solution[t, 1] += 1
-
-	# 		# # compartiment I
-	# 		# for individu in range(self.solution[t-1, 2]):
-	# 		# 	if random.random() <= self.modele.c: # passage de I vers R
-	# 		# 		if random.random() <= self.modele.f:
-	# 		# 			self.solution[t, 3] += 1
-	# 		# 		else:
-	# 		# 			self.solution[t, 4] += 1
-	# 		# 	else:
-	# 		# 		self.solution[t, 2] += 1
-
-
-	# 		# compartiments R1 e R2 : on ajoute le passé (ces compartiments cumulent)
-	# 		self.solution[t, 3] += self.solution[t-1, 3]
-	# 		self.solution[t, 4] += self.solution[t-1, 4]
-
-	# 		# print('self.solution[t, :]=', self.solution[t, :])
-	# 		# print('sum = ', np.sum(self.solution[t, :]))
-	# 		# input('pause')
-
-	# 	return self.solution
 
 
 	def plotEDO(self, name, title, sliceedo, slicedata, plot, data='', text=''):

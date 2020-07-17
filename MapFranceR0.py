@@ -136,9 +136,14 @@ def main(sysargv):
 	# df1['coords'] = df1['geometry'].apply(lambda x: x.centroid.coords[:])
 	# df1['coords'] = [coords[0] for coords in df1['coords']]
 
-	# Le min et le max des 3 colonnes
-	a = df1[list(df1)[1:4]].values
+	# Le min et le max des 4 colonnes
+	# print(df1['R0MoyenP3'])
+	# print(len(df1['R0MoyenP3']))
+	# print(len(df1['R0MoyenP2']))
+	# input('apuse')
+	a = df1[list(df1)[1:5]].values
 	minRO=np.amin(np.amin(a))
+	minRO=0.
 	if minRO == -1:
 		#find th second minimum value (to avoid -1 value whose meaning is to say that the place has a non-meaning RO)
 		minRO = np.amin(np.array(a)[a != np.amin(a)])
@@ -148,15 +153,15 @@ def main(sysargv):
 		print('minRO=', minRO)
 		print('maxRO=', maxRO)
 
-	# carte de couleurs (commune aux 3 périodes)
+	# carte de couleurs (commune aux périodes)
 	mycolormapR0, newcmpR0 = getColorMap(indexmaxcolor, minRO, maxRO, blackstartP, alpha)
 	
 	# PARTIE SUR R0
 	##################################################################
-	# On dessine les cartes pour les 3 R0
-	for p in range(3):
+	# On dessine les cartes pour les R0
+	for p in range(4):
 		labelRO = 'R0MoyenP'+str(p)
-		labelI  = 'IEndP'+str(p)
+		labelI  = 'IEndP'   +str(p)
 		print('PROCESSING of', labelRO)
 
 		# # Le min et le max de la colonne

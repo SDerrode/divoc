@@ -16,9 +16,12 @@ from common           import readDataEurope, readDataFrance, readDates, PlotData
 from common           import getRepertoire, addDaystoStrDate
 from France           import getPlace
 
-# constante
-fileLocalCopy = True # if we upload the file from the url (to get latest results) or from a local copy file
+# constant
+fileLocalCopy = True # if we upload the file from the url (to get latest results) or if we use a local copy of the file
 
+
+########################################################
+# For Kalman filtering
 
 def fR1(r1, dt):
     return r1 # on renvoie R1
@@ -35,31 +38,34 @@ def fR1F(r1f, dt):
 def hR1F(r1f):
     return r1f # on renvoie R1 et F
 
+
+########################################################
+# Main program
 def main(sysargv):
     """
-        Program to perform UKF filtering on Covid Data.
+        Program to plot data and generate figures on Covid Data.
  
         :Example:
 
-        For country (European database)
+        For country all around the world (European database)
         >> python PlotDataCovid.py 
         >> python PlotDataCovid.py United_Kingdom
-        >> python PlotDataCovid.py Italy 2 1 # Seulement les femmes italiennes
+        >> python PlotDataCovid.py Italy 2 1        # Only Italian women
         >> python PlotDataCovid.py France,Germany 1 # Shortcut for processing the two countries successively
         >> python PlotDataCovid.py France,Spain,Italy,United_Kingdom,Germany,Belgium 0
 
-        For French Regions (French database)
-        >> python PlotDataCovid.py FRANCE,D69         # Code Insee Dpt 69 (Rhône)
-        >> python PlotDataCovid.py FRANCE,R84         # Tous les dpts de la Région dont le code Insee est 84 (Auvergne-Rhone-Alpes)
-        >> python PlotDataCovid.py FRANCE,R32+        # Somme de tous les dpts de la Région 32 (Hauts de France)
-        >> python PlotDataCovid.py FRANCE,MetropoleD  # Tous les départements de la France métropolitaine
-        >> python PlotDataCovid.py FRANCE,MetropoleD+ # Toute la France métropolitaine (en sommant les dpts)
-        >> python PlotDataCovid.py FRANCE,MetropoleR+ # Somme des dpts de toutes les régions françaises
-        Toute combinaison est possible : exemple FRANCE,R32+,D05,R84
+        For French geographical areas (French database)
+        >> python PlotDataCovid.py FRANCE,D69         # Department 69 (Rhône), INSEE numbering
+        >> python PlotDataCovid.py FRANCE,R84         # Process successively all the dpts of region #84 ('Auvergne-Rhone-Alpes')
+        >> python PlotDataCovid.py FRANCE,R32+        # Sum od all dpts of Région 32 ('Hauts de France')
+        >> python PlotDataCovid.py FRANCE,MetropoleD  # All the dpts of the metropolitan France
+        >> python PlotDataCovid.py FRANCE,MetropoleD+ # France (by summing dpts)
+        >> python PlotDataCovid.py FRANCE,MetropoleR+ # All the regions by summing their dpts
+        Every combination is possible, e.g.: FRANCE,R32+,D05,R84
 
-        argv[1] : List of countries (ex. France,Germany,Italy), or see above. Default: France 
-        argv[2] : Sex (male:1, female:2, male+female:0). Only for french database    Default: 0
-        argv[3] : Verbose level (debug: 3, ..., almost mute: 0).              Default: 1
+        argv[1] : List of countries (ex. France,Germany,Italy), or see above for France. Default: France 
+        argv[2] : Sex (male:1, female:2, male+female:0). Only for french database        Default: 0
+        argv[3] : Verbose level (debug: 3, ..., almost mute: 0).                         Default: 1
     """
 
     #Austria,Belgium,Croatia,Czechia,Finland,France,Germany,Greece,Hungary,Ireland,Italy,Lithuania,Poland,Portugal,Romania,Serbia,Spain,Switzerland,Ukraine
@@ -70,9 +76,9 @@ def main(sysargv):
         print('  CAUTION : bad number of arguments - see help')
         exit(1)
 
-    # Constantes
+    # Constants
     ######################################################@
-    dt = 1
+    dt               = 1
     readStartDateStr = "2020-03-01" 
     readStopDateStr  = None
     France           = 'France'
@@ -86,13 +92,14 @@ def main(sysargv):
     verbose       = 1
     
     # Parameters from argv
-    if len(sysargv)>1: liste   = list(sysargv[1].split(','))
+    if len(sysargv)>1: liste = list(sysargv[1].split(','))
     if len(sysargv)>2: sexe = int(sysargv[2])
     if len(sysargv)>3: verbose = int(sysargv[3])
-    if sexe not in [0,1,2]: sexe, sexestr = 0, 'male+female'      # sexe indiférencié
-    if sexe == 1:                 sexestr =    'male'
-    if sexe == 2:                 sexestr =    'female'
+    if sexe not in [0,1,2]: sexe, sexestr = 0, 'male+female'
+    if sexe == 1: sexestr = 'male'
+    if sexe == 2: sexestr = 'female'
 
+    # List iof places to process
     listplaces = []
     listnames  = []
     if liste[0]=='FRANCE':
@@ -110,9 +117,6 @@ def main(sysargv):
     else:
         listplaces = liste[:]
         FrDatabase = False
-    # print('listplaces=', listplaces)
-    # print('listnames=', listnames)
-    # input('attente')
     
     # Loop for all places
     ############################################################@
@@ -126,12 +130,12 @@ def main(sysargv):
             placefull   = place
             DatesString = readDates(place, verbose)
         
-        # Repertoire figures
+        # Figures repository
         repertoire = getRepertoire(True, './figures/data/'+placefull+'/sexe_'+str(sexe))
-        prefFig = repertoire + '/'
+        prefFig    = repertoire + '/'
         
-        # Lecture des données et copy of the observation
-        #############################################################################
+        # Data reading and plot
+        ##########################################################
         if FrDatabase==True:
             pd_exerpt, HeadData, N, readStartDateStr, readStopDateStr, dateFirstNonZeroStr = readDataFrance(place, readStartDateStr, readStopDateStr, fileLocalCopy, sexe, verbose=0)
         else:
@@ -146,15 +150,12 @@ def main(sysargv):
             print('dateFirstNonZeroStr=', dateFirstNonZeroStr)
             #input('pause')
 
-        # On ajoute le gradient
+        # Adding the gradient
         pd_exerpt['Diff ' + HeadData[0]] = pd_exerpt[HeadData[0]].diff()
         pd_exerpt['Diff ' + HeadData[1]] = pd_exerpt[HeadData[1]].diff()
         pd_exerpt['Diff ' + HeadData[2]] = pd_exerpt[HeadData[2]].diff()
-        # print('Head=', pd_exerpt.head())
-        # print('tail=', pd_exerpt.tail())
-        # print('HeadData=', HeadData)
-        # print('liste=', list(pd_exerpt))
 
+        # Plot and store the figures in the directory
         if sexe==0:
             titre = placefull
         else:
@@ -168,8 +169,12 @@ def main(sysargv):
         PlotData(pd_exerpt, titre=titre, filenameFig=prefFig+'Diff'+HeadData[0]+HeadData[1]+'.png',             y=['Diff ' + HeadData[0], 'Diff ' + HeadData[1]], color=['red', 'black'], Dates=DatesString)
         PlotData(pd_exerpt, titre=titre, filenameFig=prefFig+'Diff'+HeadData[0]+HeadData[1]+HeadData[2]+'.png', y=['Diff ' + HeadData[0], 'Diff ' + HeadData[1], 'Diff ' + HeadData[2]], color=['red', 'black', 'blue'], Dates=DatesString)
         
-        # on filtre R1plusD par UKF
-        #############################################################################
+
+
+        # Data filtering and plot
+        ######################################################
+
+        # R1+D filtering by UKF
         data   = pd_exerpt[HeadData[2]].tolist()
         dt     = 1
         sigmas = MerweScaledSigmaPoints(n=1, alpha=.5, beta=2., kappa=0.) #1-3.)
@@ -197,8 +202,8 @@ def main(sysargv):
         PlotData(pd_exerpt, titre=titre, filenameFig=prefFig+'diff_filt'+HeadData[2]+'.png', y=['Diff ' + HeadData[2], 'Diff ' + HeadData[2] + ' filt'], color=['red', 'darkred'], Dates=DatesString)
 
 
-        # on filtre Diff R1 par UKF
-        # Ca marche mais identique au précédent
+        # Diff R1 filtering by UKF
+        # It works but identicial to previous plot
         #############################################################################
         # data    = pd_exerpt['Diff cases'].tolist()
         # data[0] = data[1]
@@ -220,7 +225,7 @@ def main(sysargv):
         # pd_exerpt['diffR1 filt'] = diffR1filt
         # PlotData(pd_exerpt, titre=titre, filenameFig=prefFig+'diffcases_filt'+HeadData[0]+'.png', y=['Diff cases', 'diffR1 filt'], color=['red', 'darkred'], Dates=DatesString)
 
-        # on filtre F par UKF
+        # F filtering by UKF
         #############################################################################
         data   = pd_exerpt[HeadData[1]].tolist()
         dt     = 1
@@ -241,12 +246,11 @@ def main(sysargv):
         # plotting
         pd_exerpt[HeadData[1] + ' filt'] = Ffilt
         PlotData(pd_exerpt, titre=titre, filenameFig=prefFig+'filt'+HeadData[1]+'.png', y=[HeadData[1], HeadData[1] + ' filt'], color=['gray', 'black'], Dates=DatesString)
-
         pd_exerpt['Diff ' + HeadData[1] + ' filt']  = pd_exerpt[HeadData[1] + ' filt'].diff()
         PlotData(pd_exerpt, titre=titre, filenameFig=prefFig+'diff_filt'+HeadData[1]+'.png', y=['Diff ' + HeadData[1], 'Diff ' + HeadData[1] + ' filt'], color=['gray', 'black'], Dates=DatesString)
 
 
-        # on filtre R1 et F simultanément par UKF
+        # R1 and F simultaneous filtering by UKF
         #############################################################################
         data   = pd_exerpt[[HeadData[0], HeadData[1]]].to_numpy(copy=True)
         dt     = 1

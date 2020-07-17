@@ -6,7 +6,7 @@ from scipy.integrate import odeint
 import matplotlib.pyplot as plt
 
 class SEIR1R2:
-	''' Modèle SEIR1R2 du papier suivant 
+	''' SEIR1R2 model from the following paper
 		"Un modèle mathématique des débuts de l'épidémie de coronavirus en France", Nicolas Bacaër
 	'''
 
@@ -14,12 +14,12 @@ class SEIR1R2:
 
 		self._verbose=verbose
 
-		self.dimState       = 5   # Les 5 variables du modèle SEIR1R2 (S, E, ...)
-		self.dimObs         = 1   # On observe uniquement R1 (nombre sumulé de cas confirmés)
+		self.dimState       = 5                      # The five variable of SEIR1R2 model (S, E, ...)
+		self.dimObs         = 1                      # There is only one observed variable R1
 		self.modelName      = 'SEIR1R2 (N. Bacaer)'  # Long name for the model
 		self.modelShortName = 'SEIR1R2'              # Short name for the model
 
-		# Default values for parameters - from the paper
+		# Default values for parameters
 		self.N  = N              # taille de la population étudiée
 		self.a  = 0.155			 # tau de contact effectif
 		self.b  = 1./5.2         # phase de latence de 5.2 jours
@@ -76,7 +76,7 @@ class SEIR1R2:
 	def getR0(self):
 		return self.R0
 
-	# The SEIR1R2 model differential equations.
+	# The SEIR1R2's differential equations
 	def deriv(self, y, t, N, a, b, c, f):
 		S, E, I, R1, R2 = y
 		dSdt  = -a * S * I / N

@@ -8,22 +8,20 @@ from scipy.integrate import odeint
 from SEIR1R2 import SEIR1R2
 
 class SEIR1R2D(SEIR1R2):
-	''' Modèle SEIR1R2D du papier suivant 
-		"Universal masking is urgent in the covid-19 pandemic...", 
-		De Kai, Guy-Philippe Goldstein, et al. ArXiv
+	''' SEIR1R2D model, whcih is a combination of N. Bacaer paper and 
+		"Universal masking is urgent in the covid-19 pandemic...", from Kai, Guy-Philippe Goldstein, et al. ArXiv
 	'''
 
 	def __init__(self, N, dt=1, verbose=1):
 
 		super().__init__(N, dt, verbose)
 
-		# Correction of some varaible specific
-		self.dimState       = 6          # Les 6 variables du modèle SEIR1R2D (S, E, ...)
-		self.dimObs         = 2          # On observe R1 et F 
+		self.dimState       = 6          # The 6 varaibles of the SEIR1R2D model (S, E, ...)
+		self.dimObs         = 2          # There is two observed variables R1 and F
 		self.modelName      = 'SEIR1R2D' # Long name for the model
 		self.modelShortName = 'SEIR1R2D' # Short name for the model
 
-		# Add suplementary parameters - from the paper
+		# Add suplementary parameters
 		self.mu = 0.001         # taux de mortalité spécifique à la pandémie
 		self.xi = 0.001         # rate of re-susceptibility
 
@@ -69,7 +67,7 @@ class SEIR1R2D(SEIR1R2):
 	def getR0(self):
 		return self.R0
 
-	# The SEIR1R2D model differential equations.
+	# The SEIR1R2D's differential equations.
 	def deriv(self, y, t, N, a, b, c, f, mu, xi):
 		S, E, I, R1, R2, D = y
 		R = R1+R2

@@ -93,18 +93,18 @@ def readDates(place, verbose=0):
 def GetPairListDates(readStartDate, readStopDate, DatesString, decalage, nbperiodes, recouvrement):
 
 	ListDates = [readStartDate, readStopDate]
-	if nbperiodes!=1:
-		confin_decalage = None
-		if DatesString.listConfDates != []:
-			confin_decalage = datetime.strptime(addDaystoStrDate(DatesString.listConfDates[0], decalage-recouvrement), strDate)
-			if confin_decalage>ListDates[-2] and confin_decalage<ListDates[-1]:
-				ListDates.insert(-1, confin_decalage)
-		
-		deconfin_decalage = None
-		if DatesString.listDeconfDates != []:
-			deconfin_decalage = datetime.strptime(addDaystoStrDate(DatesString.listDeconfDates[0], decalage-recouvrement), strDate)
-			if deconfin_decalage>ListDates[-2] and deconfin_decalage<ListDates[-1]:
-				ListDates.insert(-1, deconfin_decalage)
+	if DatesString.listOtherDates != []:
+		aDate = datetime.strptime(addDaystoStrDate(DatesString.listOtherDates[0], decalage), strDate)
+		ListDates.append(aDate)
+	if DatesString.listConfDates != []:
+		aDate = datetime.strptime(addDaystoStrDate(DatesString.listConfDates[0], decalage), strDate)
+		ListDates.append(aDate)
+	if DatesString.listDeconfDates != []:
+		aDate = datetime.strptime(addDaystoStrDate(DatesString.listDeconfDates[0], decalage), strDate)
+		ListDates.append(aDate)
+	ListDates.sort()
+	# print('ListDates=', ListDates)
+	# input('stop')
 
 	ListePairDates = []
 	for i in range(len(ListDates)-1):
@@ -112,6 +112,8 @@ def GetPairListDates(readStartDate, readStopDate, DatesString, decalage, nbperio
 			ListePairDates.append((ListDates[i]+timedelta(recouvrement), ListDates[i+1]))
 		else:
 			ListePairDates.append((ListDates[i], ListDates[i+1]))
+	# print('ListePairDates=', ListePairDates)
+	# input('stop')
 
 	# Conversion date chaine
 	ListePairDatesStr = [(date1.strftime(strDate), date2.strftime(strDate)) for date1, date2 in ListePairDates]
@@ -184,12 +186,13 @@ def readDataFrance(placeliste=['D69'], dateMinStr=None, dateMaxStr=None, fileLoc
 
 	covid_orig = None
 	if fileLocalCopy==True:
-		name = './data/csvFrance_2020-07-01.csv'
+		name = './data/csvFrance_2020-07-15.csv'
 		try:
 			covid_orig = pd.read_csv(name, sep=';', parse_dates=[2], dayfirst=True)
 		except:
 			fileLocalCopy = False
 	
+	# cf https://www.data.gouv.fr/fr/datasets/donnees-hospitalieres-relatives-a-lepidemie-de-covid-19/
 	if fileLocalCopy==False:
 		url        = "https://static.data.gouv.fr/resources/donnees-hospitalieres-relatives-a-lepidemie-de-covid-19/20200504-190020/donnees-hospitalieres-covid19-2020-05-04-19h00.csv"
 		url_stable = "https://www.data.gouv.fr/fr/datasets/r/63352e38-d353-4b54-bfd1-f1b3ee1cabd7"

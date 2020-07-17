@@ -206,7 +206,7 @@ def fit(sysargv):
 			
 
 		# Get the list of dates to process
-		ListDates, ListDatesStr = GetPairListDates(readStartDate, readStopDate, DatesString, decalage+recouvrement, nbperiodes, recouvrement)
+		ListDates, ListDatesStr = GetPairListDates(readStartDate, readStopDate, DatesString, decalag, nbperiodes, recouvrement)
 		if verbose>1:
 			#print('ListDates   =', ListDates)
 			print('ListDatesStr=', ListDatesStr)

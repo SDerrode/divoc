@@ -34,9 +34,9 @@ def fit(sysargv):
 
 		For countries (European database)
 		>> python ProcessSEIR1R2.py 
-		>> python ProcessSEIR1R2.py France 0 1 0 0 1 1
-		>> python ProcessSEIR1R2.py France 2 -1 18 0 1 1       # 3 périodes en France avec un décalage de 18 jours
-		>> python ProcessSEIR1R2.py France,Germany 1 1 0 0 1 1 # 1 période pour les francais et les allemands 
+		>> python ProcessSEIR1R2.py France         0  1  0 0 1 1
+		>> python ProcessSEIR1R2.py France         2 -1 18 0 1 1 # 3 périodes en France avec un décalage de 18 jours
+		>> python ProcessSEIR1R2.py France,Germany 1  1  0 0 1 1 # 1 période pour les francais et les allemands 
 
 		For French Region (French database)
 		>> python ProcessSEIR1R2.py FRANCE,D69         0 -1 18 0 1 1 # Code Insee Dpt 69 (Rhône)
@@ -72,7 +72,7 @@ def fit(sysargv):
 	recouvrement     = -1
 	dt               = 1
 	France           = 'France'
-	thresholdSignif  = 1E-6
+	thresholdSignif  = 1.E-7 #0.5E-6
 	
 
 	# Interpretation of arguments - reparation
@@ -86,7 +86,7 @@ def fit(sysargv):
 	UKF_filt        = False
 	verbose         = 1
 	plot            = True
-	readStopDateStr = "2020-07-01"
+	readStopDateStr = "None" #"2020-07-14"
 
 	# Parameters from argv
 	######################################@
@@ -99,10 +99,11 @@ def fit(sysargv):
 	if len(sysargv)>5: verbose    = int(sysargv[5])
 	if len(sysargv)>6 and int(sysargv[6])==0: plot     = False
 	if len(sysargv)>7: readStopDateStr = sysargv[7]
-	if nbperiodes==1:       decalage = 0  # nécessairement pas de décalage (on compense le recouvrement)
+	if nbperiodes==1:  decalage = 0  # nécessairement pas de décalage (on compense le recouvrement)
 	if sexe not in [0,1,2]:	sexe, sexestr = 0, 'male+female'      # sexe indiférencié
-	if sexe == 1: 		          sexestr =    'male'
-	if sexe == 2:                 sexestr =    'female'
+	if sexe == 1: sexestr = 'male'
+	if sexe == 2: sexestr = 'female'
+	if readStopDateStr == "None": readStopDateStr=None
 	
 	listplaces = []
 	listnames  = []
@@ -136,11 +137,11 @@ def fit(sysargv):
 
 	readStartDate = datetime.strptime(readStartDateStr, strDate)
 	if readStartDate<pd_exerpt.index[0]:
-		readStartDate    = pd_exerpt.index[0]
+		readStartDate    = pd_exerpt.index[0].to_pydatetime()
 		readStartDateStr = pd_exerpt.index[0].strftime(strDate)
 	readStopDate = datetime.strptime(readStopDateStr, strDate)
 	if readStopDate<pd_exerpt.index[-1]:
-		readStopDate     = pd_exerpt.index[-1]
+		readStopDate     = pd_exerpt.index[-1].to_pydatetime()
 		readStopDateStr  = pd_exerpt.index[-1].strftime(strDate)
 
 	dataLength = pd_exerpt.shape[0]
@@ -148,7 +149,7 @@ def fit(sysargv):
 		print('readStartDateStr=', readStartDateStr, ', readStopDateStr=', readStopDateStr)
 		print('readStartDate   =', readStartDate,    ', readStopDate   =', readStopDate)
 		print('dataLength      =', dataLength)
-		#input('pause')
+		# input('pause')
 
 	# Collections of data return by this function
 	modelSEIR1R2  = np.zeros(shape=(len(listplaces), dataLength, 5))
@@ -173,12 +174,14 @@ def fit(sysargv):
 
 		# Get the full name of the place to process, and the special dates corresponding to the place
 		if FrDatabase == True: 
-			placefull   = 'France-' + listnames[indexplace][0]
 			DatesString = readDates(France, verbose)
+			if 'MetropoleD+' in listnames[indexplace][0]:
+				placefull = 'France'
+			else:
+				placefull  = 'France-' + listnames[indexplace][0]
 		else:
-			placefull   = place
 			DatesString = readDates(place, verbose)
-		
+			placefull  = place
 
 		# data reading of the observations
 		#############################################################################
@@ -209,11 +212,11 @@ def fit(sysargv):
 			pd_exerpt[HeadData[2]] = R1filt
 
 		# Get the list of dates to process
-		ListDates, ListDatesStr = GetPairListDates(readStartDate, readStopDate, DatesString, decalage+recouvrement, nbperiodes, recouvrement)
+		ListDates, ListDatesStr = GetPairListDates(readStartDate, readStopDate, DatesString, decalage, nbperiodes, recouvrement)
 		if verbose>1:
-			#print('ListDates   =', ListDates)
+			print('ListDates   =', ListDates)
 			print('ListDatesStr=', ListDatesStr)
-			#input('pause')
+			input('pause')
 		
 		# Solveur edo
 		solveur   = SolveEDO_SEIR1R2(N, dt, verbose)
@@ -294,7 +297,7 @@ def fit(sysargv):
 					T = 350
 				# R20 = int((1.-f0)*(R10/f0))
 				
-			if i==1 or i==2:
+			if i>0:
 				datelegend = None
 				_, a0, b0, c0, f0 = solveur.modele.getParam()
 				R10 = int(data[indMinPeriod, 0]) # on corrige R1 à la valeur numérique 
@@ -377,13 +380,15 @@ def fit(sysargv):
 			# Sauvegarde des param (tableau et texte)
 			seuil  = (data[slicedata.stop-1, 0]-data[slicedata.start, 0])/getNbDaysBetweenDateFromString(fitStartDateStr, fitStopDateStr)/N
 			seuil2 = (data[slicedata.stop-1, 0]-data[slicedata.start, 0])/getNbDaysBetweenDateFromString(fitStartDateStr, fitStopDateStr)
-			nbjournonul=0
+			# seuil=1.
+			# seuil2=3.
 
 			if DEGENERATE_CASE==True:
 				ROsignificatif = False
 				ListetabParamModelPlace.append([-1., -1., -1., -1., -1.])
 			else:
 				if seuil<thresholdSignif or seuil2<1.:
+				#if seuil2<1.:
 					ROsignificatif = False
 					ListetabParamModelPlace.append([a1, b1, c1, f1, -1.])
 				else:
@@ -431,6 +436,26 @@ def fit(sysargv):
 			# sol_ode_withSwitch = solveur.solveEDO_withSwitch(T, timeswitch=ts+dataLengthPeriod)
 
 			# ajout des données et des données dérivées
+			# if i==0:
+			# 	slicedata_sansrecouvrement      = slice(indMinPeriod, indMinPeriod+dataLengthPeriod)
+			# 	slicedataderiv_sansrecouvrement = slice(slicedata.start+1, slicedata.stop)
+			# 	starting=0
+			# else:
+			# 	slicedata_sansrecouvrement      = slice(indMinPeriod-recouvrement-1, indMinPeriod+dataLengthPeriod)
+			# 	slicedataderiv_sansrecouvrement = slice(slicedata_sansrecouvrement.start+1, slicedata_sansrecouvrement.stop)
+			# 	starting=-recouvrement-1
+
+
+			# print('slicedataderiv=',                  slicedataderiv)
+			# print('slicedataderiv_sansrecouvrement=', slicedataderiv_sansrecouvrement)
+			# print('shape=', np.shape(data_all_period[starting:,:]))
+			# input('apuse')
+			# data_all     [indexplace, slicedataderiv_sansrecouvrement, :] = data_all_period[starting:,:]
+			# modelR1_all  [indexplace, slicedataderiv_sansrecouvrement, :] = modelR1_all_period[starting:,:]
+			# data_deriv   [indexplace, slicedataderiv_sansrecouvrement, :] = data_deriv_period[starting:,:]
+			# modelR1_deriv[indexplace, slicedataderiv_sansrecouvrement, :] = modelR1_deriv_period[starting:,:]
+			# input('apuse')
+
 			data_all     [indexplace, slicedataderiv, :] = data_all_period
 			modelR1_all  [indexplace, slicedataderiv, :] = modelR1_all_period
 			data_deriv   [indexplace, slicedataderiv, :] = data_deriv_period
